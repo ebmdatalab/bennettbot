@@ -1,0 +1,8 @@
+[
+  {"project": "openprescribing",
+   "url":"https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
+   "requires": ["environment"]},
+  {"project": "clinicaltrials-act-tracker",
+   "url":"https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
+   "requires": ["environment"]}
+]
