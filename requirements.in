@@ -3,3 +3,4 @@ slackbot
 django-dotenv
 dateparser
 pytest
+flask

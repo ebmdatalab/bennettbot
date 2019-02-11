@@ -8,8 +8,7 @@ ERRORS_TO = 'tech'
 
 PLUGINS = [
     'ebmbot.openprescribing',
-    'ebmbot.hal',
-
+    'ebmbot.hal'
 ]
 
 GITHUB_WEBHOOK_PORT = 9999
