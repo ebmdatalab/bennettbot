@@ -91,5 +91,5 @@ def test_github_webhook(mock_deploy):
     client = ebmbot_runner.app.test_client()
     client.post('/', json=dict(
         action='closed',
-        merged='true'))
+        pull_request=dict(merged='true')))
     mock_deploy.assert_called()

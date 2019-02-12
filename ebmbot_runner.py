@@ -24,10 +24,10 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def handle_github_webhook():
     logging.info("Received data %s", request.data)
-    data = json.loads(request.data)
+    data = json.loads(request.data.decode())
     action = data.get('action', None)
-    merged = data.get('merged', None)
-    should_deploy = action == 'closed' and merged == 'true'
+    merged = data.get('pull_request', {}).get("merged", None)
+    should_deploy = action == 'closed' and merged
     if should_deploy:
         msg = {'channel': '#tech', 'ts': None}
         client = SlackClient(settings.API_TOKEN)
