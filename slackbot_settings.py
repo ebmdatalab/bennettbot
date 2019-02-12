@@ -14,5 +14,5 @@ PLUGINS = [
 GITHUB_WEBHOOK_PORT = 9999
 
 logging.basicConfig(
-    filename='runner.log',
+    filename='/var/log/ebmbot/runner.log',
     level=logging.DEBUG)
