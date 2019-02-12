@@ -14,5 +14,5 @@ PLUGINS = [
 GITHUB_WEBHOOK_PORT = 9999
 
 logging.basicConfig(
-    handlers=[logging.StreamHandler()],
-    level=logging.WARN)
+    filename='runner.log',
+    level=logging.DEBUG)

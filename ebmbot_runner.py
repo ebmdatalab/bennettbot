@@ -4,6 +4,7 @@ For bot commands that execute fabric commands which assume sudo, this
 script should be run by a user in the `fabric` group
 
 """
+import logging
 import json
 import threading
 
@@ -22,8 +23,11 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def handle_github_webhook():
+    logging.info("Received data %s", request.data)
     data = json.loads(request.data)
-    should_deploy = data['action'] == 'closed' and data['merged'] == 'true'
+    action = data.get('action', None)
+    merged = data.get('merged', None)
+    should_deploy = action == 'closed' and merged == 'true'
     if should_deploy:
         msg = {'channel': '#tech', 'ts': None}
         client = SlackClient(settings.API_TOKEN)
