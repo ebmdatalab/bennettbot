@@ -13,6 +13,12 @@ PLUGINS = [
 
 GITHUB_WEBHOOK_PORT = 9999
 
-logging.basicConfig(
-    filename='/var/log/ebmbot/runner.log',
-    level=logging.DEBUG)
+try:
+    # Production location
+    logging.basicConfig(
+        filename='/var/log/ebmbot/runner.log',
+        level=logging.DEBUG)
+except FileNotFoundError:
+    logging.basicConfig(
+        handlers=[logging.StreamHandler()],
+        level=logging.DEBUG)
