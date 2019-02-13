@@ -2,6 +2,7 @@ from threading import Thread
 from dateparser import parse
 from time import sleep
 from datetime import datetime
+import logging
 import re
 
 from slackbot.bot import respond_to
@@ -113,6 +114,7 @@ def suppress_deploy(message, start_time, end_time):
 def deploy_timer(message):
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
+            logging.info("Starting OP deploy via fabric")
             execute(deploy, environment='live')
             message.reply("Deploy done", in_thread=True)
             if flags.deploy_queued:
