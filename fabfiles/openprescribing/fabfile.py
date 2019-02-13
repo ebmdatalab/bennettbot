@@ -222,6 +222,8 @@ def checkpoint(force_build):
         .split())
     if not force_build and env.next_commit == env.previous_commit:
         abort("No changes to pull from origin!")
+    else:
+        return env.changed_files
 
 
 def deploy_static():

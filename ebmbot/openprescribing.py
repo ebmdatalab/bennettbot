@@ -8,6 +8,7 @@ import re
 from slackbot.bot import respond_to
 from fabric.tasks import execute
 
+from fabfiles.openprescribing.fabfile import checkpoint
 from fabfiles.openprescribing.fabfile import clear_cloudflare
 from fabfiles.openprescribing.fabfile import deploy
 
@@ -72,6 +73,12 @@ def cancel_deploy_live(message):
 def clear_cache(message):
     result = execute(clear_cloudflare)
     message.reply("Cache cleared:\n\n {}".format(result), in_thread=True)
+
+
+@respond_to(r'op checkpoint', re.IGNORECASE)
+def clear_cache(message):
+    result = execute(checkpoint, False)
+    message.reply(str(result), in_thread=True)
 
 
 @respond_to('op cancel suppression', re.IGNORECASE)
