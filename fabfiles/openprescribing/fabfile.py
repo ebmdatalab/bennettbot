@@ -74,6 +74,7 @@ def setup_sudo():
             env.path, sudoer_file_test))
     run('/usr/sbin/visudo -cf {}'.format(sudoer_file_test))
     # Copy it to the right place
+    logging.info("visudo check passed")
     sudo('cp {} {}'.format(sudoer_file_test, sudoer_file_real))
 
 
