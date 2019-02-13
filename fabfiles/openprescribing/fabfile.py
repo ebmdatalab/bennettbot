@@ -78,6 +78,7 @@ def setup_sudo():
     # Copy it to the right place
     logging.info("visudo check passed")
     sudo('cp {} {}'.format(sudoer_file_test, sudoer_file_real))
+    logging.info("visudo finished")
 
 
 def notify_slack(message):
@@ -208,6 +209,7 @@ def log_deploy():
 
 
 def checkpoint(force_build):
+    logging.info("Checkpoint started")
     env.started_at = datetime.utcnow()
     with settings(warn_only=True):
         inited = run('git status').return_code == 0
@@ -216,8 +218,11 @@ def checkpoint(force_build):
         if run('file .venv').return_code > 0:
             venv_init()
     env.previous_commit = run('git rev-parse --verify HEAD')
+    logging.info("git fetch running")
     run('git fetch')
+    logging.info("git rev-parse running")
     env.next_commit = run('git rev-parse --verify origin/%s' % env.branch)
+    logging.info("git diff running")
     env.changed_files = set(
         run("git diff --name-only %s %s" %
             (env.previous_commit, env.next_commit), pty=False)
