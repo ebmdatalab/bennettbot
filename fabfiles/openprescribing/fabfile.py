@@ -67,7 +67,7 @@ def setup_sudo():
         env.app)
     sudoer_file_real = '/etc/sudoers.d/openprescribing_fabric_{}'.format(
         env.app)
-    if not exists(sudoer_file_real):
+    if not exists(sudoer_file_real, verbose=True):
         # Test the format of the file, to prevent locked-out-disasters
         logging.info("visudo tmp file being made")
         run(
