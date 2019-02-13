@@ -9,6 +9,8 @@ from fabric.tasks import execute
 
 from fabfiles.openprescribing.fabfile import deploy
 
+from ebmbot import flags
+
 DEPLOY_DELAY = 60
 
 TIME_FMT = "%Y-%m-%d %H:%M"
@@ -16,17 +18,16 @@ TIME_FMT = "%Y-%m-%d %H:%M"
 
 def suppressed(func):
     def wrapper(message):
-        global deploy_suppressed
         now = datetime.now()
-        if deploy_suppressed:
-            start_time, end_time = deploy_suppressed
+        if flags.deploy_suppressed:
+            start_time, end_time = flags.deploy_suppressed
             if start_time <= now <= end_time:
                 message.reply(
                     "Not deploying: suppressed until {}".format(
                         end_time.strftime(TIME_FMT)
                     ))
             else:
-                deploy_suppressed = None
+                flags.deploy_suppressed = None
                 func(message)
         else:
             func(message)
@@ -34,12 +35,18 @@ def suppressed(func):
 
 
 @suppressed
-@respond_to('op deploy', re.IGNORECASE)
+@respond_to(r'op deploy$', re.IGNORECASE)
 def deploy_live_delayed(message):
-    message.reply(
-        "Deploying in {} seconds".format(DEPLOY_DELAY),
-        in_thread=True
-    )
+    if deploy_in_progress():
+        message.reply(
+            "Deploy underway. Will start another when it's finished",
+            in_thread=True
+        )
+    else:
+        message.reply(
+            "Deploying in {} seconds".format(DEPLOY_DELAY),
+            in_thread=True
+        )
     reset_or_deploy_timer(DEPLOY_DELAY, message)
 
 
@@ -58,9 +65,8 @@ def cancel_deploy_live(message):
 
 @respond_to('op cancel suppression', re.IGNORECASE)
 def cancel_suppression(message):
-    global deploy_suppressed
-    if deploy_suppressed:
-        deploy_suppressed = None
+    if flags.deploy_suppressed:
+        flags.deploy_suppressed = None
         message.reply("Cancelled", in_thread=True)
     else:
         message.reply("No suppressions to cancel", in_thread=True)
@@ -68,29 +74,28 @@ def cancel_suppression(message):
 
 @respond_to('op status', re.IGNORECASE)
 def show_status(message):
-    global deploy_suppressed
-    global deploy_countdown
     msgs = []
-    if deploy_suppressed:
-        start_time, end_time = deploy_suppressed
+    if flags.deploy_suppressed:
+        start_time, end_time = flags.deploy_suppressed
         msgs.append("Deploys suppressed from {} to {}`".format(
             start_time.strftime(TIME_FMT),
             end_time.strftime(TIME_FMT)))
     else:
-        if deploy_countdown:
-            msgs.append(
-                "Deploy due in {} seconds".format(deploy_countdown)),
-        else:
+        if flags.deploy_countdown is None:
             msgs.append("No deploys in progress")
+        elif flags.deploy_countdown < 1:
+            msgs.append("Deploy in progress")
+        else:
+            msgs.append(
+                "Deploy due in {} seconds".format(flags.deploy_countdown)),
     message.reply("\n".join(msgs), in_thread=True)
 
 
-@respond_to('op suppress deploy(?:s) from (.*) to (.*)', re.IGNORECASE)
+@respond_to(r'op suppress from (.*) to (.*)', re.IGNORECASE)
 def suppress_deploy(message, start_time, end_time):
-    global deploy_suppressed
     start_time = parse(start_time)
     end_time = parse(end_time)
-    deploy_suppressed = [start_time, end_time]
+    flags.deploy_suppressed = [start_time, end_time]
     message.reply(
         "Deployment suppressed from {} until {}. "
         "Cancel with `cancel suppression`".format(
@@ -98,40 +103,44 @@ def suppress_deploy(message, start_time, end_time):
             end_time.strftime(TIME_FMT)),
         in_thread=True
     )
-    if deploy_countdown:
-        deploy_due_at = datetime.now() + deploy_countdown
+    if flags.deploy_countdown:
+        deploy_due_at = datetime.now() + flags.deploy_countdown
         if deploy_due_at <= end_time:
             reset_or_deploy_timer(None, message)
             message.reply("Current deployment cancelled", in_thread=True)
 
 
-deploy_countdown = None
-deploy_suppressed = None
-
-
 def deploy_timer(message):
-    global deploy_countdown
-    while deploy_countdown is not None:
-        if deploy_countdown <= 0:
+    while flags.deploy_countdown is not None:
+        if flags.deploy_countdown <= 0:
             execute(deploy, environment='live')
-            message.reply("Deploy done")
-            deploy_countdown = None
+            message.reply("Deploy done", in_thread=True)
+            if flags.deploy_queued:
+                flags.deploy_queued = False
+                deploy_live_delayed(message)
+            else:
+                flags.deploy_countdown = None
         else:
             sleep(1)
-            if deploy_countdown is not None:
-                deploy_countdown -= 1
+            if flags.deploy_countdown is not None:
+                flags.deploy_countdown -= 1
+
+
+def deploy_in_progress():
+    return flags.deploy_countdown in [-1, 0]
 
 
 def reset_or_deploy_timer(secs, message):
-    global deploy_countdown
+    if deploy_in_progress():
+        flags.deploy_queued = True
     if secs is None:
         # Cancel countdown
-        deploy_countdown = None
-    elif deploy_countdown is None:
+        flags.deploy_countdown = None
+    elif flags.deploy_countdown is None:
         # Start countdown
-        deploy_countdown = secs
+        flags.deploy_countdown = secs
         myThread = Thread(target=deploy_timer, args=(message,))
         myThread.start()
     else:
         # Reset countdown
-        deploy_countdown = secs
+        flags.deploy_countdown = secs

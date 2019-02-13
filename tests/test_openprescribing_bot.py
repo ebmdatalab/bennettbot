@@ -1,8 +1,11 @@
 import time
-
 from datetime import datetime
+from unittest.mock import call
 from unittest.mock import patch
 from unittest.mock import MagicMock
+
+import pytest
+
 from ebmbot.openprescribing import deploy_live_delayed
 from ebmbot.openprescribing import deploy_live_now
 from ebmbot.openprescribing import reset_or_deploy_timer
@@ -10,7 +13,22 @@ from ebmbot.openprescribing import suppress_deploy
 from ebmbot.openprescribing import cancel_suppression
 from ebmbot.openprescribing import cancel_deploy_live
 from ebmbot.openprescribing import show_status
+from ebmbot import flags
 import ebmbot_runner
+
+
+@pytest.fixture(autouse=True)
+def reset_flags():
+    """Reset `global` flags between tests
+    """
+    old_flags = {}
+    for possible_variable in dir(flags):
+        if not possible_variable.startswith('__'):
+            old_flags[possible_variable] = getattr(flags, possible_variable)
+
+    yield
+    for k, v in old_flags.items():
+        setattr(flags, k, v)
 
 
 @patch('ebmbot.openprescribing.reset_or_deploy_timer')
@@ -48,7 +66,7 @@ def test_deploy_live_delayed_with_suppression(mock_datetime, mock_timer):
 
 
 @patch('ebmbot.openprescribing.execute')
-@patch('ebmbot.openprescribing.DEPLOY_DELAY', 0.7)
+@patch('ebmbot.openprescribing.DEPLOY_DELAY', 1.0)
 def test_delayed_deploy(mock_execute):
     mock_message = MagicMock()
     deploy_live_delayed(mock_message)
@@ -66,6 +84,32 @@ def test_delayed_deploy(mock_execute):
     time.sleep(1)
     mock_execute.assert_called()
     assert 'done' in str(mock_message.method_calls[-1])
+
+
+@patch('ebmbot.openprescribing.execute')
+@patch('ebmbot.openprescribing.DEPLOY_DELAY', 0.1)
+def test_deploy_queued(mock_execute):
+    """Two consecutive deployment calls should cause the second deployment
+    to wait until the first is finished.
+
+    """
+    mock_message = MagicMock()
+    deploy_live_delayed(mock_message)  # Deploying in N seconds
+    flags.deploy_countdown = -1  # Simulate a long-running deployment
+    deploy_live_delayed(mock_message)  # Deploy underway
+    time.sleep(3)  # allow for threads to start
+
+    mock_message.assert_has_calls([
+        call.reply(
+            'Deploying in 0.1 seconds', in_thread=True),
+        call.reply(
+            "Deploy underway. Will start another when it's finished", in_thread=True),
+        call.reply(
+            'Deploy done', in_thread=True),
+        call.reply(
+            'Deploying in 0.1 seconds', in_thread=True),
+        call.reply(
+            'Deploy done', in_thread=True)])
 
 
 @patch('ebmbot.openprescribing.execute')
