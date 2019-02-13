@@ -2,6 +2,14 @@ import logging
 from fabric.tasks import execute
 
 
+class NonExitingError(Exception):
+    def __init__(self, original):
+        self.original = original
+
+    def __str__(self):
+        return "NonExitingError wrapping {}".format(self.original)
+
+
 def safe_execute(cmd, *args, **kwargs):
     """Execute fabric command, catching and logging SystemExit
 
@@ -10,7 +18,8 @@ def safe_execute(cmd, *args, **kwargs):
     """
     try:
         result = execute(cmd, *args, **kwargs)
-    except Exception as e:
-        logging.info("Fabric aborted with %s", e)
-        result = "Error: {}".format(e)
+    except BaseException as e:
+        # System-exiting exceptions don't inherit from Exception
+        logging.info("Fabric aborted with exiting exception %s, %s", type(e), e)
+        raise NonExitingError(e)
     return result
