@@ -10,7 +10,7 @@ def safe_execute(cmd, *args, **kwargs):
     """
     try:
         result = execute(cmd, *args, **kwargs)
-    except SystemExit as e:
+    except Exception as e:
         logging.info("Fabric aborted with %s", e)
         result = "Error: {}".format(e)
     return result

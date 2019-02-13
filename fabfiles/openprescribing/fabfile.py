@@ -220,7 +220,9 @@ def checkpoint(force_build):
         run("git diff --name-only %s %s" %
             (env.previous_commit, env.next_commit), pty=False)
         .split())
+    logging.info("prev %s, next %s, force_build %s", env.next_commit, env.previous_commit, force_build)
     if not force_build and env.next_commit == env.previous_commit:
+        logging.info("aborting...")
         abort("No changes to pull from origin!")
     else:
         return env.changed_files
