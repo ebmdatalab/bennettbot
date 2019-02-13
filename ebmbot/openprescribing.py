@@ -144,11 +144,12 @@ def deploy_timer(message):
                 message.reply(
                     "Error during deploy: {}".format(e), in_thread=True)
                 raise
-            if flags.deploy_queued:
-                flags.deploy_queued = False
-                deploy_live_delayed(message)
-            else:
-                flags.deploy_countdown = None
+            finally:
+                if flags.deploy_queued:
+                    flags.deploy_queued = False
+                    deploy_live_delayed(message)
+                else:
+                    flags.deploy_countdown = None
         else:
             sleep(1)
             if flags.deploy_countdown is not None:
