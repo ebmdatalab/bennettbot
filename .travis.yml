@@ -4,4 +4,4 @@ python:
 before_script:
   - cp environment-sample environment
 script:
-  - cd ebmbot && py.test
+  - source environment && cd ebmbot && py.test

@@ -70,20 +70,19 @@ def cancel_suppression(message):
 def show_status(message):
     global deploy_suppressed
     global deploy_countdown
+    msgs = []
     if deploy_suppressed:
         start_time, end_time = deploy_suppressed
-        msg = "Deploys suppressed {} - {}`".format(
+        msgs.append("Deploys suppressed from {} to {}`".format(
             start_time.strftime(TIME_FMT),
-            end_time.strftime(TIME_FMT)),
-        message.reply(msg, in_thread=True)
+            end_time.strftime(TIME_FMT)))
     else:
-        message.reply("No suppression set", in_thread=True)
         if deploy_countdown:
-            message.reply(
-                "Deploy due in {} seconds".format(deploy_countdown),
-                in_thread=True)
+            msgs.append(
+                "Deploy due in {} seconds".format(deploy_countdown)),
         else:
-            message.reply("No deploys in progress")
+            msgs.append("No deploys in progress")
+    message.reply("\n".join(msgs), in_thread=True)
 
 
 @respond_to('op suppress deploy(?:s) from (.*) to (.*)', re.IGNORECASE)
