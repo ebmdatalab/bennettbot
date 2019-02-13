@@ -136,8 +136,12 @@ def deploy_timer(message):
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
             logging.info("Starting OP deploy via fabric")
-            result = safe_execute(deploy, environment='production')
-            logging.debug("Got result: %s", result)
+            try:
+                safe_execute(deploy, environment='production')
+            except Exception as e:
+                logging.info("Got error: %s", e)
+                message.reply("Error during deploy: {}".format(e))
+                raise
             logging.info("Finished OP deploy via fabric")
             message.reply("Deploy done", in_thread=True)
             if flags.deploy_queued:
@@ -164,8 +168,8 @@ def reset_or_deploy_timer(secs, message):
     elif flags.deploy_countdown is None:
         # Start countdown
         flags.deploy_countdown = secs
-        myThread = Thread(target=deploy_timer, args=(message,))
-        myThread.start()
+        timer_thread = Thread(target=deploy_timer, args=(message,))
+        timer_thread.start()
     else:
         # Reset countdown
         flags.deploy_countdown = secs
