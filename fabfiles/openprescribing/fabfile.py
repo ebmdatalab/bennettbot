@@ -68,10 +68,12 @@ def setup_sudo():
     sudoer_file_real = '/etc/sudoers.d/openprescribing_fabric_{}'.format(
         env.app)
     # Test the format of the file, to prevent locked-out-disasters
+    logging.info("visudo tmp file being made")
     run(
         'echo "%fabric ALL = () '
         'NOPASSWD: {}/deploy/fab_scripts/" > {}'.format(
             env.path, sudoer_file_test))
+    logging.info("visudo checking")
     run('/usr/sbin/visudo -cf {}'.format(sudoer_file_test))
     # Copy it to the right place
     logging.info("visudo check passed")

@@ -19,7 +19,8 @@ def safe_execute(cmd, *args, **kwargs):
     try:
         result = execute(cmd, *args, **kwargs)
     except BaseException as e:
-        # System-exiting exceptions don't inherit from Exception
+        # System-exiting exceptions don't inherit from Exception, and
+        # we want to catch them too
         logging.info("Fabric aborted with exiting exception %s, %s", type(e), e)
         raise NonExitingError(e)
     return result
