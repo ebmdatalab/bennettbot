@@ -138,17 +138,18 @@ def deploy_timer(message):
             logging.info("Starting OP deploy via fabric")
             try:
                 safe_execute(deploy, environment='production')
+                logging.info("Finished OP deploy via fabric")
+                message.reply("Deploy done", in_thread=True)
             except Exception as e:
-                logging.info("Got error: %s", e)
-                message.reply("Error during deploy: {}".format(e))
+                message.reply(
+                    "Error during deploy: {}".format(e), in_thread=True)
                 raise
-            logging.info("Finished OP deploy via fabric")
-            message.reply("Deploy done", in_thread=True)
-            if flags.deploy_queued:
-                flags.deploy_queued = False
-                deploy_live_delayed(message)
-            else:
-                flags.deploy_countdown = None
+            finally:
+                if flags.deploy_queued:
+                    flags.deploy_queued = False
+                    deploy_live_delayed(message)
+                else:
+                    flags.deploy_countdown = None
         else:
             sleep(1)
             if flags.deploy_countdown is not None:
