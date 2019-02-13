@@ -67,9 +67,12 @@ def setup_sudo():
         env.app)
     sudoer_file_real = '/etc/sudoers.d/openprescribing_fabric_{}'.format(
         env.app)
-    exists = run("stat \"\$(echo /etc/sudoers.d/openprescribing_fabric_openprescribing)\"")
-    logging.info("exists %s", exists)
-    if not exists(sudoer_file_real, verbose=True):
+    logging.info("XXXX")
+    # Raise an exception if not set up
+    check_setup = run(
+        "sudo -n {}/deploy/fab_scripts/hello.sh".format(env.path),
+        warn_only=True)
+    if check_setup.failed:
         # Test the format of the file, to prevent locked-out-disasters
         logging.info("visudo tmp file being made")
         run(
@@ -80,7 +83,7 @@ def setup_sudo():
         run('/usr/sbin/visudo -cf {}'.format(sudoer_file_test))
         # Copy it to the right place
         logging.info("visudo check passed")
-        sudo('cp {} {}'.format(sudoer_file_test, sudoer_file_real))
+        run('sudo -n cp {} {}'.format(sudoer_file_test, sudoer_file_real))
         logging.info("visudo finished")
 
 
@@ -144,6 +147,7 @@ def pip_install():
 def npm_install():
     installed = run("if [[ -n $(which npm) ]]; then echo 1; fi")
     if not installed:
+        # XXX change to sudo_script
         sudo('curl -sL https://deb.nodesource.com/setup_6.x |'
              'bash - && apt-get install -y  '
              'nodejs binutils libproj-dev gdal-bin libgeoip1 libgeos-c1;',
