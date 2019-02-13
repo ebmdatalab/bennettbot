@@ -205,7 +205,6 @@ def log_deploy():
             "A #deploy just happened. Changes here: %s" % url)
 
 
-@task
 def checkpoint(force_build):
     env.started_at = datetime.utcnow()
     with settings(warn_only=True):
@@ -305,9 +304,11 @@ def setup_cron():
 
 @task
 def deploy(environment, force_build=False, branch='master'):
-    logging.info("Starting deploy")
+    logging.info("Starting deploy in fabfile")
+    logging.info(os.environ.keys())
     if 'CF_API_KEY' not in os.environ:
         abort("Expected variables (e.g. `CF_API_KEY`) not found in environment")
+    logging.info("Environments %s in %s?", environment, environments)
     if environment not in environments:
         abort("Specified environment must be one of %s" %
               ",".join(environments.keys()))
