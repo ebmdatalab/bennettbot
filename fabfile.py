@@ -1,4 +1,5 @@
 from fabric.api import run, sudo, put
+from fabric.api import settings
 from fabric.api import prefix, warn, abort
 from fabric.api import settings, task, env, shell_env
 from fabric.contrib.files import exists
@@ -40,8 +41,24 @@ def update_from_git():
             run('git fetch --all')
             run('git checkout --force origin/%s' % env.branch)
 
+
 def setup_ebmbot():
     sudo('%s/ebmbot/deploy/setup_ebmbot.sh %s' % (env.path, env.app))
+
+
+def test_fabfiles():
+    """Check vendored fabfiles are set up according to `fabfiles.json`
+    """
+    with prefix('source venv/bin/activate'):
+        with settings(warn_only=True):
+            output = run('python ebmbot/get_fabfiles.py')
+            if 'WARNING' in output:
+                abort("Environment not set up:\n\n{}".format(output))
+            result = run("cd ebmbot && git diff-index --quiet HEAD --")
+            if result.failed:
+                abort("The checked-in fabfiles don't match those in the "
+                      "source repositories. Run `get_fabfiles.py` locally "
+                      "and commit the result.")
 
 
 @task
@@ -63,3 +80,4 @@ def deploy(environment, branch='master'):
         update_from_git()
         pip_install()
         setup_ebmbot()
+        test_fabfiles()
