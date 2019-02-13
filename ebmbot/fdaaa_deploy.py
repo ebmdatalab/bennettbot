@@ -4,6 +4,9 @@ from fabric.tasks import execute
 
 from fabfiles.clinicaltrials_act_tracker.fabfile import update
 from fabfiles.clinicaltrials_act_tracker.fabfile import send_tweet
+from fabric.api import env
+
+env.user = 'ebmbot'
 
 
 @respond_to('deploy fdaaa', re.IGNORECASE)

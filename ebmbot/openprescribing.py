@@ -11,8 +11,11 @@ from fabric.tasks import execute
 from fabfiles.openprescribing.fabfile import checkpoint
 from fabfiles.openprescribing.fabfile import clear_cloudflare
 from fabfiles.openprescribing.fabfile import deploy
+from fabric.api import env
 
 from ebmbot import flags
+
+env.user = 'ebmbot'
 
 DEPLOY_DELAY = 60
 
