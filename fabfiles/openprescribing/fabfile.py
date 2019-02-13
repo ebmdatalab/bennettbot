@@ -70,7 +70,7 @@ def setup_sudo():
     logging.info("XXXX")
     # Raise an exception if not set up
     check_setup = run(
-        "sudo -n {}/deploy/fab_scripts/hello.sh".format(env.path),
+        "/usr/bin/sudo -n {}/deploy/fab_scripts/test.sh".format(env.path),
         warn_only=True)
     if check_setup.failed:
         # Test the format of the file, to prevent locked-out-disasters
