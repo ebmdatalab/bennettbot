@@ -205,6 +205,7 @@ def log_deploy():
             "A #deploy just happened. Changes here: %s" % url)
 
 
+@task
 def checkpoint(force_build):
     env.started_at = datetime.utcnow()
     with settings(warn_only=True):
