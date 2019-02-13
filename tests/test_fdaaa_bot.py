@@ -5,7 +5,7 @@ from ebmbot.fdaaa_deploy import update_fdaaa_staging
 from fabfiles.clinicaltrials_act_tracker.fabfile import update
 
 
-@patch('ebmbot.fdaaa_deploy.execute')
+@patch('ebmbot.fdaaa_deploy.safe_execute')
 def test_deploy(mock_execute):
     mock_message = MagicMock()
     deploy_fdaaa(mock_message)
@@ -13,7 +13,7 @@ def test_deploy(mock_execute):
     mock_execute.assert_called_with(update, environment='live')
 
 
-@patch('ebmbot.fdaaa_deploy.execute')
+@patch('ebmbot.fdaaa_deploy.safe_execute')
 def test_update(mock_execute):
     mock_message = MagicMock()
     update_fdaaa_staging(mock_message)

@@ -6,7 +6,6 @@ import logging
 import re
 
 from slackbot.bot import respond_to
-from fabric.tasks import execute
 
 from fabfiles.openprescribing.fabfile import checkpoint
 from fabfiles.openprescribing.fabfile import clear_cloudflare
@@ -14,6 +13,8 @@ from fabfiles.openprescribing.fabfile import deploy
 from fabric.api import env
 
 from ebmbot import flags
+from ebmbot.utils import safe_execute
+
 
 env.user = 'ebmbot'
 
@@ -74,13 +75,13 @@ def cancel_deploy_live(message):
 
 @respond_to(r'op clear cache', re.IGNORECASE)
 def clear_cache(message):
-    result = execute(clear_cloudflare)
+    result = safe_execute(clear_cloudflare)
     message.reply("Cache cleared:\n\n {}".format(result), in_thread=True)
 
 
 @respond_to(r'op checkpoint', re.IGNORECASE)
 def clear_cache(message):
-    result = execute(checkpoint, False)
+    result = safe_execute(checkpoint, False)
     message.reply(str(result), in_thread=True)
 
 
@@ -135,7 +136,7 @@ def deploy_timer(message):
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
             logging.info("Starting OP deploy via fabric")
-            result = execute(deploy, environment='live')
+            result = safe_execute(deploy, environment='production')
             logging.debug("Got result: %s", result)
             logging.info("Finished OP deploy via fabric")
             message.reply("Deploy done", in_thread=True)

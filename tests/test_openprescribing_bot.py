@@ -65,7 +65,7 @@ def test_deploy_live_delayed_with_suppression(mock_datetime, mock_timer):
     assert 'Deploying in' in str(mock_message.method_calls[-1])
 
 
-@patch('ebmbot.openprescribing.execute')
+@patch('ebmbot.openprescribing.safe_execute')
 @patch('ebmbot.openprescribing.DEPLOY_DELAY', 1.0)
 def test_delayed_deploy(mock_execute):
     mock_message = MagicMock()
@@ -86,7 +86,7 @@ def test_delayed_deploy(mock_execute):
     assert 'done' in str(mock_message.method_calls[-1])
 
 
-@patch('ebmbot.openprescribing.execute')
+@patch('ebmbot.openprescribing.safe_execute')
 @patch('ebmbot.openprescribing.DEPLOY_DELAY', 0.1)
 def test_deploy_queued(mock_execute):
     """Two consecutive deployment calls should cause the second deployment
@@ -112,7 +112,7 @@ def test_deploy_queued(mock_execute):
             'Deploy done', in_thread=True)])
 
 
-@patch('ebmbot.openprescribing.execute')
+@patch('ebmbot.openprescribing.safe_execute')
 def test_deploy_cancellation(mock_execute):
     mock_message = MagicMock()
     deploy_live_delayed(mock_message)
@@ -121,7 +121,7 @@ def test_deploy_cancellation(mock_execute):
     assert 'No deploys in progress' in str(mock_message.method_calls[-1])
 
 
-@patch('ebmbot.openprescribing.execute')
+@patch('ebmbot.openprescribing.safe_execute')
 def test_immediate_deploy(mock_execute):
     mock_message = MagicMock()
     deploy_live_now(mock_message)
