@@ -115,7 +115,9 @@ def deploy_timer(message):
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
             logging.info("Starting OP deploy via fabric")
-            execute(deploy, environment='live')
+            result = execute(deploy, environment='live')
+            logging.debug("Got result: %s", result)
+            logging.info("Finished OP deploy via fabric")
             message.reply("Deploy done", in_thread=True)
             if flags.deploy_queued:
                 flags.deploy_queued = False

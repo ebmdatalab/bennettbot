@@ -10,6 +10,7 @@ import json
 import os
 
 import dotenv
+import logging
 import requests
 
 basedir = os.path.dirname(os.path.abspath(__file__))
@@ -301,6 +302,7 @@ def setup_cron():
 
 @task
 def deploy(environment, force_build=False, branch='master'):
+    logging.info("Starting deploy")
     if 'CF_API_KEY' not in os.environ:
         abort("Expected variables (e.g. `CF_API_KEY`) not found in environment")
     if environment not in environments:
@@ -310,15 +312,19 @@ def deploy(environment, force_build=False, branch='master'):
     env.environment = environment
     env.path = "/webapps/%s" % env.app
     env.branch = branch
+    logging.info("Starting sudo setup")
     setup_sudo()
     with cd(env.path):
         checkpoint(force_build)
+        logging.info("Git pull")
         git_pull()
         pip_install()
         npm_install()
         npm_install_deps(force_build)
+        logging.info("Npm build")
         npm_build_js()
         npm_build_css(force_build)
+        logging.info("Static deploy")
         deploy_static()
         run_migrations()
         graceful_reload()
