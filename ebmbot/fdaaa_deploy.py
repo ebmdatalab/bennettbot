@@ -10,7 +10,7 @@ from fabfiles.clinicaltrials_act_tracker.fabfile import send_tweet
 def deploy_fdaaa(message):
     message.reply("Copying staging data to live site...")
     execute(update, environment='live')
-    message.reply("Done.")
+    message.reply("Done.", in_thread=True)
 
 
 @respond_to('update fdaaa staging', re.IGNORECASE)
