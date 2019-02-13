@@ -92,4 +92,5 @@ def test_github_webhook(mock_deploy):
     client.post('/', json=dict(
         action='closed',
         pull_request=dict(merged='true')))
+    time.sleep(0.01)
     mock_deploy.assert_called()
