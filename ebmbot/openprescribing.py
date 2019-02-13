@@ -55,6 +55,9 @@ def deploy_live_delayed(message):
 @suppressed
 @respond_to('op deploy now', re.IGNORECASE)
 def deploy_live_now(message):
+    message.reply(
+        "Deploying now".format(DEPLOY_DELAY),
+        in_thread=True)
     reset_or_deploy_timer(0, message)
 
 
