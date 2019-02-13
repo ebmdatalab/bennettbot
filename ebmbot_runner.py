@@ -32,6 +32,7 @@ def handle_github_webhook():
         msg = {'channel': '#tech', 'ts': None}
         client = SlackClient(settings.API_TOKEN)
         message = Message(client, msg)
+        logging.info("Triggering delayed deploy")
         deploy_live_delayed(message)
     return ""
 
