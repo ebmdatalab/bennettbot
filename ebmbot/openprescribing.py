@@ -70,8 +70,8 @@ def cancel_deploy_live(message):
 
 @respond_to(r'op clear cache', re.IGNORECASE)
 def clear_cache(message):
-    execute(clear_cloudflare)
-    message.reply("Cache cleared", in_thread=True)
+    result = execute(clear_cloudflare)
+    message.reply("Cache cleared:\n\n {}".format(result), in_thread=True)
 
 
 @respond_to('op cancel suppression', re.IGNORECASE)
