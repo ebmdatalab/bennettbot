@@ -54,11 +54,12 @@ def test_fabfiles():
             output = run('python ebmbot/get_fabfiles.py')
             if 'WARNING' in output:
                 abort("Environment not set up:\n\n{}".format(output))
-            result = run("cd ebmbot && git diff-index --quiet HEAD --")
+            result = run("cd ebmbot && git diff --exit-code")
             if result.failed:
+                output = run("cd ebmbot && git status --short")
                 abort("The checked-in fabfiles don't match those in the "
                       "source repositories. Run `get_fabfiles.py` locally "
-                      "and commit the result.")
+                      "and commit the result.\n\n{}".format(output))
 
 
 @task
@@ -70,10 +71,6 @@ def deploy(environment, branch='master'):
     env.environment = environment
     env.path = "/var/www/%s" % env.app
     env.branch = branch
-
-    # assumes these are manually made on the server first time setup, and added
-    # as repository keys to github
-
     make_directory()
     with cd(env.path):
         venv_init()
