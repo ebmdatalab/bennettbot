@@ -8,6 +8,7 @@ ERRORS_TO = 'tech'
 
 PLUGINS = [
     'ebmbot.openprescribing',
+    'ebmbot.fdaaa_deploy',
     'ebmbot.hal'
 ]
 

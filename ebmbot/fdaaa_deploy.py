@@ -1,10 +1,9 @@
 from slackbot.bot import respond_to
-from slackbot.bot import listen_to
 import re
 from fabric.tasks import execute
 
-from fabfile import update
-from fabfile import send_tweet
+from fabfiles.clinicaltrials_act_tracker.fabfile import update
+from fabfiles.clinicaltrials_act_tracker.fabfile import send_tweet
 
 
 @respond_to('deploy fdaaa', re.IGNORECASE)

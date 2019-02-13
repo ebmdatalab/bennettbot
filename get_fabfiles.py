@@ -8,6 +8,9 @@ with open('fabfiles.json', 'r') as f:
     for fabfile in fabfiles:
         proj_path = os.path.join('fabfiles', fabfile['project'])
         os.makedirs(proj_path, exist_ok=True)
+        init_path = os.path.join(proj_path, '__init__.py')
+        with open(init_path, 'w') as f:
+            f.write("")
         fabfile_path = os.path.join(proj_path, 'fabfile.py')
         r = requests.get(fabfile['url'], stream=True)
         if r.status_code == 200:
