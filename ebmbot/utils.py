@@ -1,6 +1,7 @@
 import contextlib
 import io
 import logging
+import traceback
 from fabric.tasks import execute
 
 
@@ -33,9 +34,10 @@ def safe_execute(cmd, *args, **kwargs):
         captured_stderr.seek(0)
         stderr = captured_stderr.read()
         if isinstance(e, SystemExit):
-            msg = "Fabric aborted with exiting exception %s, %s, %s"
+            msg = "Fabric aborted with exiting exception %s, %s, %s\n\n%s"
         else:
-            msg = "Fabric aborted with exception %s, %s, %s"
-        logging.info(msg, type(e), e, stderr)
+            msg = "Fabric aborted with exception %s, %s, %s\n\n%s"
+        stack = traceback.extract_stack()
+        logging.info(msg, type(e), e, stderr, stack)
         raise NonExitingError(e, stderr)
     return result
