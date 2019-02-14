@@ -10,7 +10,7 @@ class NonExitingError(Exception):
         self.stderr = stderr
 
     def __str__(self):
-        return "NonExitingError wrapping {}\n\n".format(
+        return "NonExitingError wrapping {}\n\n{}".format(
             self.original,
             self.stderr)
 
@@ -28,10 +28,14 @@ def safe_execute(cmd, *args, **kwargs):
     try:
         with contextlib.redirect_stderr(captured_stderr):
             result = execute(cmd, *args, **kwargs)
-    except SystemExit as e:
+    except BaseException as e:
+        # BaseException includes SystemExit
         captured_stderr.seek(0)
         stderr = captured_stderr.read()
-        logging.info("Fabric aborted with exiting exception %s, %s, %s",
-                     type(e), e, stderr)
+        if isinstance(e, SystemExit):
+            msg = "Fabric aborted with exiting exception %s, %s, %s"
+        else:
+            msg = "Fabric aborted with exception %s, %s, %s"
+        logging.info(msg, type(e), e, stderr)
         raise NonExitingError(e, stderr)
     return result
