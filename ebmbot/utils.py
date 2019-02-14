@@ -37,7 +37,7 @@ def safe_execute(cmd, *args, **kwargs):
             msg = "Fabric aborted with exiting exception %s, %s, %s\n\n%s"
         else:
             msg = "Fabric aborted with exception %s, %s, %s\n\n%s"
-        stack = traceback.format_stack()
+        stack = traceback.format_tb(e.__traceback__)
         logging.info(msg, type(e), e, stderr, stack)
         raise NonExitingError(e, stderr)
     return result
