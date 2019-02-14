@@ -17,6 +17,7 @@ PLUGINS = [
 GITHUB_WEBHOOK_PORT = 9999
 
 env.disable_known_hosts = True
+env.colorize_errors = False
 
 try:
     # Production location
