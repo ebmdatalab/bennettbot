@@ -67,7 +67,6 @@ def setup_sudo():
         env.app)
     sudoer_file_real = '/etc/sudoers.d/openprescribing_fabric_{}'.format(
         env.app)
-    logging.info("XXXX")
     # Raise an exception if not set up
     check_setup = run(
         "/usr/bin/sudo -n {}/deploy/fab_scripts/test.sh".format(env.path),
@@ -319,11 +318,15 @@ def setup_cron():
 
 
 @task
-def deploy(environment, force_build=False, branch='master'):
+def deploy(environment,
+           force_build=False,
+           branch='master',
+           do_setup_sudo=True):
     logging.info("Starting deploy in fabfile")
     logging.info(os.environ.keys())
     if 'CF_API_KEY' not in os.environ:
-        abort("Expected variables (e.g. `CF_API_KEY`) not found in environment")
+        abort("Expected variables (e.g. `CF_API_KEY`) "
+              "not found in environment")
     logging.info("Environments %s in %s?", environment, environments)
     if environment not in environments:
         abort("Specified environment must be one of %s" %
@@ -332,8 +335,8 @@ def deploy(environment, force_build=False, branch='master'):
     env.environment = environment
     env.path = "/webapps/%s" % env.app
     env.branch = branch
-    logging.info("Starting sudo setup")
-    setup_sudo()
+    if do_setup_sudo:
+        setup_sudo()
     with cd(env.path):
         checkpoint(force_build)
         logging.info("Git pull")
