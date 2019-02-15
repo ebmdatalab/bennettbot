@@ -2,7 +2,10 @@ import contextlib
 import io
 import logging
 import traceback
+
+from fabric.api import settings
 from fabric.tasks import execute
+from slackbot_settings import FABRIC_ENV
 
 
 class NonExitingError(Exception):
@@ -18,19 +21,24 @@ class NonExitingError(Exception):
 
 def safe_execute(cmd, *args, **kwargs):
     """Execute fabric command, catching and logging SystemExit along with
-    stderr.
+    stderr, so we have a chance to close threads cleaning with an exit
+    message.
 
-    This is because Fabric `abort` operations raise SystemExit, which
-    (uncaught) leads to our calling thread dying before a response can
-    be sent to Slack.
+    Requires explicit `hosts` value. This is because by convention
+    fabfiles set this in a global-and-non-threadsafe module; in turn,
+    this means that running more than one fabric operation at a time
+    may lead to the commands running on the wrong hosts.
 
     """
+
     captured_stderr = io.StringIO()
+    assert 'hosts' in kwargs, "You must supply a `hosts` keyword argument"
     try:
         with contextlib.redirect_stderr(captured_stderr):
-            result = execute(cmd, *args, **kwargs)
+            with settings(**FABRIC_ENV):
+                result = execute(cmd, *args, **kwargs)
     except BaseException as e:
-        # BaseException includes SystemExit
+        # BaseException includes SystemExit, whereas Exception doesn't.
         captured_stderr.seek(0)
         stderr = captured_stderr.read()
         if isinstance(e, SystemExit):

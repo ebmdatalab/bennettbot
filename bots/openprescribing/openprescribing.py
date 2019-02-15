@@ -16,11 +16,9 @@ from bots.openprescribing import flags
 from bots.utils import safe_execute
 
 
-FABRIC_OVERRIDES = {
-    'user': 'ebmbot',
-    'disable_known_hosts': True,
-    'hosts': ['web2.openprescribing.net']
-}
+# We store a copy of hosts after we import the fabfile, because the
+# fabric env is global and thus not threadsafe
+HOSTS = env.hosts[:]
 
 DEPLOY_DELAY = 60
 
@@ -79,14 +77,8 @@ def cancel_deploy_live(message):
 
 @respond_to(r'op clear cache', re.IGNORECASE)
 def clear_cache(message):
-    result = safe_execute(clear_cloudflare, **FABRIC_OVERRIDES)
+    result = safe_execute(clear_cloudflare, hosts=HOSTS)
     message.reply("Cache cleared:\n\n {}".format(result), in_thread=True)
-
-
-@respond_to(r'op checkpoint', re.IGNORECASE)
-def clear_cache(message):
-    result = safe_execute(checkpoint, False, **FABRIC_OVERRIDES)
-    message.reply(str(result), in_thread=True)
 
 
 @respond_to('op cancel suppression', re.IGNORECASE)
@@ -137,13 +129,14 @@ def suppress_deploy(message, start_time, end_time):
 
 
 def deploy_timer(message):
+    # We import the fabfile here to ensure the fabric environ
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
             logging.info("Starting OP deploy via fabric")
             try:
                 safe_execute(
-                    deploy, environment='production',
-                    do_setup_sudo=False, **FABRIC_OVERRIDES)
+                    deploy, hosts=HOSTS, environment='production',
+                    do_setup_sudo=False)
                 logging.info("Finished OP deploy via fabric")
                 message.reply("Deploy done", in_thread=True)
             except Exception as e:
@@ -175,7 +168,7 @@ def reset_or_deploy_timer(secs, message):
     elif flags.deploy_countdown is None:
         # Start countdown
         flags.deploy_countdown = secs
-        timer_thread = Thread(target=deploy_timer, args=(message))
+        timer_thread = Thread(target=deploy_timer, args=(message,))
         timer_thread.start()
     else:
         # Reset countdown

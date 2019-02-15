@@ -5,17 +5,19 @@ from bots.fdaaa.fdaaa_deploy import update_fdaaa_staging
 from fabfiles.clinicaltrials_act_tracker.fabfile import update
 
 
-@patch('ebmbot.fdaaa_deploy.safe_execute')
+@patch('bots.fdaaa.fdaaa_deploy.safe_execute')
 def test_deploy(mock_execute):
     mock_message = MagicMock()
     deploy_fdaaa(mock_message)
     assert 'Done' in str(mock_message.method_calls[-1])
-    mock_execute.assert_called_with(update, environment='live')
+    mock_execute.assert_called_with(
+        update, hosts=['smallweb1.openprescribing.net'], environment='live')
 
 
-@patch('ebmbot.fdaaa_deploy.safe_execute')
+@patch('bots.fdaaa.fdaaa_deploy.safe_execute')
 def test_update(mock_execute):
     mock_message = MagicMock()
     update_fdaaa_staging(mock_message)
     assert 'Updating' in str(mock_message.method_calls[-1])
-    mock_execute.assert_called_with(update, environment='staging')
+    mock_execute.assert_called_with(
+        update, hosts=['smallweb1.openprescribing.net'], environment='staging')

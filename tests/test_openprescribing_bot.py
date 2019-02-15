@@ -133,8 +133,6 @@ def test_immediate_deploy(mock_execute):
 def test_immediate_deploy_fabric_env(mock_execute):
     mock_message = MagicMock()
     deploy_live_now(mock_message)
-    import pdb; pdb.set_trace()
-
     time.sleep(0.01)
     mock_execute.assert_called()
     mock_message.reply.assert_called()
