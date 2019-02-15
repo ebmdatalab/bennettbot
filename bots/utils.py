@@ -15,8 +15,8 @@ class NonExitingError(Exception):
 
     def __str__(self):
         return (
-            "Exit code {}:\n\n"
-            "{}\n\n"
+            "exit code {}:\n\n"
+            "```{}```\n\n"
             "(see ebmbot logs for traceback)".format(
                 self.original,
                 self.stderr))
