@@ -135,8 +135,7 @@ def deploy_timer(message):
             logging.info("Starting OP deploy via fabric")
             try:
                 safe_execute(
-                    deploy, hosts=HOSTS, environment='production',
-                    do_setup_sudo=False)
+                    deploy, hosts=HOSTS, environment='production')
                 logging.info("Finished OP deploy via fabric")
                 message.reply("Deploy done", in_thread=True)
             except Exception as e:

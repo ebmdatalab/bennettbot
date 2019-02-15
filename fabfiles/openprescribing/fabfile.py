@@ -10,7 +10,6 @@ import json
 import os
 
 import dotenv
-import logging
 import requests
 
 basedir = os.path.dirname(os.path.abspath(__file__))
@@ -73,17 +72,13 @@ def setup_sudo():
         warn_only=True)
     if check_setup.failed:
         # Test the format of the file, to prevent locked-out-disasters
-        logging.info("visudo tmp file being made")
         run(
             'echo "%fabric ALL = () '
             'NOPASSWD: {}/deploy/fab_scripts/" > {}'.format(
                 env.path, sudoer_file_test))
-        logging.info("visudo checking")
         run('/usr/sbin/visudo -cf {}'.format(sudoer_file_test))
         # Copy it to the right place
-        logging.info("visudo check passed")
-        run('sudo -n cp {} {}'.format(sudoer_file_test, sudoer_file_real))
-        logging.info("visudo finished")
+        sudo('cp {} {}'.format(sudoer_file_test, sudoer_file_real))
 
 
 def notify_slack(message):
@@ -146,7 +141,6 @@ def pip_install():
 def npm_install():
     installed = run("if [[ -n $(which npm) ]]; then echo 1; fi")
     if not installed:
-        # XXX change to sudo_script
         sudo('curl -sL https://deb.nodesource.com/setup_6.x |'
              'bash - && apt-get install -y  '
              'nodejs binutils libproj-dev gdal-bin libgeoip1 libgeos-c1;',
@@ -231,8 +225,6 @@ def checkpoint(force_build):
         .split())
     if not force_build and env.next_commit == env.previous_commit:
         abort("No changes to pull from origin!")
-    else:
-        return env.changed_files
 
 
 def deploy_static():
@@ -312,13 +304,9 @@ def setup_cron():
 
 
 @task
-def deploy(environment,
-           force_build=False,
-           branch='master',
-           do_setup_sudo=True):
+def deploy(environment, force_build=False, branch='master'):
     if 'CF_API_KEY' not in os.environ:
-        abort("Expected variables (e.g. `CF_API_KEY`) "
-              "not found in environment")
+        abort("Expected variables (e.g. `CF_API_KEY`) not found in environment")
     if environment not in environments:
         abort("Specified environment must be one of %s" %
               ",".join(environments.keys()))
@@ -326,8 +314,7 @@ def deploy(environment,
     env.environment = environment
     env.path = "/webapps/%s" % env.app
     env.branch = branch
-    if do_setup_sudo:
-        setup_sudo()
+    setup_sudo()
     with cd(env.path):
         checkpoint(force_build)
         git_pull()
