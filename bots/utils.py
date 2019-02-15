@@ -14,9 +14,12 @@ class NonExitingError(Exception):
         self.stderr = stderr
 
     def __str__(self):
-        return "NonExitingError wrapping {}\n\n{}".format(
-            self.original,
-            self.stderr)
+        return (
+            "Exit code {}:\n\n"
+            "{}\n\n"
+            "(see ebmbot logs for traceback)".format(
+                self.original,
+                self.stderr))
 
 
 def safe_execute(cmd, *args, **kwargs):
@@ -46,6 +49,6 @@ def safe_execute(cmd, *args, **kwargs):
         else:
             msg = "Fabric aborted with exception %s, %s, %s\n\n%s"
         stack = traceback.format_tb(e.__traceback__)
-        logging.info(msg, type(e), e, stderr, stack)
+        logging.info(msg, type(e), e, stderr, "".join(stack))
         raise NonExitingError(e, stderr)
     return result
