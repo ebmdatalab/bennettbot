@@ -1,12 +1,11 @@
 from slackbot.bot import respond_to
 import re
-from fabric.tasks import execute
 
 from fabfiles.clinicaltrials_act_tracker.fabfile import update
 from fabfiles.clinicaltrials_act_tracker.fabfile import send_tweet
 from fabric.api import env
 
-from ebmbot.utils import safe_execute
+from bots.utils import safe_execute
 
 
 env.user = 'ebmbot'

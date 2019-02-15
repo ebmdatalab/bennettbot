@@ -1,7 +1,7 @@
 from unittest.mock import patch
 from unittest.mock import MagicMock
-from ebmbot.fdaaa_deploy import deploy_fdaaa
-from ebmbot.fdaaa_deploy import update_fdaaa_staging
+from bots.fdaaa.fdaaa_deploy import deploy_fdaaa
+from bots.fdaaa.fdaaa_deploy import update_fdaaa_staging
 from fabfiles.clinicaltrials_act_tracker.fabfile import update
 
 

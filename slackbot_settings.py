@@ -9,9 +9,9 @@ DEFAULT_REPLY = "I'm sorry, but I didn't understand you"
 ERRORS_TO = 'tech'
 
 PLUGINS = [
-    'ebmbot.openprescribing',
-    'ebmbot.fdaaa_deploy',
-    'ebmbot.hal'
+    'ebmbot.openprescribing.openprescribing',
+    'ebmbot.fdaaa.fdaaa_deploy',
+    'ebmbot.hal.hal'
 ]
 
 GITHUB_WEBHOOK_PORT = 9999

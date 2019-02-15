@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import patch
 
 from tests import fabfile_example
-from ebmbot.utils import safe_execute
-from ebmbot.utils import NonExitingError
+from bots.utils import safe_execute
+from bots.utils import NonExitingError
 
 
 # Because py.test replaces stdin with a StringIO, but fabric wants to

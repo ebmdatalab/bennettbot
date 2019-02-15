@@ -6,14 +6,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ebmbot.openprescribing import deploy_live_delayed
-from ebmbot.openprescribing import deploy_live_now
-from ebmbot.openprescribing import reset_or_deploy_timer
-from ebmbot.openprescribing import suppress_deploy
-from ebmbot.openprescribing import cancel_suppression
-from ebmbot.openprescribing import cancel_deploy_live
-from ebmbot.openprescribing import show_status
-from ebmbot import flags
+from bots.openprescribing.openprescribing import deploy_live_delayed
+from bots.openprescribing.openprescribing import deploy_live_now
+from bots.openprescribing.openprescribing import suppress_deploy
+from bots.openprescribing.openprescribing import cancel_suppression
+from bots.openprescribing.openprescribing import cancel_deploy_live
+from bots.openprescribing.openprescribing import show_status
+from bots.openprescribing import flags
 import ebmbot_runner
 
 
@@ -31,8 +30,8 @@ def reset_flags():
         setattr(flags, k, v)
 
 
-@patch('ebmbot.openprescribing.reset_or_deploy_timer')
-@patch('ebmbot.openprescribing.datetime')
+@patch('bots.openprescribing.openprescribing.reset_or_deploy_timer')
+@patch('bots.openprescribing.openprescribing.datetime')
 def test_deploy_live_delayed_with_suppression(mock_datetime, mock_timer):
     now = datetime.now()
     # Set time to 1pm
@@ -65,8 +64,8 @@ def test_deploy_live_delayed_with_suppression(mock_datetime, mock_timer):
     assert 'Deploying in' in str(mock_message.method_calls[-1])
 
 
-@patch('ebmbot.openprescribing.safe_execute')
-@patch('ebmbot.openprescribing.DEPLOY_DELAY', 1.0)
+@patch('bots.openprescribing.openprescribing.safe_execute')
+@patch('bots.openprescribing.openprescribing.DEPLOY_DELAY', 1.0)
 def test_delayed_deploy(mock_execute):
     mock_message = MagicMock()
     deploy_live_delayed(mock_message)
@@ -86,8 +85,8 @@ def test_delayed_deploy(mock_execute):
     assert 'done' in str(mock_message.method_calls[-1])
 
 
-@patch('ebmbot.openprescribing.safe_execute')
-@patch('ebmbot.openprescribing.DEPLOY_DELAY', 0.1)
+@patch('bots.openprescribing.openprescribing.safe_execute')
+@patch('bots.openprescribing.openprescribing.DEPLOY_DELAY', 0.1)
 def test_deploy_queued(mock_execute):
     """Two consecutive deployment calls should cause the second deployment
     to wait until the first is finished.
@@ -112,7 +111,7 @@ def test_deploy_queued(mock_execute):
             'Deploy done', in_thread=True)])
 
 
-@patch('ebmbot.openprescribing.safe_execute')
+@patch('bots.openprescribing.openprescribing.safe_execute')
 def test_deploy_cancellation(mock_execute):
     mock_message = MagicMock()
     deploy_live_delayed(mock_message)
@@ -121,10 +120,21 @@ def test_deploy_cancellation(mock_execute):
     assert 'No deploys in progress' in str(mock_message.method_calls[-1])
 
 
-@patch('ebmbot.openprescribing.safe_execute')
+@patch('bots.openprescribing.openprescribing.safe_execute')
 def test_immediate_deploy(mock_execute):
     mock_message = MagicMock()
     deploy_live_now(mock_message)
+    time.sleep(0.01)
+    mock_execute.assert_called()
+    mock_message.reply.assert_called()
+
+
+@patch('bots.openprescribing.openprescribing.safe_execute')
+def test_immediate_deploy_fabric_env(mock_execute):
+    mock_message = MagicMock()
+    deploy_live_now(mock_message)
+    import pdb; pdb.set_trace()
+
     time.sleep(0.01)
     mock_execute.assert_called()
     mock_message.reply.assert_called()

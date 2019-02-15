@@ -15,7 +15,7 @@ from slackbot.slackclient import SlackClient
 from slackbot.dispatcher import Message
 from slackbot.bot import Bot
 
-from ebmbot.openprescribing import deploy_live_delayed
+from bots.openprescribing.openprescribing import deploy_live_delayed
 
 
 app = Flask(__name__)

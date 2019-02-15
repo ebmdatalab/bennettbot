@@ -12,11 +12,15 @@ from fabfiles.openprescribing.fabfile import clear_cloudflare
 from fabfiles.openprescribing.fabfile import deploy
 from fabric.api import env
 
-from ebmbot import flags
-from ebmbot.utils import safe_execute
+from bots.openprescribing import flags
+from bots.utils import safe_execute
 
 
-env.user = 'ebmbot'
+FABRIC_OVERRIDES = {
+    'user': 'ebmbot',
+    'disable_known_hosts': True,
+    'hosts': ['web2.openprescribing.net']
+}
 
 DEPLOY_DELAY = 60
 
@@ -75,13 +79,13 @@ def cancel_deploy_live(message):
 
 @respond_to(r'op clear cache', re.IGNORECASE)
 def clear_cache(message):
-    result = safe_execute(clear_cloudflare)
+    result = safe_execute(clear_cloudflare, **FABRIC_OVERRIDES)
     message.reply("Cache cleared:\n\n {}".format(result), in_thread=True)
 
 
 @respond_to(r'op checkpoint', re.IGNORECASE)
 def clear_cache(message):
-    result = safe_execute(checkpoint, False)
+    result = safe_execute(checkpoint, False, **FABRIC_OVERRIDES)
     message.reply(str(result), in_thread=True)
 
 
@@ -138,7 +142,8 @@ def deploy_timer(message):
             logging.info("Starting OP deploy via fabric")
             try:
                 safe_execute(
-                    deploy, environment='production', do_setup_sudo=False)
+                    deploy, environment='production',
+                    do_setup_sudo=False, **FABRIC_OVERRIDES)
                 logging.info("Finished OP deploy via fabric")
                 message.reply("Deploy done", in_thread=True)
             except Exception as e:
@@ -170,7 +175,7 @@ def reset_or_deploy_timer(secs, message):
     elif flags.deploy_countdown is None:
         # Start countdown
         flags.deploy_countdown = secs
-        timer_thread = Thread(target=deploy_timer, args=(message,))
+        timer_thread = Thread(target=deploy_timer, args=(message))
         timer_thread.start()
     else:
         # Reset countdown
