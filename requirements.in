@@ -4,3 +4,4 @@ django-dotenv
 dateparser
 pytest
 flask
+cryptography==2.4.2  # unpin this once https://github.com/paramiko/paramiko/pull/1379 is merged
