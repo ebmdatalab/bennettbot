@@ -215,7 +215,6 @@ def log_deploy():
 
 
 def checkpoint(force_build):
-    logging.info("Checkpoint started")
     env.started_at = datetime.utcnow()
     with settings(warn_only=True):
         inited = run('git status').return_code == 0
@@ -224,18 +223,13 @@ def checkpoint(force_build):
         if run('file .venv').return_code > 0:
             venv_init()
     env.previous_commit = run('git rev-parse --verify HEAD')
-    logging.info("git fetch running")
     run('git fetch')
-    logging.info("git rev-parse running")
     env.next_commit = run('git rev-parse --verify origin/%s' % env.branch)
-    logging.info("git diff running")
     env.changed_files = set(
         run("git diff --name-only %s %s" %
             (env.previous_commit, env.next_commit), pty=False)
         .split())
-    logging.info("prev %s, next %s, force_build %s", env.next_commit, env.previous_commit, force_build)
     if not force_build and env.next_commit == env.previous_commit:
-        logging.info("aborting...")
         abort("No changes to pull from origin!")
     else:
         return env.changed_files
@@ -322,12 +316,9 @@ def deploy(environment,
            force_build=False,
            branch='master',
            do_setup_sudo=True):
-    logging.info("Starting deploy in fabfile")
-    logging.info(os.environ.keys())
     if 'CF_API_KEY' not in os.environ:
         abort("Expected variables (e.g. `CF_API_KEY`) "
               "not found in environment")
-    logging.info("Environments %s in %s?", environment, environments)
     if environment not in environments:
         abort("Specified environment must be one of %s" %
               ",".join(environments.keys()))
@@ -339,15 +330,12 @@ def deploy(environment,
         setup_sudo()
     with cd(env.path):
         checkpoint(force_build)
-        logging.info("Git pull")
         git_pull()
         pip_install()
         npm_install()
         npm_install_deps(force_build)
-        logging.info("Npm build")
         npm_build_js()
         npm_build_css(force_build)
-        logging.info("Static deploy")
         deploy_static()
         run_migrations()
         graceful_reload()
