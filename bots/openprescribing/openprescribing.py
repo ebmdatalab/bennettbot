@@ -52,10 +52,14 @@ def deploy_live_delayed(message):
             in_thread=True
         )
     else:
-        message.reply(
-            "Deploying in {} seconds".format(DEPLOY_DELAY),
-            in_thread=True
-        )
+        if message.body['ts']:
+            msg = "Deploying in {} seconds".format(DEPLOY_DELAY)
+            message.reply(msg, in_thread=True)
+        else:
+            msg = "PR merged. "
+            msg += "Deploying in {} seconds".format(DEPLOY_DELAY)
+            # This was triggered from github webhooks - no thread
+            message.send_webapi(msg)
     reset_or_deploy_timer(DEPLOY_DELAY, message)
 
 
