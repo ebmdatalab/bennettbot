@@ -4,5 +4,6 @@ python:
 before_script:
   - cp environment-sample environment
   - ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && chmod og-wx ~/.ssh/authorized_keys
+  - touch bots/openprescribing/environment
 script:
   - source environment && py.test
