@@ -1,0 +1,8 @@
+/var/log/ebmbot/*.log {
+    weekly
+    rotate 7
+    missingok
+    dateext
+    copytruncate
+    compress
+}
