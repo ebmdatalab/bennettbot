@@ -57,8 +57,8 @@ def op_help(message):
     message.reply(msg.format(DEPLOY_DELAY))
 
 
-@suppressed
 @respond_to(r'op deploy$', re.IGNORECASE)
+@suppressed
 def deploy_live_delayed(message):
     if deploy_in_progress():
         message.reply(
@@ -77,8 +77,8 @@ def deploy_live_delayed(message):
     reset_or_deploy_timer(DEPLOY_DELAY, message)
 
 
-@suppressed
 @respond_to('op deploy now', re.IGNORECASE)
+@suppressed
 def deploy_live_now(message):
     message.reply(
         "Deploying now".format(DEPLOY_DELAY),
@@ -86,8 +86,8 @@ def deploy_live_now(message):
     reset_or_deploy_timer(0, message)
 
 
-@suppressed
 @respond_to('op cancel deploy', re.IGNORECASE)
+@suppressed
 def cancel_deploy_live(message):
     reset_or_deploy_timer(None, message)
     message.reply("Cancelled", in_thread=True)
