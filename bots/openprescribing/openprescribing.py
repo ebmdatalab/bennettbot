@@ -46,13 +46,13 @@ def suppressed(func):
 @respond_to(r'op help', re.IGNORECASE)
 def op_help(message):
     msg = """
-op deploy: deploy after a {}s delay
-op deploy now: deploy immediately
-op cancel deploy: cancel any pending deploy (but not a running one!)
-op clear cache: clear cloudflare cache
-op suppress from 12:40 to 18:00: don't allow deploys between these times
-op cancel suppression: cancel any current suppression
-op status: show current deployment and supression status
+`op deploy`: deploy after a {}s delay
+`op deploy now`: deploy immediately
+`op cancel deploy`: cancel any pending deploy (but not a running one!)
+`op clear cache`: clear cloudflare cache
+`op suppress from 12:40 to 18:00`: don't allow deploys between these times
+`op cancel suppression`: cancel any current suppression
+`op status`: show current deployment and supression status
 """
     message.reply(msg.format(DEPLOY_DELAY))
 
