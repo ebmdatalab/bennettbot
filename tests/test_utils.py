@@ -9,8 +9,12 @@ from bots.utils import NonExitingError
 
 # These tests assume the user running the tests has passwordless SSH
 # access to localhost. If the tests are hanging, it's probably waiting
-# on password input
+# on password input.
+#
+# See `.travis.yml` for how we set this up before running the tests
+# there.
 HOSTS = ["{}@localhost".format(getpass.getuser())]
+
 
 # Because py.test replaces stdin with a StringIO, but fabric wants to
 # do a low-level `select` on a stdin which is a file, we have to patch

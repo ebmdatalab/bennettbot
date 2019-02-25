@@ -54,7 +54,7 @@ op suppress from 12:40 to 18:00: don't allow deploys between these times
 op cancel suppression: cancel any current suppression
 op status: show current deployment and supression status
 """
-    message.reply(msg)
+    message.reply(msg.format(DEPLOY_DELAY))
 
 
 @suppressed

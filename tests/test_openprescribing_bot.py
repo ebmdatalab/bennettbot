@@ -93,16 +93,18 @@ def test_deploy_queued(mock_execute):
 
     """
     mock_message = MagicMock()
+    mock_message.body = {'ts': 1234}   # Mock this being a threaded message
     deploy_live_delayed(mock_message)  # Deploying in N seconds
-    flags.deploy_countdown = -1  # Simulate a long-running deployment
-    deploy_live_delayed(mock_message)  # Deploy underway
-    time.sleep(3)  # allow for threads to start
+    flags.deploy_countdown = -1        # Simulate a long-running deployment
+    deploy_live_delayed(mock_message)  # Deploy underway enqueues instead
+    time.sleep(3)                      # Allow time for threads to start
 
     mock_message.assert_has_calls([
         call.reply(
             'Deploying in 0.1 seconds', in_thread=True),
         call.reply(
-            "Deploy underway. Will start another when it's finished", in_thread=True),
+            "Deploy underway. Will start another when it's finished",
+            in_thread=True),
         call.reply(
             'Deploy done', in_thread=True),
         call.reply(
