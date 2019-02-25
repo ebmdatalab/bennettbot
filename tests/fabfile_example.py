@@ -10,11 +10,11 @@ env.disable_known_hosts = True
 
 
 def do_run():
-    return run('echo "hello world"')
+    return run('/bin/echo "hello world"')
 
 
 def do_disallowed_thing():
-    return run('cat /etc/sudoers')
+    return run('/bin/cat /etc/sudoers')
 
 
 def do_abort():
