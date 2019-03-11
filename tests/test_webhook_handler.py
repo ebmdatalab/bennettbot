@@ -14,7 +14,7 @@ GITHUB_VALID_DATA_SIG = {
 def test_github_webhook_works(mock_slack, mock_deploy):
     client = ebmbot_runner.app.test_client()
     client.post(
-        '/',
+        '/github/',
         json=GITHUB_VALID_DATA,
         headers=GITHUB_VALID_DATA_SIG)
     mock_slack.assert_called()
@@ -26,6 +26,6 @@ def test_github_webhook_works(mock_slack, mock_deploy):
 def test_github_webhook_auth_no_header(mock_slack, mock_deploy):
     client = ebmbot_runner.app.test_client()
     result = client.post(
-        '/',
+        '/github/',
         json=GITHUB_VALID_DATA)
     assert result.status_code == 403
