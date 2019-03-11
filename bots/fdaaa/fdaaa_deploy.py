@@ -16,13 +16,14 @@ HOSTS = env.hosts[:]
 def deploy_fdaaa(message):
     message.reply("Copying staging data to live site...")
     safe_execute(update, hosts=HOSTS, environment='live')
-    message.reply("Done.", in_thread=True)
+    message.reply("Done.")
 
 
 @respond_to('update fdaaa staging', re.IGNORECASE)
 def update_fdaaa_staging(message):
     message.reply("Updating staging site with data. Takes approx 2 hours.")
     safe_execute(update, hosts=HOSTS, environment='staging')
+    # The code itself reports that it's finished via slack
 
 
 @respond_to('tweet fdaaa', re.IGNORECASE)

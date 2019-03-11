@@ -1,5 +1,4 @@
 from threading import Thread
-from dateparser import parse
 from time import sleep
 from datetime import datetime
 import logging
@@ -7,7 +6,6 @@ import re
 
 from slackbot.bot import respond_to
 
-from fabfiles.openprescribing.fabfile import checkpoint
 from fabfiles.openprescribing.fabfile import clear_cloudflare
 from fabfiles.openprescribing.fabfile import deploy
 from fabric.api import env
@@ -66,13 +64,11 @@ def op_help(message):
 def deploy_live_delayed(message):
     if deploy_in_progress():
         message.reply(
-            "Deploy underway. Will start another when it's finished",
-            in_thread=True
-        )
+            "Deploy underway. Will start another when it's finished")
     else:
         if message.body['ts']:
             msg = "Deploying in {} seconds".format(DEPLOY_DELAY)
-            message.reply(msg, in_thread=True)
+            message.reply(msg)
         else:
             msg = "PR merged. "
             msg += "Deploying in {} seconds".format(DEPLOY_DELAY)
@@ -86,8 +82,7 @@ def deploy_live_delayed(message):
 @suppressed
 def deploy_live_now(message):
     message.reply(
-        "Deploying now".format(DEPLOY_DELAY),
-        in_thread=True)
+        "Deploying now".format(DEPLOY_DELAY))
     reset_or_deploy_timer(0, message)
 
 
@@ -101,16 +96,16 @@ def cancel_deploy_live(message):
 @respond_to(r'op clear cache', re.IGNORECASE)
 def clear_cache(message):
     result = safe_execute(clear_cloudflare, hosts=HOSTS)
-    message.reply("Cache cleared:\n\n {}".format(result), in_thread=True)
+    message.reply("Cache cleared:\n\n {}".format(result))
 
 
 @respond_to('op cancel suppression', re.IGNORECASE)
 def cancel_suppression(message):
     if flags.deploy_suppressed:
         flags.deploy_suppressed = None
-        message.reply("Cancelled", in_thread=True)
+        message.reply("Cancelled")
     else:
-        message.reply("No suppressions to cancel", in_thread=True)
+        message.reply("No suppressions to cancel")
 
 
 @respond_to('op status', re.IGNORECASE)
@@ -118,9 +113,10 @@ def show_status(message):
     msgs = []
     if flags.deploy_suppressed:
         start_time, end_time = flags.deploy_suppressed
-        msgs.append("Deploys suppressed from {} to {}`".format(
-            start_time.strftime(TIME_FMT),
-            end_time.strftime(TIME_FMT)))
+        if end_time >= datetime.now():
+            msgs.append("Deploys suppressed from {} to {}".format(
+                start_time.strftime(TIME_FMT),
+                end_time.strftime(TIME_FMT)))
     else:
         if flags.deploy_countdown is None:
             msgs.append("No deploys in progress")
@@ -129,30 +125,40 @@ def show_status(message):
         else:
             msgs.append(
                 "Deploy due in {} seconds".format(flags.deploy_countdown)),
-    message.reply("\n".join(msgs), in_thread=True)
+    message.reply("\n".join(msgs))
+
+
+def _time_today(time_str):
+    now = datetime.now()
+    if len(time_str) == 4:
+        hour = int(time_str[:2])
+        minute = int(time_str[2:])
+    else:
+        hour, minute = [int(x) for x in time_str.split(':')]
+    return datetime(now.year, now.month, now.day, hour, minute)
 
 
 @respond_to(r'op suppress from (.*) to (.*)', re.IGNORECASE)
 def suppress_deploy(message, start_time, end_time):
-    start_time = parse(start_time)
-    end_time = parse(end_time)
+    start_time = _time_today(start_time)
+    end_time = _time_today(end_time)
+    if end_time < start_time:
+        raise ValueError("End time must be after start time!")
     flags.deploy_suppressed = [start_time, end_time]
     message.reply(
         "Deployment suppressed from {} until {}. "
         "Cancel with `cancel suppression`".format(
             start_time.strftime(TIME_FMT),
-            end_time.strftime(TIME_FMT)),
-        in_thread=True
+            end_time.strftime(TIME_FMT))
     )
     if flags.deploy_countdown:
         deploy_due_at = datetime.now() + flags.deploy_countdown
         if deploy_due_at <= end_time:
             reset_or_deploy_timer(None, message)
-            message.reply("Current deployment cancelled", in_thread=True)
+            message.reply("Current deployment cancelled")
 
 
 def deploy_timer(message):
-    # We import the fabfile here to ensure the fabric environ
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
             logging.info("Starting OP deploy via fabric")
@@ -160,10 +166,10 @@ def deploy_timer(message):
                 safe_execute(
                     deploy, hosts=HOSTS, environment='production')
                 logging.info("Finished OP deploy via fabric")
-                message.reply("Deploy done", in_thread=True)
+                message.reply("Deploy done")
             except Exception as e:
                 message.reply(
-                    "Error during deploy: {}".format(e), in_thread=True)
+                    "Error during deploy: {}".format(e))
                 raise
             finally:
                 if flags.deploy_queued:
