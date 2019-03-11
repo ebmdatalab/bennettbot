@@ -108,9 +108,10 @@ def show_status(message):
     msgs = []
     if flags.deploy_suppressed:
         start_time, end_time = flags.deploy_suppressed
-        msgs.append("Deploys suppressed from {} to {}".format(
-            start_time.strftime(TIME_FMT),
-            end_time.strftime(TIME_FMT)))
+        if end_time >= datetime.now():
+            msgs.append("Deploys suppressed from {} to {}".format(
+                start_time.strftime(TIME_FMT),
+                end_time.strftime(TIME_FMT)))
     else:
         if flags.deploy_countdown is None:
             msgs.append("No deploys in progress")

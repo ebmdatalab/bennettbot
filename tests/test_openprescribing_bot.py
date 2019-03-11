@@ -70,6 +70,8 @@ def test_deploy_live_delayed_with_suppression(
         mock_now - timedelta(hours=2),
         mock_now - timedelta(hours=1)]
     suppress_deploy(mock_message, None, None)
+    show_status(mock_message)
+    assert 'Deploys suppressed ' not in str(mock_message.method_calls[-1])
     deploy_live_delayed(mock_message)
     mock_timer.assert_called()
     assert 'Deploying in' in str(mock_message.method_calls[-1])
