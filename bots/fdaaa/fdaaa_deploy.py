@@ -23,6 +23,7 @@ def deploy_fdaaa(message):
 def update_fdaaa_staging(message):
     message.reply("Updating staging site with data. Takes approx 2 hours.")
     safe_execute(update, hosts=HOSTS, environment='staging')
+    # The code itself reports that it's finished via slack
 
 
 @respond_to('tweet fdaaa', re.IGNORECASE)
