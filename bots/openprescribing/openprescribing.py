@@ -7,7 +7,6 @@ import re
 
 from slackbot.bot import respond_to
 
-from fabfiles.openprescribing.fabfile import checkpoint
 from fabfiles.openprescribing.fabfile import clear_cloudflare
 from fabfiles.openprescribing.fabfile import deploy
 from fabric.api import env
