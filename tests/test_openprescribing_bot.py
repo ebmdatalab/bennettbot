@@ -155,9 +155,9 @@ def test_immediate_deploy_fabric_env(mock_execute):
 @patch('ebmbot_runner.SlackClient')
 def test_github_webhook(mock_slack, mock_deploy):
     client = ebmbot_runner.app.test_client()
-    client.post('/', json=dict(
-        action='closed',
-        pull_request=dict(merged='true')))
+    client.post('/', json={
+        'action': 'closed',
+        'pull_request': {'merged': 'true'}})
     mock_slack.assert_called()
     mock_deploy.assert_called()
 
