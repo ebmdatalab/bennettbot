@@ -36,7 +36,7 @@ def verify_signature(request):
         abort(403)
 
 
-@app.route('/', methods=['POST'])
+@app.route('/github/', methods=['POST'])
 def handle_github_webhook():
     logging.info("Received data %s", request.data)
     verify_signature(request)
