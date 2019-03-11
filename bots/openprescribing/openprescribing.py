@@ -1,5 +1,4 @@
 from threading import Thread
-from dateparser import parse
 from time import sleep
 from datetime import datetime
 import logging
@@ -126,10 +125,22 @@ def show_status(message):
     message.reply("\n".join(msgs), in_thread=True)
 
 
+def _time_today(time_str):
+    now = datetime.now()
+    if len(time_str) == 4:
+        hour = int(time_str[:2])
+        minute = int(time_str[2:])
+    else:
+        hour, minute = [int(x) for x in time_str.split(':')]
+    return datetime(now.year, now.month, now.day, hour, minute)
+
+
 @respond_to(r'op suppress from (.*) to (.*)', re.IGNORECASE)
 def suppress_deploy(message, start_time, end_time):
-    start_time = parse(start_time)
-    end_time = parse(end_time)
+    start_time = _time_today(start_time)
+    end_time = _time_today(end_time)
+    if end_time < start_time:
+        raise ValueError("End time must be after start time!")
     flags.deploy_suppressed = [start_time, end_time]
     message.reply(
         "Deployment suppressed from {} until {}. "

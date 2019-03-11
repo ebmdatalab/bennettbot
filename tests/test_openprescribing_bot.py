@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from datetime import timedelta
 from unittest.mock import call
 from unittest.mock import patch
 from unittest.mock import MagicMock
@@ -32,15 +33,22 @@ def reset_flags():
 
 @patch('bots.openprescribing.openprescribing.reset_or_deploy_timer')
 @patch('bots.openprescribing.openprescribing.datetime')
-def test_deploy_live_delayed_with_suppression(mock_datetime, mock_timer):
+@patch('bots.openprescribing.openprescribing._time_today')
+def test_deploy_live_delayed_with_suppression(
+        mock_time_today, mock_datetime, mock_timer):
     now = datetime.now()
+
     # Set time to 1pm
-    mock_datetime.now.return_value = datetime(
-        *now.timetuple()[:3], 13, 00)
+    mock_now = datetime(*now.timetuple()[:3], 13, 00)
+    mock_datetime.now.return_value = mock_now
     mock_message = MagicMock()
 
     # Try do deploy during suppression period
-    suppress_deploy(mock_message, "12:30", "14:30")
+    mock_time_today.side_effect = [
+        mock_now - timedelta(hours=1),
+        mock_now + timedelta(hours=1)]
+    # `None` as final two args because mocked by previous line:
+    suppress_deploy(mock_message, None, None)
     assert 'Deployment suppressed' in str(mock_message.method_calls[-1])
     deploy_live_delayed(mock_message)
     assert 'Not deploying' in str(mock_message.method_calls[-1])
@@ -58,7 +66,10 @@ def test_deploy_live_delayed_with_suppression(mock_datetime, mock_timer):
     assert 'Deploying in' in str(mock_message.method_calls[-1])
 
     # Set suppression to before now
-    suppress_deploy(mock_message, "12:30", "12:59")
+    mock_time_today.side_effect = [
+        mock_now - timedelta(hours=2),
+        mock_now - timedelta(hours=1)]
+    suppress_deploy(mock_message, None, None)
     deploy_live_delayed(mock_message)
     mock_timer.assert_called()
     assert 'Deploying in' in str(mock_message.method_calls[-1])
@@ -149,3 +160,20 @@ def test_github_webhook(mock_slack, mock_deploy):
         pull_request=dict(merged='true')))
     mock_slack.assert_called()
     mock_deploy.assert_called()
+
+
+@patch('bots.openprescribing.openprescribing.reset_or_deploy_timer')
+def test_suppression_parsing(mock_timer):
+    mock_message = MagicMock()
+
+    suppress_deploy(mock_message, "1230", "14:30")
+    assert flags.deploy_suppressed[0].hour == 12
+    assert flags.deploy_suppressed[0].minute == 30
+    assert flags.deploy_suppressed[1].hour == 14
+    assert flags.deploy_suppressed[1].minute == 30
+
+    with pytest.raises(ValueError):
+        suppress_deploy(mock_message, "1230", "1130")
+
+    with pytest.raises(ValueError):
+        suppress_deploy(mock_message, "asd", "14:30")
