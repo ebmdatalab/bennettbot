@@ -31,10 +31,14 @@ def suppressed(func):
         if flags.deploy_suppressed:
             start_time, end_time = flags.deploy_suppressed
             if start_time <= now <= end_time:
-                message.reply(
-                    "Not deploying: suppressed until {}".format(
-                        end_time.strftime(TIME_FMT)
-                    ))
+                msg = ""
+                if not message.body['ts']:
+                    msg = "PR merged. "
+                msg += "Not deploying: suppressed until {}".format(
+                        end_time.strftime(TIME_FMT))
+                msg += "\nIn an emergency, use `op cancel suppression` "
+                msg += "followed by `op deploy` to force a deployment"
+                message.reply(msg)
             else:
                 flags.deploy_suppressed = None
                 func(message)
@@ -73,6 +77,7 @@ def deploy_live_delayed(message):
             msg = "PR merged. "
             msg += "Deploying in {} seconds".format(DEPLOY_DELAY)
             # This was triggered from github webhooks - no thread
+            msg += "Use `op cancel deploy` to prevent this"
             message.send_webapi(msg)
     reset_or_deploy_timer(DEPLOY_DELAY, message)
 
@@ -90,7 +95,7 @@ def deploy_live_now(message):
 @suppressed
 def cancel_deploy_live(message):
     reset_or_deploy_timer(None, message)
-    message.reply("Cancelled", in_thread=True)
+    message.reply("Cancelled.\nUse `op deploy` to start again.")
 
 
 @respond_to(r'op clear cache', re.IGNORECASE)
