@@ -157,7 +157,6 @@ def suppress_deploy(message, start_time, end_time):
 
 
 def deploy_timer(message):
-    # We import the fabfile here to ensure the fabric environ
     while flags.deploy_countdown is not None:
         if flags.deploy_countdown <= 0:
             logging.info("Starting OP deploy via fabric")
