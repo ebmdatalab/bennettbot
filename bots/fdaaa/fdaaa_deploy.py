@@ -16,7 +16,7 @@ HOSTS = env.hosts[:]
 def deploy_fdaaa(message):
     message.reply("Copying staging data to live site...")
     safe_execute(update, hosts=HOSTS, environment='live')
-    message.reply("Done.", in_thread=True)
+    message.reply("Done.")
 
 
 @respond_to('update fdaaa staging', re.IGNORECASE)

@@ -112,16 +112,15 @@ def test_deploy_queued(mock_execute):
 
     mock_message.assert_has_calls([
         call.reply(
-            'Deploying in 0.1 seconds', in_thread=True),
+            'Deploying in 0.1 seconds'),
         call.reply(
-            "Deploy underway. Will start another when it's finished",
-            in_thread=True),
+            "Deploy underway. Will start another when it's finished"),
         call.reply(
-            'Deploy done', in_thread=True),
+            'Deploy done'),
         call.reply(
-            'Deploying in 0.1 seconds', in_thread=True),
+            'Deploying in 0.1 seconds'),
         call.reply(
-            'Deploy done', in_thread=True)])
+            'Deploy done')])
 
 
 @patch('bots.openprescribing.openprescribing.safe_execute')
