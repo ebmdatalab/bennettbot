@@ -13,7 +13,6 @@ from bots.openprescribing.openprescribing import cancel_suppression
 from bots.openprescribing.openprescribing import cancel_deploy_live
 from bots.openprescribing.openprescribing import show_status
 from bots.openprescribing import flags
-import ebmbot_runner
 
 
 @pytest.fixture(autouse=True)
@@ -138,14 +137,3 @@ def test_immediate_deploy_fabric_env(mock_execute):
     time.sleep(0.01)
     mock_execute.assert_called()
     mock_message.reply.assert_called()
-
-
-@patch('ebmbot_runner.deploy_live_delayed')
-@patch('ebmbot_runner.SlackClient')
-def test_github_webhook(mock_slack, mock_deploy):
-    client = ebmbot_runner.app.test_client()
-    client.post('/', json=dict(
-        action='closed',
-        pull_request=dict(merged='true')))
-    mock_slack.assert_called()
-    mock_deploy.assert_called()

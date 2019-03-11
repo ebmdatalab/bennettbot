@@ -15,6 +15,7 @@ PLUGINS = [
 ]
 
 GITHUB_WEBHOOK_PORT = 9999
+GITHUB_WEBOOK_SECRET = os.environ['GITHUB_WEBHOOK_SECRET'].encode("ascii")
 
 FABRIC_ENV = {
     'user': 'ebmbot',
