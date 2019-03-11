@@ -24,14 +24,14 @@ HOSTS = ["{}@localhost".format(getpass.getuser())]
 def test_run():
     with patch('fabric.operations.input_loop'):
         result = safe_execute(fabfile_example.do_run, hosts=HOSTS)
-        assert result[HOSTS[0]] == "hello world"
+    assert result[HOSTS[0]] == "hello world"
 
 
 def test_disallowed():
     with patch('fabric.operations.input_loop'):
         with pytest.raises(NonExitingError) as excinfo:
             safe_execute(fabfile_example.do_disallowed_thing, hosts=HOSTS)
-        assert "Fatal error" in excinfo.value.stderr
+    assert "Fatal error" in excinfo.value.stderr
 
 
 def test_abort():
