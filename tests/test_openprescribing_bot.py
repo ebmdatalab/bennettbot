@@ -1,3 +1,4 @@
+import threading
 import time
 from datetime import datetime
 from datetime import timedelta
@@ -7,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bots.openprescribing.openprescribing import deploy_branch_to_staging
 from bots.openprescribing.openprescribing import deploy_live_delayed
 from bots.openprescribing.openprescribing import deploy_live_now
 from bots.openprescribing.openprescribing import suppress_deploy
@@ -149,6 +151,36 @@ def test_immediate_deploy_fabric_env(mock_execute):
     time.sleep(0.01)
     mock_execute.assert_called()
     mock_message.reply.assert_called()
+
+
+@patch('bots.openprescribing.openprescribing.safe_execute')
+def test_deploy_branch_to_staging(mock_execute):
+    mock_message = MagicMock()
+    deploy_branch_to_staging(mock_message, 'branchname')
+    mock_execute.assert_called()
+
+
+@patch('bots.openprescribing.openprescribing.safe_execute',
+       side_effect=lambda *args, **kwargs: time.sleep(0.1))
+def test_deploy_branch_to_staging_singleton(mock_execute):
+    mock_message = MagicMock()
+    # Start a deploy thread that will block for 0.1s
+    threading.Thread(
+        target=deploy_branch_to_staging,
+        args=(mock_message, 'branchname')).start()
+
+    # Immediately start another
+    deploy_branch_to_staging(mock_message, 'branchname2')
+
+    # The second deploy should be refused
+    assert 'Deploy of branchname already in progress' in str(
+        mock_message.method_calls[-1])
+
+    # Eventually the first will finish
+    time.sleep(0.15)
+    assert 'Deploy of branchname to staging finished' in str(
+        mock_message.method_calls[-1])
+
 
 
 @patch('bots.openprescribing.openprescribing.reset_or_deploy_timer')

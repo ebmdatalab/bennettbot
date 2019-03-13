@@ -51,6 +51,7 @@ def op_help(message):
 `op suppress from 12:40 to 18:00`: don't allow deploys between these times
 `op cancel suppression`: cancel any current suppression
 `op status`: show current deployment and supression status
+`op staging deploy <name>`: deploy branch <name> to staging
 """
     message.reply(msg.format(DEPLOY_DELAY))
 
@@ -79,6 +80,23 @@ def deploy_live_now(message):
     message.reply(
         "Deploying now".format(DEPLOY_DELAY))
     reset_or_deploy_timer(0, message)
+
+
+@respond_to('op staging deploy (.*)', re.IGNORECASE)
+def deploy_branch_to_staging(message, branch):
+    if flags.staging_deploy_in_progress:
+        message.reply(
+            "Deploy of {} already in progress. Refusing to deploy!".format(
+                flags.staging_deploy_in_progress))
+    else:
+        try:
+            flags.staging_deploy_in_progress = branch
+            safe_execute(
+                deploy, hosts=HOSTS, environment='staging', branch=branch)
+            message.reply("Deploy of {} to staging finished".format(branch))
+            logging.info("Deploy of {} to staging finished".format(branch))
+        finally:
+            flags.staging_deploy_in_progress = False
 
 
 @respond_to('op cancel deploy', re.IGNORECASE)
