@@ -1,8 +1,15 @@
 from unittest.mock import patch
 from unittest.mock import MagicMock
 from bots.fdaaa.fdaaa_deploy import deploy_fdaaa
+from bots.fdaaa.fdaaa_deploy import fdaaa_help
 from bots.fdaaa.fdaaa_deploy import update_fdaaa_staging
 from fabfiles.clinicaltrials_act_tracker.fabfile import update
+
+
+def test_help():
+    mock_message = MagicMock()
+    fdaaa_help(mock_message)
+    assert 'fdaaa deploy' in str(mock_message.method_calls[-1])
 
 
 @patch('bots.fdaaa.fdaaa_deploy.safe_execute')
