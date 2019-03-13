@@ -84,9 +84,19 @@ def deploy_live_now(message):
 
 @respond_to('op staging deploy (.*)', re.IGNORECASE)
 def deploy_branch_to_staging(message, branch):
-    safe_execute(
-        deploy, hosts=HOSTS, environment='staging', branch=branch)
-    logging.info("Finished deploy of {} to staging".format(branch))
+    if flags.staging_deploy_in_progress:
+        message.reply(
+            "Deploy of {} already in progress. Refusing to deploy!".format(
+                flags.staging_deploy_in_progress))
+    else:
+        try:
+            flags.staging_deploy_in_progress = branch
+            safe_execute(
+                deploy, hosts=HOSTS, environment='staging', branch=branch)
+            message.reply("Deploy of {} to staging finished".format(branch))
+            logging.info("Deploy of {} to staging finished".format(branch))
+        finally:
+            flags.staging_deploy_in_progress = False
 
 
 @respond_to('op cancel deploy', re.IGNORECASE)
