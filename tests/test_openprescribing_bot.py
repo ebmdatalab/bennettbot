@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bots.openprescribing.openprescribing import deploy_branch_to_staging
 from bots.openprescribing.openprescribing import deploy_live_delayed
 from bots.openprescribing.openprescribing import deploy_live_now
 from bots.openprescribing.openprescribing import suppress_deploy
@@ -149,6 +150,13 @@ def test_immediate_deploy_fabric_env(mock_execute):
     time.sleep(0.01)
     mock_execute.assert_called()
     mock_message.reply.assert_called()
+
+
+@patch('bots.openprescribing.openprescribing.safe_execute')
+def test_deploy_branch_to_staging(mock_execute):
+    mock_message = MagicMock()
+    deploy_branch_to_staging(mock_message, 'branchname')
+    mock_execute.assert_called()
 
 
 @patch('bots.openprescribing.openprescribing.reset_or_deploy_timer')
