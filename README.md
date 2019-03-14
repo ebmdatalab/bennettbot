@@ -4,8 +4,17 @@ This is a Python [slackbot](https://github.com/lins05/slackbot). To start it:
 
 On a live server, it's managed by `supervisord`.
 
-The bot does deployment-related actions by **executing fabric
-tasks**. In turn, this requires two things:
+The bot does deployment-related actions by **executing fabric tasks**.
+Fabric is used for historic reasons - it's the system we already used
+for deployment.
+
+Note that one unfortunate consequence of this is that none of these
+tasks are thread-safe: fabric maintains state in a module global
+called `env` which is shared between all fabric tasks; and bot
+commands are executed in threads.  In practice this is unlikely to be
+a big issue due to how rarely we run commands.
+
+The use of fabric requires two things:
 
 1. Fabfiles for each repo, which are vendored to be local to the bot (in `fabfiles/`)
   * These are listed in `fabfiles.json`; run `get_fabfiles.py` to fetch these and minimally sanity check dependencies; that is also run during a deploy as a sanity check that everything is up-to-date
