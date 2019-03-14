@@ -17,7 +17,7 @@ GITHUB_WEBHOOK_PORT = 9999
 GITHUB_WEBOOK_SECRET = os.environ['GITHUB_WEBHOOK_SECRET'].encode("ascii")
 
 FABRIC_ENV = {
-    'user': 'hello',
+    'user': 'ebmbot',
     'disable_known_hosts': True,
     'colorize_errors': False,
     'abort_on_prompts': True  # Ensure we never block on user input
