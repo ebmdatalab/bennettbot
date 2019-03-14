@@ -90,6 +90,7 @@ def deploy_branch_to_staging(message, branch):
                 flags.staging_deploy_in_progress))
     else:
         try:
+            message.reply("Deploy of {} to staging started".format(branch))
             flags.staging_deploy_in_progress = branch
             safe_execute(
                 deploy, hosts=HOSTS, environment='staging', branch=branch)
