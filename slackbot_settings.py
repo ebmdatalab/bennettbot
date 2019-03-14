@@ -1,7 +1,6 @@
 import logging
 import os
 
-from fabric.api import env
 
 # "Bot User OAuth Access Token" from https://api.slack.com/apps/A6B85C8KC/oauth
 API_TOKEN = os.environ['SLACK_BOT_ACCESS_TOKEN']
@@ -18,9 +17,10 @@ GITHUB_WEBHOOK_PORT = 9999
 GITHUB_WEBOOK_SECRET = os.environ['GITHUB_WEBHOOK_SECRET'].encode("ascii")
 
 FABRIC_ENV = {
-    'user': 'ebmbot',
+    'user': 'hello',
     'disable_known_hosts': True,
-    'colorize_errors': False
+    'colorize_errors': False,
+    'abort_on_prompts': True  # Ensure we never block on user input
 }
 
 try:
