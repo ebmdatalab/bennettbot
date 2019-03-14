@@ -6,7 +6,7 @@ GITHUB_VALID_DATA = {
     'action': 'closed',
     'pull_request': {'merged': 'true'}}
 GITHUB_VALID_DATA_SIG = {
-    "X-Hub-Signature": "sha1=cc26ba0d85cda109adedfb424ef7d65627c813aa"}
+    "X-Hub-Signature": "sha1=fa080b2ca8570d2a4af63ab68f2a6820b2397bd0"}
 
 
 @patch('ebmbot_runner.deploy_live_delayed')
