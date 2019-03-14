@@ -9,17 +9,28 @@ from slackbot_settings import FABRIC_ENV
 
 
 class NonExitingError(Exception):
-    def __init__(self, original, stderr):
-        self.original = original
+    def __init__(self, original, stderr, stdout):
         self.stderr = stderr
+        self.stdout = stdout
 
     def __str__(self):
-        return (
-            "exit code {}:\n\n"
-            "```{}```\n\n"
-            "(see ebmbot logs for traceback)".format(
-                self.original,
-                self.stderr))
+        msg = """
+---------------------------------
+STDERR:
+
+{}
+
+---------------------------------
+last lines of STDOUT:
+
+{}
+
+(see ebmbot logs for traceback)"""
+        stdout_tail = "\n".join(self.stdout.splitlines()[-200:])
+        msg = msg.format(
+            self.stderr,
+            stdout_tail)
+        return msg
 
 
 def safe_execute(cmd, *args, **kwargs):
@@ -35,20 +46,24 @@ def safe_execute(cmd, *args, **kwargs):
     """
 
     captured_stderr = io.StringIO()
+    captured_stdout = io.StringIO()
     assert 'hosts' in kwargs, "You must supply a `hosts` keyword argument"
     try:
         with contextlib.redirect_stderr(captured_stderr):
-            with settings(**FABRIC_ENV):
-                result = execute(cmd, *args, **kwargs)
+            with contextlib.redirect_stdout(captured_stdout):
+                with settings(**FABRIC_ENV):
+                    result = execute(cmd, *args, **kwargs)
     except BaseException as e:
         # BaseException includes SystemExit, whereas Exception doesn't.
         captured_stderr.seek(0)
         stderr = captured_stderr.read()
+        captured_stdout.seek(0)
+        stdout = captured_stdout.read()
         if isinstance(e, SystemExit):
             msg = "Fabric aborted with exiting exception %s, %s, %s\n\n%s"
         else:
             msg = "Fabric aborted with exception %s, %s, %s\n\n%s"
         stack = traceback.format_tb(e.__traceback__)
         logging.info(msg, type(e), e, stderr, "".join(stack))
-        raise NonExitingError(e, stderr)
+        raise NonExitingError(e, stderr, stdout)
     return result
