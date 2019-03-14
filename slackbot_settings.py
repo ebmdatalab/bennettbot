@@ -28,7 +28,7 @@ try:
     logging.basicConfig(
         filename='/var/log/ebmbot/runner.log',
         format="%(asctime)s %(message)s",
-        level=logging.DEBUG)
+        level=logging.INFO)
 except FileNotFoundError:
     logging.basicConfig(
         handlers=[logging.StreamHandler()],
