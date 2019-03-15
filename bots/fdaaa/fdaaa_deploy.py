@@ -15,7 +15,7 @@ HOSTS = env.hosts[:]
 @respond_to(r'fdaaa help', re.IGNORECASE)
 def fdaaa_help(message):
     msg = """
-`fdaaa update staging: perform a scrape and load data into staging for review
+`fdaaa update staging`: perform a scrape and load data into staging for review
 `fdaaa deploy`: deploy by copying staging to live site
 """
     message.reply(msg)
