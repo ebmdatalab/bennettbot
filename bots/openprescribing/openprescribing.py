@@ -77,7 +77,7 @@ def deploy_live_delayed(message):
             msg = "PR merged. "
             msg += "Deploying in {} seconds".format(DEPLOY_DELAY)
             # This was triggered from github webhooks - no thread
-            msg += "Use `op cancel deploy` to prevent this"
+            msg += "\nUse `op cancel deploy` to prevent this"
             message.send_webapi(msg)
     reset_or_deploy_timer(DEPLOY_DELAY, message)
 
