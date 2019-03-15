@@ -31,6 +31,10 @@ def suppressed(func):
             if start_time <= now <= end_time:
                 msg = ""
                 if not message.body['ts']:
+                    # `ts` indicates a threadable message. Our github 
+                    # webhook listener thread sets this to `None` when 
+                    # it notifies Slack that a deploy has been triggered 
+                    # via that route
                     msg = "PR merged. "
                 msg += "Not deploying: suppressed until {}".format(
                         end_time.strftime(TIME_FMT))
