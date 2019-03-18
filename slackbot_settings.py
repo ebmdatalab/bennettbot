@@ -5,7 +5,10 @@ import os
 # "Bot User OAuth Access Token" from https://api.slack.com/apps/A6B85C8KC/oauth
 API_TOKEN = os.environ['SLACK_BOT_ACCESS_TOKEN']
 DEFAULT_REPLY = "I'm sorry, but I didn't understand you"
-ERRORS_TO = 'technoise'
+
+# Uncommenting the following will result in all errors going to that
+# channel, rather than the channel which originated the message thread
+# ERRORS_TO = 'technoise'
 
 PLUGINS = [
     'bots.openprescribing.openprescribing',
