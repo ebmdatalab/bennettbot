@@ -66,4 +66,9 @@ def safe_execute(cmd, *args, **kwargs):
         stack = traceback.format_tb(e.__traceback__)
         logging.info(msg, type(e), e, stderr, "".join(stack))
         raise NonExitingError(e, stderr, stdout)
-    return result
+
+    # execute() returns a dictionary mapping the name of a host to the output
+    # of running the command on that host.  At the moment, we expect commands
+    # to only ever be run on one host, so we return the output from that host.
+    assert len(result) == 1
+    return list(result.values())[0]
