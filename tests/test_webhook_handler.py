@@ -17,8 +17,8 @@ def test_github_webhook_works(mock_slack, mock_deploy):
         '/github/',
         json=GITHUB_VALID_DATA,
         headers=GITHUB_VALID_DATA_SIG)
-    mock_slack.assert_called()
     mock_deploy.assert_called()
+    mock_slack.assert_called()
 
 
 @patch('ebmbot_runner.deploy_live_delayed')
