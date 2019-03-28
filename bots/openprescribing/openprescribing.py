@@ -8,6 +8,7 @@ from slackbot.bot import respond_to
 
 from fabfiles.openprescribing.fabfile import clear_cloudflare
 from fabfiles.openprescribing.fabfile import deploy
+from fabfiles.openprescribing.fabfile import call_management_command
 from fabric.api import env
 
 from bots.openprescribing import flags
@@ -52,6 +53,9 @@ def op_help(message):
 `op cancel suppression`: cancel any current suppression
 `op status`: show current deployment and supression status
 `op staging deploy <name>`: deploy branch <name> to staging
+`op ncso import`: run NCSO concession importer
+`op ncso report'`: show unreconciled NCSO concessions
+`op ncso reconcile concession [id] against vmpp [id]'`: reconcile concession against VMPP
 """
     message.reply(msg.format(DEPLOY_DELAY))
 
@@ -215,3 +219,43 @@ def reset_or_deploy_timer(secs, message):
     else:
         # Reset countdown
         flags.deploy_countdown = secs
+
+
+@respond_to(r'op ncso import')
+def ncso_import(message):
+    safe_execute(
+        call_management_command,
+        hosts=HOSTS,
+        environment='production',
+        command_name='fetch_and_import_ncso_concessions',
+        args=(),
+        kwargs={},
+    )
+    # No need to respond to message, as fetch_and_import_ncso_concessions
+    # reports to Slack.
+
+
+@respond_to(r'op ncso report')
+def ncso_report(message):
+    output = safe_execute(
+        call_management_command,
+        hosts=HOSTS,
+        environment='production',
+        command_name='summarise_ncso_concessions',
+        args=(),
+        kwargs={},
+    )
+    message.reply(output)
+
+
+@respond_to(r'op ncso reconcile concession (\d+) against vmpp (\d+)')
+def ncso_reconcile(message, concession_id, vmpp_id):
+    output = safe_execute(
+        call_management_command,
+        hosts=HOSTS,
+        environment='production',
+        command_name='reconcile_ncso_concession',
+        args=(concession_id, vmpp_id),
+        kwargs={},
+    )
+    message.reply(output)
