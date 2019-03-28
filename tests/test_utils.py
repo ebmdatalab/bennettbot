@@ -24,7 +24,7 @@ HOSTS = ["{}@localhost".format(getpass.getuser())]
 def test_run():
     with patch('fabric.operations.input_loop'):
         result = safe_execute(fabfile_example.do_run, hosts=HOSTS)
-    assert result[HOSTS[0]] == "hello world"
+    assert result == "hello world"
 
 
 def test_disallowed():
