@@ -6,17 +6,18 @@ GITHUB_VALID_DATA = {
     'action': 'closed',
     'pull_request': {'merged': 'true'}}
 GITHUB_VALID_DATA_SIG = {
-    "X-Hub-Signature": "sha1=fa080b2ca8570d2a4af63ab68f2a6820b2397bd0"}
+    "X-Hub-Signature": "sha1=cc26ba0d85cda109adedfb424ef7d65627c813aa"}
 
 
 @patch('ebmbot_runner.deploy_live_delayed')
 @patch('ebmbot_runner.SlackClient')
 def test_github_webhook_works(mock_slack, mock_deploy):
     client = ebmbot_runner.app.test_client()
-    client.post(
+    result = client.post(
         '/github/',
         json=GITHUB_VALID_DATA,
         headers=GITHUB_VALID_DATA_SIG)
+    assert result.status_code == 200
     mock_deploy.assert_called()
     mock_slack.assert_called()
 
