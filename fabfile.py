@@ -1,3 +1,5 @@
+import os
+
 from fabric.api import run, sudo, put
 from fabric.api import settings
 from fabric.api import prefix, warn, abort
@@ -17,6 +19,25 @@ env.user = 'root'
 environments = {
     'live': 'ebmbot',
 }
+
+
+def sudo_script(script, www_user=False):
+    """Run script under `deploy/fab_scripts/` as sudo.
+
+    We don't use the `fabric` `sudo()` command, because instead we
+    expect the user that is running fabric to have passwordless sudo
+    access.  In this configuration, that is achieved by the user being
+    a member of the `fabric` group (see `setup_sudo()`, below).
+
+    """
+    if www_user:
+        sudo_cmd = 'sudo -u www-data '
+    else:
+        sudo_cmd = 'sudo '
+    return run(sudo_cmd +
+               os.path.join(
+                   env.path,
+                   'ebmbot', 'deploy', 'fab_scripts', script))
 
 
 def make_directory():
@@ -44,6 +65,10 @@ def update_from_git():
 
 def setup_ebmbot():
     sudo('%s/ebmbot/deploy/setup_ebmbot.sh %s' % (env.path, env.app))
+
+
+def restart_ebmbot():
+    sudo_script('restart_bot.sh')
 
 
 def test_fabfiles():
@@ -78,3 +103,4 @@ def deploy(environment, branch='master'):
         pip_install()
         setup_ebmbot()
         test_fabfiles()
+        restart_ebmbot()
