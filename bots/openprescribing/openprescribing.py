@@ -1,6 +1,6 @@
 from threading import Thread
 from time import sleep
-from datetime import datetime
+from datetime import date, datetime
 import logging
 import re
 
@@ -56,6 +56,7 @@ def op_help(message):
 `op ncso import`: run NCSO concession importer
 `op ncso report'`: show unreconciled NCSO concessions
 `op ncso reconcile concession [id] against vmpp [id]`: reconcile concession against VMPP
+`op ncso send alerts`: send alerts for NCSO concessions
 """
     message.reply(msg.format(DEPLOY_DELAY))
 
@@ -257,6 +258,21 @@ def ncso_reconcile(message, concession_id, vmpp_id):
         environment='production',
         command_name='reconcile_ncso_concession',
         args=(concession_id, vmpp_id),
+        kwargs={},
+    )
+    message.reply(output)
+
+
+@respond_to(r'op ncso send alerts')
+def ncso_send_alerts(message):
+    message.reply('Sending NCSO concession alerts')
+    today = date.today().strftime('%Y-%m-%d')
+    output = safe_execute(
+        call_management_command,
+        hosts=HOSTS,
+        environment='production',
+        command_name='send_ncso_concessions_alerts',
+        args=(today,),
         kwargs={},
     )
     message.reply(output)
