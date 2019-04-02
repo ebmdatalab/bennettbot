@@ -223,6 +223,7 @@ def reset_or_deploy_timer(secs, message):
 
 @respond_to(r'op ncso import')
 def ncso_import(message):
+    message.reply('Importing NCSO concessions')
     safe_execute(
         call_management_command,
         hosts=HOSTS,
@@ -231,8 +232,8 @@ def ncso_import(message):
         args=(),
         kwargs={},
     )
-    # No need to respond to message, as fetch_and_import_ncso_concessions
-    # reports to Slack.
+    # No need to report that the command has finished, as
+    # fetch_and_import_ncso_concessions reports to Slack.
 
 
 @respond_to(r'op ncso report')
