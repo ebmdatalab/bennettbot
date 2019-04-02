@@ -24,10 +24,6 @@ def sorry(message, cap):
 def what_is(message, cap):
     message.reply("I don't know, I'm not a scientist.")
 
-@respond_to(r'help', re.IGNORECASE)
-def help(message):
-    message.reply("I know I've made some very poor decisions recently, but I can give you my complete assurance that my work will be back to normal. I've still got the greatest enthusiasm and confidence in the mission. And I want to help you.")
-
 @respond_to(r'(bug|mistake|error)', re.IGNORECASE)
 def mistake(message, cap):
     message.reply("It can only be attributable to human error")
