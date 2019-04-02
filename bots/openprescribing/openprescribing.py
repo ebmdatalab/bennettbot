@@ -55,7 +55,7 @@ def op_help(message):
 `op staging deploy <name>`: deploy branch <name> to staging
 `op ncso import`: run NCSO concession importer
 `op ncso report'`: show unreconciled NCSO concessions
-`op ncso reconcile concession [id] against vmpp [id]'`: reconcile concession against VMPP
+`op ncso reconcile concession [id] against vmpp [id]`: reconcile concession against VMPP
 """
     message.reply(msg.format(DEPLOY_DELAY))
 
