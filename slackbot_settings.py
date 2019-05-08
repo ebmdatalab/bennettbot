@@ -13,7 +13,8 @@ DEFAULT_REPLY = "I'm sorry, but I didn't understand you"
 PLUGINS = [
     'bots.openprescribing.openprescribing',
     'bots.fdaaa.fdaaa_deploy',
-    'bots.hal.hal'
+    'bots.hal.hal',
+    'bots.misc.gdrive',
 ]
 
 GITHUB_WEBHOOK_PORT = 9999
