@@ -7,15 +7,18 @@ from googleapiclient.discovery import build
 
 from slackbot.bot import respond_to
 
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+from bots.utils import send_message_to_channel
+
+
+SCOPES = ['https://www.googleapis.com/auth/drive']
 
 credentials = service_account.Credentials.from_service_account_file(
     os.environ['GOOGLE_SERVICE_ACCOUNT_FILE'], scopes=SCOPES)
-service = build('drive', 'v3', credentials=credentials)
+service = build('drive', 'v3', credentials=credentials, cache_discovery=False)
 
 
 @respond_to('gdrive check', re.IGNORECASE)
-def check_old_shared(message):
+def check_old_shared(message=None):
     yesterday = (date.today() - timedelta(2)).strftime("%Y-%m-%d")
     results = service.files().list(
         q=("modifiedTime > '{}' "
@@ -24,15 +27,17 @@ def check_old_shared(message):
         pageSize=10,
         fields="nextPageToken, files(webViewLink, name)").execute()
     items = results.get('files', [])
-    msg = ""
+    response = ""
     if items:
         for item in items:
-            msg += "* <{}|{}>\n".format(
+            response += "* <{}|{}>\n".format(
                 item['webViewLink'], item['name'])
-    if msg:
-        msg = ("Activity in legacy shared Google Drive detected! "
-               "Since yesterday:\n\n" + msg)
-        message.reply(msg)
+    if response:
+        response = ("Activity in legacy shared Google Drive detected! "
+                    "Since yesterday:\n\n" + response)
+    if message:
+        if not response:
+            response = "No actively in legacy shared Google Drive detected"
+        message.reply(response)
     else:
-        message.reply(
-            "No actively in legacy shared Google Drive detected")
+        send_message_to_channel(response, '#general')

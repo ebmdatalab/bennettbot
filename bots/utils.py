@@ -4,8 +4,13 @@ import logging
 import traceback
 
 from fabric.api import settings
+
 from fabric.tasks import execute
 from slackbot_settings import FABRIC_ENV
+
+import slackbot
+from slackbot.slackclient import SlackClient
+from slackbot.dispatcher import Message
 
 
 class NonExitingError(Exception):
@@ -72,3 +77,10 @@ def safe_execute(cmd, *args, **kwargs):
     # to only ever be run on one host, so we return the output from that host.
     assert len(result) == 1
     return list(result.values())[0]
+
+
+def send_message_to_channel(message, channel):
+    assert channel.startswith('#')
+    msg = {'channel': channel, 'ts': None}
+    client = SlackClient(slackbot.settings.API_TOKEN)
+    Message(client, msg).send_webapi(message)
