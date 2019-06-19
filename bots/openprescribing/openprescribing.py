@@ -12,7 +12,7 @@ from fabfiles.openprescribing.fabfile import call_management_command
 from fabric.api import env
 
 from bots.openprescribing import flags
-from bots.utils import safe_execute
+from bots.utils import safe_execute, reply
 
 
 # We store a copy of hosts after we import the fabfile, because the
@@ -30,7 +30,7 @@ def suppressed(func):
         if flags.deploy_suppressed:
             start_time, end_time = flags.deploy_suppressed
             if start_time <= now <= end_time:
-                message.reply(
+                reply(message,
                     "Not deploying: suppressed until {}".format(
                         end_time.strftime(TIME_FMT)
                     ))
@@ -58,19 +58,19 @@ def op_help(message):
 `op ncso reconcile concession [id] against vmpp [id]`: reconcile concession against VMPP
 `op ncso send alerts`: send alerts for NCSO concessions
 """
-    message.reply(msg.format(DEPLOY_DELAY))
+    reply(message, msg.format(DEPLOY_DELAY))
 
 
 @respond_to(r'op deploy$', re.IGNORECASE)
 @suppressed
 def deploy_live_delayed(message):
     if deploy_in_progress():
-        message.reply(
+        reply(message,
             "Deploy underway. Will start another when it's finished")
     else:
         if message.body['ts']:
             msg = "Deploying in {} seconds".format(DEPLOY_DELAY)
-            message.reply(msg)
+            reply(message, msg)
         else:
             msg = "PR merged. "
             msg += "Deploying in {} seconds".format(DEPLOY_DELAY)
@@ -82,24 +82,24 @@ def deploy_live_delayed(message):
 @respond_to('op deploy now', re.IGNORECASE)
 @suppressed
 def deploy_live_now(message):
-    message.reply(
-        "Deploying now".format(DEPLOY_DELAY))
+    reply(message,
+         "Deploying now".format(DEPLOY_DELAY))
     reset_or_deploy_timer(0, message)
 
 
 @respond_to('op staging deploy (.*)', re.IGNORECASE)
 def deploy_branch_to_staging(message, branch):
     if flags.staging_deploy_in_progress:
-        message.reply(
-            "Deploy of {} already in progress. Refusing to deploy!".format(
+        reply(message,
+             "Deploy of {} already in progress. Refusing to deploy!".format(
                 flags.staging_deploy_in_progress))
     else:
         try:
-            message.reply("Deploy of {} to staging started".format(branch))
+            reply(message, "Deploy of {} to staging started".format(branch))
             flags.staging_deploy_in_progress = branch
             safe_execute(
                 deploy, hosts=HOSTS, environment='staging', branch=branch)
-            message.reply("Deploy of {} to staging finished".format(branch))
+            reply(message, "Deploy of {} to staging finished".format(branch))
             logging.info("Deploy of {} to staging finished".format(branch))
         finally:
             flags.staging_deploy_in_progress = False
@@ -109,22 +109,22 @@ def deploy_branch_to_staging(message, branch):
 @suppressed
 def cancel_deploy_live(message):
     reset_or_deploy_timer(None, message)
-    message.reply("Cancelled")
+    reply(message, "Cancelled")
 
 
 @respond_to(r'op clear cache', re.IGNORECASE)
 def clear_cache(message):
     result = safe_execute(clear_cloudflare, hosts=HOSTS)
-    message.reply("Cache cleared:\n\n {}".format(result))
+    reply(message, "Cache cleared:\n\n {}".format(result))
 
 
 @respond_to('op cancel suppression', re.IGNORECASE)
 def cancel_suppression(message):
     if flags.deploy_suppressed:
         flags.deploy_suppressed = None
-        message.reply("Cancelled")
+        reply(message, "Cancelled")
     else:
-        message.reply("No suppressions to cancel")
+        reply(message, "No suppressions to cancel")
 
 
 @respond_to('op status', re.IGNORECASE)
@@ -144,7 +144,7 @@ def show_status(message):
         else:
             msgs.append(
                 "Deploy due in {} seconds".format(flags.deploy_countdown)),
-    message.reply("\n".join(msgs))
+    reply(message, "\n".join(msgs))
 
 
 def _time_today(time_str):
@@ -164,17 +164,17 @@ def suppress_deploy(message, start_time, end_time):
     if end_time < start_time:
         raise ValueError("End time must be after start time!")
     flags.deploy_suppressed = [start_time, end_time]
-    message.reply(
-        "Deployment suppressed from {} until {}. "
-        "Cancel with `cancel suppression`".format(
-            start_time.strftime(TIME_FMT),
-            end_time.strftime(TIME_FMT))
+    reply(message,
+         "Deployment suppressed from {} until {}. "
+         "Cancel with `cancel suppression`".format(
+             start_time.strftime(TIME_FMT),
+             end_time.strftime(TIME_FMT))
     )
     if flags.deploy_countdown:
         deploy_due_at = datetime.now() + flags.deploy_countdown
         if deploy_due_at <= end_time:
             reset_or_deploy_timer(None, message)
-            message.reply("Current deployment cancelled")
+            reply(message, "Current deployment cancelled")
 
 
 def deploy_timer(message):
@@ -185,10 +185,10 @@ def deploy_timer(message):
                 safe_execute(
                     deploy, hosts=HOSTS, environment='production')
                 logging.info("Finished OP deploy via fabric")
-                message.reply("Deploy done")
+                reply(message, "Deploy done")
             except Exception as e:
-                message.reply(
-                    "Error during deploy: {}".format(e))
+                reply(message,
+                     "Error during deploy: {}".format(e))
                 raise
             finally:
                 if flags.deploy_queued:
@@ -224,7 +224,7 @@ def reset_or_deploy_timer(secs, message):
 
 @respond_to(r'op ncso import')
 def ncso_import(message):
-    message.reply('Importing NCSO concessions')
+    reply(message, 'Importing NCSO concessions')
     safe_execute(
         call_management_command,
         hosts=HOSTS,
@@ -247,7 +247,7 @@ def ncso_report(message):
         args=(),
         kwargs={},
     )
-    message.reply(output)
+    reply(message, output)
 
 
 @respond_to(r'op ncso reconcile concession (\d+) against vmpp (\d+)')
@@ -260,12 +260,12 @@ def ncso_reconcile(message, concession_id, vmpp_id):
         args=(concession_id, vmpp_id),
         kwargs={},
     )
-    message.reply(output)
+    reply(message, output)
 
 
 @respond_to(r'op ncso send alerts')
 def ncso_send_alerts(message):
-    message.reply('Sending NCSO concession alerts')
+    reply(message, 'Sending NCSO concession alerts')
     today = date.today().strftime('%Y-%m-%d')
     output = safe_execute(
         call_management_command,
@@ -275,4 +275,4 @@ def ncso_send_alerts(message):
         args=(today,),
         kwargs={},
     )
-    message.reply(output)
+    reply(message, output)
