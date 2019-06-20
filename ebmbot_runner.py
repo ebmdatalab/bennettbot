@@ -38,7 +38,7 @@ def verify_signature(request):
 
 @app.route('/github/', methods=['POST'])
 def handle_github_webhook():
-    logging.info("Received data %s", request.data)
+    logging.info("handle_github_webhook")
     verify_signature(request)
     data = json.loads(request.data.decode())
     action = data.get('action', None)

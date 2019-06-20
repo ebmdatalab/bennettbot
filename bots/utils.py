@@ -84,3 +84,12 @@ def send_message_to_channel(message, channel):
     msg = {'channel': channel, 'ts': None}
     client = SlackClient(slackbot.settings.API_TOKEN)
     Message(client, msg).send_webapi(message)
+
+
+def reply(message, text):
+    '''Send reply to Slack, and log it with the original message id.
+
+    Note that `message` in an instance of `slackbot.dispatcher.Message`.
+    '''
+    logging.info(str(id(message)) + ' ' + text)
+    message.reply(text)
