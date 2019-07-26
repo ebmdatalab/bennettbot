@@ -58,7 +58,7 @@ def op_help(message):
 `op ncso reconcile concession [id] against vmpp [id]`: reconcile concession against VMPP
 `op ncso send alerts`: send alerts for NCSO concessions
 """
-    reply(message, msg.format(DEPLOY_DELAY))
+    reply(message, msg.format(DEPLOY_DELAY), log=False)
 
 
 @respond_to(r'op deploy$', re.IGNORECASE)
@@ -207,6 +207,9 @@ def deploy_in_progress():
 
 
 def reset_or_deploy_timer(secs, message):
+    logging.info('reset_or_deploy_timer')
+    log_flags()
+
     if deploy_in_progress():
         flags.deploy_queued = True
     if secs is None:
@@ -276,3 +279,10 @@ def ncso_send_alerts(message):
         kwargs={},
     )
     reply(message, output)
+
+
+def log_flags():
+    logging.info('deploy_suppressed: %s', flags.deploy_suppressed)
+    logging.info('deploy_countdown: %s', flags.deploy_countdown)
+    logging.info('deploy_queued: %s', flags.deploy_queued)
+    logging.info('staging_deploy_in_progress: %s', flags.staging_deploy_in_progress)
