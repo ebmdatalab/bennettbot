@@ -58,7 +58,7 @@ def op_help(message):
 `op ncso reconcile concession [id] against vmpp [id]`: reconcile concession against VMPP
 `op ncso send alerts`: send alerts for NCSO concessions
 """
-    reply(message, msg.format(DEPLOY_DELAY))
+    reply(message, msg.format(DEPLOY_DELAY), log=False)
 
 
 @respond_to(r'op deploy$', re.IGNORECASE)
