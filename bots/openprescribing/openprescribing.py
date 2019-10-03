@@ -46,14 +46,14 @@ def suppressed(func):
 def log_call(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        logger.info(fn.__name__ + ' {')
+        logging.info(fn.__name__ + ' {')
         if args:
-            logger.info("args: %r", args)
+            logging.info("args: %r", args)
         if kwargs:
-            logger.info("kwargs: %r", kwargs)
+            logging.info("kwargs: %r", kwargs)
         log_flags()
         rv = fn(*args, **kwargs)
-        logger.info(fn.__name__ + ' }')
+        logging.info(fn.__name__ + ' }')
         return rv
     return wrapper
 
