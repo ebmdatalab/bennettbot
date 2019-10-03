@@ -83,17 +83,14 @@ def op_help(message):
 @log_call
 def deploy_live_delayed(message):
     if deploy_in_progress():
-        reply(message,
-            "Deploy underway. Will start another when it's finished")
+        msg = "Deploy underway. Will start another when it's finished"
     else:
-        if message.body['ts']:
-            msg = "Deploying in {} seconds".format(DEPLOY_DELAY)
-            reply(message, msg)
-        else:
-            msg = "PR merged. "
-            msg += "Deploying in {} seconds".format(DEPLOY_DELAY)
-            # This was triggered from github webhooks - no thread
-            message.send_webapi(msg)
+        msg = "Deploying in {} seconds".format(DEPLOY_DELAY)
+
+    if not message.body['ts']:
+        msg = "PR merged. {}".format(msg)
+
+    reply(message, msg)
     reset_or_deploy_timer(DEPLOY_DELAY, message)
 
 

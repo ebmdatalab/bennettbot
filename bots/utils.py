@@ -90,7 +90,14 @@ def reply(message, text, do_log=True):
     '''Send reply to Slack, and log it with the original message id.
 
     Note that `message` in an instance of `slackbot.dispatcher.Message`.
+
+    If `message.body['ts']` is None then the message was not created by a `respond_to`
+    handler, so we cannot reply to it.
     '''
     if do_log:
         logging.info(str(id(message)) + ' ' + text)
-    message.reply(text)
+
+    if message.body['ts']:
+        message.reply(text)
+    else:
+        message.send_webapi(text)
