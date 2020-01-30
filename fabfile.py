@@ -6,20 +6,19 @@ env.forward_agent = True
 env.colorize_errors = True
 
 env.hosts = ["smallweb1.ebmdatalab.net"]
-env.user = "root"  # TODO change this?
+env.user = "ebmbot"
 env.path = "/var/www/ebmbot2"  # TODO change this, and also in the service files
 
 
-def check_directory():
-    if not exists(env.path):
-        abort("Create {} before proceeding".format(env.path))
+def make_directory():
+    run("mkdir -p {}".format(env.path))
 
+
+def check_environment():
     environment_path = "{}/environment".format(env.path)
 
     if not exists(environment_path):
         abort("Create {} before proceeding".format(environment_path))
-
-    # TODO check ownership?
 
 
 def create_venv():
@@ -58,7 +57,8 @@ def restart_ebmbot():
 
 @task
 def deploy():
-    check_directory()
+    make_directory()
+    check_environment()
 
     with cd(env.path):
         create_venv()
