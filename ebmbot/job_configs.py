@@ -44,6 +44,22 @@ raw_config = {
             },
         ],
     },
+    "fdaaa": {
+        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
+        "jobs": {
+            "deploy": {
+                "run_args_template": "fab update:live",
+            },
+        },
+        "slack": [
+            {
+                "command": "deploy",
+                "help": "copy staging data to live site",
+                "type": "schedule_job",
+                "job_type": "deploy",
+            },
+        ],
+    },
     "op": {
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
         "jobs": {
