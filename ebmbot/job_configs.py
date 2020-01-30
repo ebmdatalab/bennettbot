@@ -45,8 +45,7 @@ raw_config = {
         ],
     },
     "op": {
-        # "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
-        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/adb1d9353624758c84e321706c4d33ae1a856fd6/fabfile.py",  # TODO fix this
+        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
         "jobs": {
             "deploy": {
                 "run_args_template": "fab deploy:production"
