@@ -1,106 +1,73 @@
-import os
-
-from fabric.api import run, sudo, put
-from fabric.api import settings
-from fabric.api import prefix, warn, abort
-from fabric.api import settings, task, env, shell_env
-from fabric.contrib.files import exists
+from fabric.api import abort, env, prefix, run, task
 from fabric.context_managers import cd
-from fabric.contrib.project import rsync_project
+from fabric.contrib.files import exists
 
-import dotenv
-
-
-env.hosts = ['smallweb1.ebmdatalab.net']
 env.forward_agent = True
 env.colorize_errors = True
-env.user = 'root'
 
-environments = {
-    'live': 'ebmbot',
-}
-
-
-def sudo_script(script, www_user=False):
-    """Run script under `deploy/fab_scripts/` as sudo.
-
-    We don't use the `fabric` `sudo()` command, because instead we
-    expect the user that is running fabric to have passwordless sudo
-    access.  In this configuration, that is achieved by the user being
-    a member of the `fabric` group (see `setup_sudo()`, below).
-
-    """
-    if www_user:
-        sudo_cmd = 'sudo -u www-data '
-    else:
-        sudo_cmd = 'sudo '
-    return run(sudo_cmd +
-               os.path.join(
-                   env.path,
-                   'ebmbot', 'deploy', 'fab_scripts', script))
+env.hosts = ["smallweb1.ebmdatalab.net"]
+env.user = "root"
+env.path = "/var/www/ebmbot"
 
 
 def make_directory():
-    run('mkdir -p %s' % (env.path))
+    run("mkdir -p {}".format(env.path))
 
 
-def venv_init():
-    run('[ -e venv ] || python3.5 -m venv venv')
+def check_environment():
+    environment_path = "{}/environment".format(env.path)
+
+    if not exists(environment_path):
+        abort("Create {} before proceeding".format(environment_path))
 
 
-def pip_install():
-    with prefix('source venv/bin/activate'):
-        run('pip install -q -r ebmbot/requirements.txt')
+def create_venv():
+    if not exists("venv"):
+        run("python3.5 -m venv venv")
 
 
 def update_from_git():
-    # clone or update code
-    if not exists('ebmbot/.git'):
+    if not exists(".git"):
         run("git clone -q git@github.com:ebmdatalab/ebmbot.git")
-    else:
-        with cd("ebmbot"):
-            run('git fetch --all')
-            run('git checkout --force origin/%s' % env.branch)
+
+    run("git fetch --all")
+    run("git checkout --force origin/ebmbot")
 
 
-def setup_ebmbot():
-    sudo('%s/ebmbot/deploy/setup_ebmbot.sh %s' % (env.path, env.app))
+def install_requirements():
+    with prefix("source venv/bin/activate"):
+        run("pip install -q -r requirements.txt")
+
+
+def chown_everything():
+    run("chown -R ebmbot:ebmbot {}".format(env.path))
+
+
+def set_up_systemd():
+    for service in ["bot", "webserver", "dispatcher"]:
+        run(
+            "ln -sf {}/deploy/systemd/app.ebmbot.{}.service /etc/systemd/system".format(
+                env.path, service
+            )
+        )
+
+    run("systemctl daemon-reload")
 
 
 def restart_ebmbot():
-    sudo_script('restart_bot.sh')
-
-
-def test_fabfiles():
-    """Check vendored fabfiles are set up according to `fabfiles.json`
-    """
-    with prefix('source venv/bin/activate'):
-        with settings(warn_only=True):
-            output = run('python ebmbot/get_fabfiles.py')
-            if 'WARNING' in output:
-                abort("Environment not set up:\n\n{}".format(output))
-            result = run("cd ebmbot && git diff --exit-code")
-            if result.failed:
-                output = run("cd ebmbot && git status --short")
-                abort("The checked-in fabfiles don't match those in the "
-                      "source repositories. Run `get_fabfiles.py` locally "
-                      "and commit the result.\n\n{}".format(output))
+    for service in ["bot", "webserver", "dispatcher"]:
+        run("systemctl restart app.ebmbot.{}.service".format(service))
 
 
 @task
-def deploy(environment, branch='master'):
-    if environment not in environments:
-        abort("Specified environment must be one of %s" %
-              ",".join(environments.keys()))
-    env.app = environments[environment]
-    env.environment = environment
-    env.path = "/var/www/%s" % env.app
-    env.branch = branch
+def deploy():
     make_directory()
+    check_environment()
+
     with cd(env.path):
-        venv_init()
+        create_venv()
         update_from_git()
-        pip_install()
-        setup_ebmbot()
-        test_fabfiles()
+        install_requirements()
+        chown_everything()
+        set_up_systemd()
         restart_ebmbot()

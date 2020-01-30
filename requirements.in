@@ -1,9 +1,18 @@
 fabric3
-slackbot
-django-dotenv
-pytest
 flask
-cryptography==2.4.2  # unpin this once https://github.com/paramiko/paramiko/pull/1379 is merged
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
+gunicorn
+requests
+slackbot
+structlog
+
+# development
+coverage
+flake8
+isort
+pytest
+pytest-cov
+pytest-env
+pytest-freezegun
+
+# for op commands
+django-dotenv

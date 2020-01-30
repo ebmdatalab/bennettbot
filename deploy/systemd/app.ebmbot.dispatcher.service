@@ -1,0 +1,12 @@
+[Unit]
+Description=ebmbot job dispatcher
+
+[Service]
+User=ebmbot
+ExecStart=/var/www/ebmbot/bin/start_service.sh dispatcher
+SyslogIdentifier=app.ebmbot.bot
+Restart=always
+RestartSec=4
+
+[Install]
+WantedBy=multi-user.target
