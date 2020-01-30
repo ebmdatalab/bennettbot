@@ -2,8 +2,8 @@
 
 ebmbot is a service for running jobs in reponse to Slack commands and GitHub webhooks.
 
-Jobs are run bash commands in a given directory.
-They are organised by namespace, and are defined in `job_configs.py`.
+A job runs a bash command in a given directory.
+Jobs are organised by namespace, and are defined in `job_configs.py`.
 
 There are three moving parts:
 
@@ -17,7 +17,10 @@ The database schema is in `connection.py`, and functions for putting jobs onto t
 
 ### deployment
 
-    fab deploy
+ebmbot is deployed on smallweb1 and is managed by systemd.
+
+* To deploy: `fab deploy`
+* To view logs: `sudo journalctl -u app.ebmbot.* -b -f`
 
 
 ### development
@@ -25,6 +28,7 @@ The database schema is in `connection.py`, and functions for putting jobs onto t
 * Set up a virtual environment
 * Install dependencies: `pip install -r requirements.txt`
 * Copy environment: `cp environment-sample environment`
+* Run individual services: `. environment && python -m ebmbot.[service]`
 * Run tests: `pytest`
 * Run tests under coverage: `pytest --cov=.`
 * Fix formatting: `./fix_formatting.sh`
