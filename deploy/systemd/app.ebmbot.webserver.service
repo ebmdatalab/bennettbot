@@ -1,0 +1,12 @@
+[Unit]
+Description=ebmbot webserver for listening for GitHub webhooks
+
+[Service]
+User=ebmbot
+ExecStart=/var/www/ebmbot2/bin/start_service.sh webserver
+SyslogIdentifier=app.ebmbot.webserver
+Restart=always
+RestartSec=4
+
+[Install]
+WantedBy=multi-user.target

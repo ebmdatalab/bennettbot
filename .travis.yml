@@ -1,9 +1,11 @@
 language: python
 python:
-  - "3.6"
-before_script:
-  - cp environment-sample environment
-  - ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && chmod og-wx ~/.ssh/authorized_keys
-  - touch bots/openprescribing/environment
-script:
-  - source environment && py.test
+  - "3.5"
+jobs:
+  include:
+    - name: "Unit tests"
+      script: pytest -v
+    - name: "Coverage"
+      script: pytest --cov=. --cov-fail-under=100
+    - name: "Linting"
+      script: ./check_formatting.sh
