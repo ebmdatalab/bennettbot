@@ -1,4 +1,4 @@
-from fabric.api import abort, env, prefix, run, sudo, task
+from fabric.api import abort, env, prefix, run, task
 from fabric.context_managers import cd
 from fabric.contrib.files import exists
 
@@ -6,7 +6,7 @@ env.forward_agent = True
 env.colorize_errors = True
 
 env.hosts = ["smallweb1.ebmdatalab.net"]
-env.user = "ebmbot"
+env.user = "root"
 env.path = "/var/www/ebmbot2"  # TODO change this, and also in the service files
 
 
@@ -39,20 +39,24 @@ def install_requirements():
         run("pip install -q -r requirements.txt")
 
 
+def chown_everything():
+    run("chown -R ebmbot:ebmbot {}".format(env.path))
+
+
 def set_up_systemd():
     for service in ["bot", "webserver", "dispatcher"]:
-        sudo(
+        run(
             "ln -sf {}/deploy/systemd/app.ebmbot.{}.service /etc/systemd/system".format(
                 env.path, service
             )
         )
 
-    sudo("sudo systemctl daemon-reload")
+    run("systemctl daemon-reload")
 
 
 def restart_ebmbot():
     for service in ["bot", "webserver", "dispatcher"]:
-        sudo("sudo systemctl restart app.ebmbot.{}.service".format(service))
+        run("systemctl restart app.ebmbot.{}.service".format(service))
 
 
 @task
@@ -64,5 +68,6 @@ def deploy():
         create_venv()
         update_from_git()
         install_requirements()
+        chown_everything()
         set_up_systemd()
         restart_ebmbot()
