@@ -7,7 +7,7 @@ env.colorize_errors = True
 
 env.hosts = ["smallweb1.ebmdatalab.net"]
 env.user = "root"
-env.path = "/var/www/ebmbot2"  # TODO change this, and also in the service files
+env.path = "/var/www/ebmbot"
 
 
 def make_directory():
@@ -31,7 +31,7 @@ def update_from_git():
         run("git clone -q git@github.com:ebmdatalab/ebmbot.git")
 
     run("git fetch --all")
-    run("git checkout --force origin/ebmbot2")  # TODO change this
+    run("git checkout --force origin/ebmbot")
 
 
 def install_requirements():

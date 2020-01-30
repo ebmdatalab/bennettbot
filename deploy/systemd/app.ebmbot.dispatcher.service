@@ -3,7 +3,7 @@ Description=ebmbot job dispatcher
 
 [Service]
 User=ebmbot
-ExecStart=/var/www/ebmbot2/bin/start_service.sh dispatcher
+ExecStart=/var/www/ebmbot/bin/start_service.sh dispatcher
 SyslogIdentifier=app.ebmbot.bot
 Restart=always
 RestartSec=4
