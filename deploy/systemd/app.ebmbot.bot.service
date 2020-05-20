@@ -6,7 +6,8 @@ User=ebmbot
 ExecStart=/var/www/ebmbot/bin/start_service.sh bot
 SyslogIdentifier=app.ebmbot.bot
 Restart=always
-RestartSec=60  # If the service restarts too quickly, we get 429s from the Slack API
+ # If the service restarts too quickly, we get 429s from the Slack API
+RestartSec=60
 
 [Install]
 WantedBy=multi-user.target
