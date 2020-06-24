@@ -31,7 +31,7 @@ def update_from_git():
         run("git clone -q git@github.com:ebmdatalab/ebmbot.git")
 
     run("git fetch --all")
-    run("git checkout --force origin/ebmbot")
+    run("git checkout --force origin/master")
 
 
 def install_requirements():
