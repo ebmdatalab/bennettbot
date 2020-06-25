@@ -102,7 +102,7 @@ class JobDispatcher:
                     shell=True,
                 )
                 rc = rv.returncode
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 rc = -1
                 stderr.write(str(e) + "\n")
 
