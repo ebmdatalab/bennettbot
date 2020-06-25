@@ -131,28 +131,28 @@ def test_job_failure_when_command_not_found():
         assert f.read() == ""
 
     with open(os.path.join(log_dir, "stderr")) as f:
-        assert f.read() == "[Errno 2] No such file or directory: 'dog'\n"
+        assert f.read() == "/bin/sh: 1: dog: not found\n"
 
 
 def test_job_with_callback():
-    # This is a tested in a slightly roundabout way.  Rather than creating a
-    # command that can be run with the extra callback arguments, we test that
-    # calling `cat` with these arguments fails.
-    log_dir = build_log_dir("test_job_with_callback")
+    log_dir = build_log_dir("test_job_to_test_callback")
 
-    scheduler.schedule_job("test_job_with_callback", {}, "channel", TS)
+    scheduler.schedule_job("test_job_to_test_callback", {}, "channel", TS)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "failed")]
+        web_api=[("logs", "about to start"), ("channel", "succeeded")]
     ):
         do_job(job)
 
     with open(os.path.join(log_dir, "stdout")) as f:
-        assert f.read() == ""
+        assert (
+            f.read()
+            == "http://localhost:9999/callback/?channel=channel&thread_ts=1575976333.0\n"
+        )
 
     with open(os.path.join(log_dir, "stderr")) as f:
-        assert "unrecognised option '--ebmbot-slack-channel" in f.read()
+        assert f.read() == ""
 
 
 def do_job(job):

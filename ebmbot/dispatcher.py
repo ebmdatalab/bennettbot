@@ -1,5 +1,4 @@
 import os
-import shlex
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -55,7 +54,10 @@ class JobDispatcher:
         namespace = self.job["type"].split("_")[0]
         self.cwd = os.path.join(settings.WORKSPACE_DIR, namespace)
         self.fabfile_url = config["fabfiles"].get(namespace)
-        self.run_args = self.build_run_args()
+        self.run_args = self.job_config["run_args_template"].format(**self.job["args"])
+        self.callback_url = "{}/callback/?channel={}&thread_ts={}".format(
+            settings.WEBHOOK_ORIGIN, self.job["channel"], self.job["thread_ts"]
+        )
 
     def start_job(self):
         """Start running the job in a new subprocess."""
@@ -80,8 +82,8 @@ class JobDispatcher:
         logger.info("run_command {")
         logger.info(
             "run_command",
-            job=self.job,
             run_args=self.run_args,
+            callback_url=self.callback_url,
             cwd=self.cwd,
             stdout_path=self.stdout_path,
             stderr_path=self.stdout_path,
@@ -92,7 +94,12 @@ class JobDispatcher:
         ) as stderr:
             try:
                 rv = subprocess.run(
-                    self.run_args, cwd=self.cwd, stdout=stdout, stderr=stderr
+                    self.run_args,
+                    cwd=self.cwd,
+                    stdout=stdout,
+                    stderr=stderr,
+                    env={"EBMBOT_CALLBACK_URL": self.callback_url},
+                    shell=True,
                 )
                 rc = rv.returncode
             except Exception as e:
@@ -159,15 +166,6 @@ class JobDispatcher:
         self.stdout_path = os.path.join(self.log_dir, "stdout")
         self.stderr_path = os.path.join(self.log_dir, "stderr")
         os.makedirs(self.log_dir)
-
-    def build_run_args(self):
-        """Interpolate job_args into run_args_template, and split into tokens."""
-
-        args = self.job_config["run_args_template"].format(**self.job["args"])
-        if self.job_config.get("add_callback_args"):
-            args += " --ebmbot-slack-channel {}".format(self.job["channel"])
-            args += " --ebmbot-slack-thread-ts {}".format(self.job["thread_ts"])
-        return shlex.split(args)
 
 
 if __name__ == "__main__":

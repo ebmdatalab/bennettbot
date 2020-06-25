@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from ebmbot import webserver
@@ -13,13 +11,10 @@ def web_client():
 
 
 def test_with_valid_payload(web_client):
-    payload = {
-        "channel": "channel",
-        "message": "Job done",
-        "thread_ts": "1234567890.098765",
-    }
     with assert_slack_client_sends_messages(
         web_api=[("channel", "Job done", "1234567890.098765")]
     ):
-        rsp = web_client.post("/callback/", data=json.dumps(payload))
+        rsp = web_client.post(
+            "/callback/?channel=channel&thread_ts=1234567890.098765", data="Job done"
+        )
     assert rsp.status_code == 200
