@@ -2,4 +2,5 @@ export LOGS_DIR=changeme
 export SLACK_LOGS_CHANNEL=changeme
 export SLACKBOT_API_TOKEN=changeme
 export GITHUB_WEBHOOK_SECRET=changeme
+export EBMBOT_WEBHOOK_SECRET=changeme
 export WEBHOOK_ORIGIN=http(s)://changeme:1234

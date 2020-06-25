@@ -1,10 +1,10 @@
-import hmac
 import json
 
 from flask import abort, request
 
 from .. import scheduler, settings
 from ..logger import logger
+from ..signatures import validate_hmac, InvalidHMAC
 
 
 def handle_github_webhook():
@@ -33,7 +33,6 @@ def verify_signature(request):
     See https://developer.github.com/webhooks/securing/.
     """
 
-    secret = settings.GITHUB_WEBHOOK_SECRET
     header = request.headers.get("X-Hub-Signature")
 
     if header is None:
@@ -44,8 +43,9 @@ def verify_signature(request):
 
     signature = header[5:]
 
-    mac = hmac.new(secret, msg=request.data, digestmod="sha1")
-    if not hmac.compare_digest(str(mac.hexdigest()), str(signature)):
+    try:
+        validate_hmac(request.data, settings.GITHUB_WEBHOOK_SECRET, signature.encode("utf8"))
+    except InvalidHMAC:
         abort(403)
 
 

@@ -7,6 +7,7 @@ from slackbot.slackclient import SlackClient
 
 from ebmbot import scheduler, settings
 from ebmbot.dispatcher import JobDispatcher, run_once
+from ebmbot import webserver
 
 from .assertions import assert_slack_client_sends_messages
 from .job_configs import config
@@ -146,13 +147,14 @@ def test_job_with_callback():
         do_job(job)
 
     with open(os.path.join(log_dir, "stdout")) as f:
-        assert (
-            f.read()
-            == "http://localhost:9999/callback/?channel=channel&thread_ts=1575976333.0\n"
-        )
+        url = f.read().strip()
 
-    with open(os.path.join(log_dir, "stderr")) as f:
-        assert f.read() == ""
+    client = webserver.app.test_client()
+    with assert_slack_client_sends_messages(
+        web_api=[("channel", "Job done", TS)]
+    ):
+        rsp = client.post(url, data="Job done",)
+        assert rsp.status_code == 200
 
 
 def do_job(job):

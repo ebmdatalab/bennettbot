@@ -3,6 +3,7 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from multiprocessing import Process
+from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
 from slackbot.slackclient import SlackClient
@@ -10,6 +11,7 @@ from slackbot.slackclient import SlackClient
 from . import job_configs, scheduler, settings
 from .logger import logger
 from .slack import notify_slack
+from .signatures import generate_hmac
 
 
 def run():  # pragma: no cover
@@ -55,9 +57,7 @@ class JobDispatcher:
         self.cwd = os.path.join(settings.WORKSPACE_DIR, namespace)
         self.fabfile_url = config["fabfiles"].get(namespace)
         self.run_args = self.job_config["run_args_template"].format(**self.job["args"])
-        self.callback_url = "{}/callback/?channel={}&thread_ts={}".format(
-            settings.WEBHOOK_ORIGIN, self.job["channel"], self.job["thread_ts"]
-        )
+        self.callback_url = self.build_callback_url()
 
     def start_job(self):
         """Start running the job in a new subprocess."""
@@ -166,6 +166,31 @@ class JobDispatcher:
         self.stdout_path = os.path.join(self.log_dir, "stdout")
         self.stderr_path = os.path.join(self.log_dir, "stderr")
         os.makedirs(self.log_dir)
+
+    def build_callback_url(self):
+        timestamp = str(time.time())
+        hmac = generate_hmac(
+            timestamp.encode("utf8"), settings.EBMBOT_WEBHOOK_SECRET
+        ).decode("utf8")
+        querystring = urlencode(
+            {
+                "channel": self.job["channel"],
+                "thread_ts": self.job["thread_ts"],
+                "token": "{}:{}".format(timestamp, hmac),
+            }
+        )
+        parsed_url = urlparse(settings.WEBHOOK_ORIGIN)
+
+        return urlunparse(
+            (
+                parsed_url.scheme,  # scheme
+                parsed_url.netloc,  # host
+                "callback/",  # path
+                "",  # params
+                querystring,  # query
+                "",  # fragment
+            )
+        )
 
 
 if __name__ == "__main__":

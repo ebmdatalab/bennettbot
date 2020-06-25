@@ -11,8 +11,15 @@ SLACK_LOGS_CHANNEL = os.environ["SLACK_LOGS_CHANNEL"]
 # "Bot User OAuth Access Token" from https://api.slack.com/apps/A6B85C8KC/oauth
 SLACKBOT_API_TOKEN = os.environ["SLACKBOT_API_TOKEN"]
 
+# Should match "Payload URL" from
+# https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
+WEBHOOK_ORIGIN = os.environ["WEBHOOK_ORIGIN"]
+
 # "Secret" from https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
 GITHUB_WEBHOOK_SECRET = os.environ["GITHUB_WEBHOOK_SECRET"].encode("ascii")
 
-# From "Payload URL" from https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
-WEBHOOK_ORIGIN = os.environ["WEBHOOK_ORIGIN"]
+# A secret that we generate ourselves
+EBMBOT_WEBHOOK_SECRET = os.environ["EBMBOT_WEBHOOK_SECRET"].encode("ascii")
+
+# TTL in seconds for webhook token
+EBMBOT_WEBHOOK_TOKEN_TTL = 60 * 60
