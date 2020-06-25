@@ -2,12 +2,12 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 
-def assert_job_matches(job, type_, args, slack_channel, start_after, started_at):
+def assert_job_matches(job, type_, args, channel, start_after, started_at):
     assert_subdict(
         {
             "type": type_,
             "args": args,
-            "slack_channel": slack_channel,
+            "channel": channel,
             "start_after": start_after,
             "started_at": started_at,
         },

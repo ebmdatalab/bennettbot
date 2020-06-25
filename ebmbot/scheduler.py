@@ -51,7 +51,7 @@ def schedule_job(type_, args, channel, thread_ts, delay_seconds=0):
 def _create_job(type_, args, channel, thread_ts, start_after):
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO job (type, args, slack_channel, thread_ts, start_after) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO job (type, args, channel, thread_ts, start_after) VALUES (?, ?, ?, ?, ?)",
             [type_, args, channel, thread_ts, start_after],
         )
 
@@ -59,7 +59,7 @@ def _create_job(type_, args, channel, thread_ts, start_after):
 def _update_job(id_, args, channel, thread_ts, start_after):
     with get_connection() as conn:
         conn.execute(
-            "UPDATE job SET args = ?, slack_channel = ?, thread_ts = ?, start_after = ? WHERE id = ?",
+            "UPDATE job SET args = ?, channel = ?, thread_ts = ?, start_after = ? WHERE id = ?",
             [args, channel, thread_ts, start_after, id_],
         )
 

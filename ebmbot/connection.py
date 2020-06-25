@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS job (
     id INTEGER PRIMARY KEY,
     type TEXT NOT NULL,
     args TEXT,
-    slack_channel TEXT,
+    channel TEXT,
     thread_ts TEXT,
     start_after DATETIME,
     started_at DATETIME

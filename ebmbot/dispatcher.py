@@ -124,7 +124,7 @@ class JobDispatcher:
                 self.job["type"], self.log_dir
             )
 
-        notify_slack(self.slack_client, self.job["slack_channel"], msg)
+        notify_slack(self.slack_client, self.job["channel"], msg)
 
     def set_up_cwd(self):
         """Ensure cwd exists, and maybe refresh fabfile."""
@@ -165,7 +165,7 @@ class JobDispatcher:
 
         args = self.job_config["run_args_template"].format(**self.job["args"])
         if self.job_config.get("add_callback_args"):
-            args += " --ebmbot-slack-channel {}".format(self.job["slack_channel"])
+            args += " --ebmbot-slack-channel {}".format(self.job["channel"])
             args += " --ebmbot-slack-thread-ts {}".format(self.job["thread_ts"])
         return shlex.split(args)
 
