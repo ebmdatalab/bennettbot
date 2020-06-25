@@ -146,7 +146,22 @@ raw_config = {
             "job_type": "ncso_send_alerts",
             "job_type": "ncso_send_alerts",
         }],
-    }
+    },
+    "os": {
+        "jobs": {
+            "cohort_generate": {
+                "run_args_template": "cohortextractor remote generate_cohort --ref {ref}",
+            },
+        },
+        "slack": [
+            {
+                "command": "cohort generate [ref]",
+                "help": "generate a cohort",
+                "type": "schedule_job",
+                "job_type": "cohort_generate",
+            },
+        ],
+    },
 }
 # fmt: on
 

@@ -1,15 +1,12 @@
-import hmac
 import json
 
-from flask import Flask, abort, request
+from flask import abort, request
 
-from . import scheduler, settings
-from .logger import logger
+from .. import scheduler, settings
+from ..logger import logger
+from ..signatures import validate_hmac, InvalidHMAC
 
-app = Flask(__name__)
 
-
-@app.route("/github/", methods=["POST"])
 def handle_github_webhook():
     """Respond to webhooks from GitHub, and schedule a deploy of
     openprescribing if required.
@@ -36,7 +33,6 @@ def verify_signature(request):
     See https://developer.github.com/webhooks/securing/.
     """
 
-    secret = settings.GITHUB_WEBHOOK_SECRET
     header = request.headers.get("X-Hub-Signature")
 
     if header is None:
@@ -47,8 +43,11 @@ def verify_signature(request):
 
     signature = header[5:]
 
-    mac = hmac.new(secret, msg=request.data, digestmod="sha1")
-    if not hmac.compare_digest(str(mac.hexdigest()), str(signature)):
+    try:
+        validate_hmac(
+            request.data, settings.GITHUB_WEBHOOK_SECRET, signature.encode("utf8")
+        )
+    except InvalidHMAC:
         abort(403)
 
 
@@ -68,13 +67,3 @@ def schedule_deploy():
 
     logger.info("Scheduling deploy")
     scheduler.schedule_job("op_deploy", {}, "#general", 60)
-
-
-if __name__ == "__main__":
-    logger.info("running ebmbot.webserver")
-    app.run(
-        host="0.0.0.0",
-        port=settings.GITHUB_WEBHOOK_PORT,
-        load_dotenv=False,
-        debug=False,
-    )

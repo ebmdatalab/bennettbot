@@ -1,15 +1,17 @@
 import os
-import shlex
 import subprocess
 import time
 from datetime import datetime, timezone
 from multiprocessing import Process
+from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
 from slackbot.slackclient import SlackClient
 
 from . import job_configs, scheduler, settings
 from .logger import logger
+from .signatures import generate_hmac
+from .slack import notify_slack
 
 
 def run():  # pragma: no cover
@@ -49,16 +51,13 @@ class JobDispatcher:
         logger.info("starting job", job_id=job_id)
         self.slack_client = slack_client
         self.job = scheduler.get_job(job_id)
+        self.job_config = config["jobs"][self.job["type"]]
 
         namespace = self.job["type"].split("_")[0]
         self.cwd = os.path.join(settings.WORKSPACE_DIR, namespace)
         self.fabfile_url = config["fabfiles"].get(namespace)
-
-        job_config = config["jobs"][self.job["type"]]
-        self.run_args = build_run_args(
-            job_config["run_args_template"], self.job["args"]
-        )
-        self.report_stdout = bool(job_config.get("report_stdout"))
+        self.run_args = self.job_config["run_args_template"].format(**self.job["args"])
+        self.callback_url = self.build_callback_url()
 
     def start_job(self):
         """Start running the job in a new subprocess."""
@@ -83,8 +82,8 @@ class JobDispatcher:
         logger.info("run_command {")
         logger.info(
             "run_command",
-            job=self.job,
             run_args=self.run_args,
+            callback_url=self.callback_url,
             cwd=self.cwd,
             stdout_path=self.stdout_path,
             stderr_path=self.stdout_path,
@@ -95,10 +94,15 @@ class JobDispatcher:
         ) as stderr:
             try:
                 rv = subprocess.run(
-                    self.run_args, cwd=self.cwd, stdout=stdout, stderr=stderr
+                    self.run_args,
+                    cwd=self.cwd,
+                    stdout=stdout,
+                    stderr=stderr,
+                    env={"EBMBOT_CALLBACK_URL": self.callback_url},
+                    shell=True,
                 )
                 rc = rv.returncode
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 rc = -1
                 stderr.write(str(e) + "\n")
 
@@ -117,7 +121,7 @@ class JobDispatcher:
         required."""
 
         if rc == 0:
-            if self.report_stdout:
+            if self.job_config.get("report_stdout"):
                 with open(self.stdout_path) as f:
                     msg = f.read()
             else:
@@ -127,7 +131,7 @@ class JobDispatcher:
                 self.job["type"], self.log_dir
             )
 
-        notify_slack(self.slack_client, self.job["slack_channel"], msg)
+        notify_slack(self.slack_client, self.job["channel"], msg)
 
     def set_up_cwd(self):
         """Ensure cwd exists, and maybe refresh fabfile."""
@@ -163,18 +167,30 @@ class JobDispatcher:
         self.stderr_path = os.path.join(self.log_dir, "stderr")
         os.makedirs(self.log_dir)
 
+    def build_callback_url(self):
+        timestamp = str(time.time())
+        hmac = generate_hmac(
+            timestamp.encode("utf8"), settings.EBMBOT_WEBHOOK_SECRET
+        ).decode("utf8")
+        querystring = urlencode(
+            {
+                "channel": self.job["channel"],
+                "thread_ts": self.job["thread_ts"],
+                "token": "{}:{}".format(timestamp, hmac),
+            }
+        )
+        parsed_url = urlparse(settings.WEBHOOK_ORIGIN)
 
-def build_run_args(run_args_template, job_args):
-    """Interpolate job_args into run_args_template, and split into tokens."""
-
-    return shlex.split(run_args_template.format(**job_args))
-
-
-def notify_slack(slack_client, channel, message):
-    """Send message to Slack."""
-
-    logger.info("Sending message", channel=channel, message=message)
-    slack_client.send_message(channel, message)
+        return urlunparse(
+            (
+                parsed_url.scheme,  # scheme
+                parsed_url.netloc,  # host
+                "callback/",  # path
+                "",  # params
+                querystring,  # query
+                "",  # fragment
+            )
+        )
 
 
 if __name__ == "__main__":

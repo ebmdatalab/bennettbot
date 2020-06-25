@@ -32,13 +32,13 @@ def test_invalid_auth_header(web_client):
 
 
 def test_valid_auth_header(web_client):
-    headers = {"X-Hub-Signature": "sha1=adac1db7f924b4572c8379dc44caa415d44b2b1d"}
+    headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
     rsp = web_client.post("/github/", data=PAYLOAD_PR_CLOSED, headers=headers)
     assert rsp.status_code == 200
 
 
 def test_on_closed_merged_pr(web_client):
-    headers = {"X-Hub-Signature": "sha1=adac1db7f924b4572c8379dc44caa415d44b2b1d"}
+    headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
     rsp = web_client.post("/github/", data=PAYLOAD_PR_CLOSED, headers=headers)
     assert rsp.status_code == 200
     jj = scheduler.get_jobs_of_type("op_deploy")
@@ -46,21 +46,21 @@ def test_on_closed_merged_pr(web_client):
 
 
 def test_on_closed_unmerged_pr(web_client):
-    headers = {"X-Hub-Signature": "sha1=7216f76b9a0d1b78b6ff77197f99fcab43f745d3"}
+    headers = {"X-Hub-Signature": "sha1=9bd6f75640ef7a6c1a573cf5d423be7d8ed23c3b"}
     rsp = web_client.post("/github/", data=PAYLOAD_PR_CLOSED_UNMERGED, headers=headers)
     assert rsp.status_code == 200
     assert not scheduler.get_jobs_of_type("op_deploy")
 
 
 def test_on_opened_pr(web_client):
-    headers = {"X-Hub-Signature": "sha1=e5d9fcbaa6acbc5031228155470fb82cbe12e018"}
+    headers = {"X-Hub-Signature": "sha1=4cc85e5c6e7a1f3a03aeaef924f1cfa7a3d72384"}
     rsp = web_client.post("/github/", data=PAYLOAD_PR_OPENED, headers=headers)
     assert rsp.status_code == 200
     assert not scheduler.get_jobs_of_type("op_deploy")
 
 
 def test_on_opened_issue(web_client):
-    headers = {"X-Hub-Signature": "sha1=0022fa92c53686109b918c709518899662fe246f"}
+    headers = {"X-Hub-Signature": "sha1=6e6218f3e729aca3abce2644128a1d29af2c76ab"}
     rsp = web_client.post("/github/", data=PAYLOAD_ISSUE_OPENED, headers=headers)
     assert rsp.status_code == 200
     assert not scheduler.get_jobs_of_type("op_deploy")
