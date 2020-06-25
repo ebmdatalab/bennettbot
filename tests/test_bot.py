@@ -1,5 +1,3 @@
-import time
-
 import pytest
 from slackbot.dispatcher import MessageDispatcher
 from slackbot.manager import PluginsManager
@@ -15,7 +13,7 @@ from .assertions import (
     assert_suppression_matches,
 )
 from .job_configs import config
-from .time_helpers import T0, T
+from .time_helpers import T0, T, TS
 
 # Make sure all tests run when datetime.now() returning T0
 pytestmark = pytest.mark.freeze_time(T0)
@@ -135,8 +133,8 @@ def test_status():
 
 
 def test_build_status():
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel")
-    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", delay_seconds=10)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS)
+    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, delay_seconds=10)
     scheduler.schedule_suppression("odd_job", T(-5), T(5))
     scheduler.schedule_suppression("good_job", T(5), T(15))
     scheduler.reserve_job()
@@ -179,7 +177,7 @@ def handle_message(text, expect_reaction=True):
     dispatcher = MessageDispatcher(client, plugins, None)
     msg = [
         "respond_to",
-        {"text": text, "channel": "channel", "ts": str(time.mktime(T0.timetuple()))},
+        {"text": text, "channel": "channel", "ts": TS},
     ]
 
     if expect_reaction:

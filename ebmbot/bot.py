@@ -160,10 +160,12 @@ def handle_schedule_job(message, slack_config):
 
     match = slack_config["regex"].match(message.body["text"])
     job_args = dict(zip(slack_config["template_params"], match.groups()))
-    channel = message._body["channel"]
-    delay_seconds = slack_config.get("delay_seconds", 0)
     scheduler.schedule_job(
-        slack_config["job_type"], job_args, channel, delay_seconds=delay_seconds
+        slack_config["job_type"],
+        job_args,
+        channel=message.body["channel"],
+        thread_ts=message.thread_ts,
+        delay_seconds=slack_config.get("delay_seconds", 0),
     )
 
 

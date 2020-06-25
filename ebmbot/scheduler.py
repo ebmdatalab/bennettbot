@@ -6,7 +6,7 @@ from .logger import log_call
 
 
 @log_call
-def schedule_job(type_, args, slack_channel, delay_seconds=0):
+def schedule_job(type_, args, channel, thread_ts, delay_seconds=0):
     """Schedule job to be run.
 
     Only one job of any type may be scheduled.  If a job is already scheduled
@@ -31,36 +31,36 @@ def schedule_job(type_, args, slack_channel, delay_seconds=0):
     existing_jobs = list(conn.execute(sql, [type_]))
 
     if len(existing_jobs) == 0:
-        _create_job(type_, args, slack_channel, start_after)
+        _create_job(type_, args, channel, thread_ts, start_after)
     elif len(existing_jobs) == 1:
         job = existing_jobs[0]
         if job["has_started"]:
-            _create_job(type_, args, slack_channel, start_after)
+            _create_job(type_, args, channel, thread_ts, start_after)
         else:
             id_ = job["id"]
-            _update_job(id_, args, slack_channel, start_after)
+            _update_job(id_, args, channel, thread_ts, start_after)
     elif len(existing_jobs) == 2:
         assert not existing_jobs[0]["has_started"]
         assert existing_jobs[1]["has_started"]
         id_ = existing_jobs[0]["id"]
-        _update_job(id_, args, slack_channel, start_after)
+        _update_job(id_, args, channel, thread_ts, start_after)
     else:
         assert False
 
 
-def _create_job(type_, args, slack_channel, start_after):
+def _create_job(type_, args, channel, thread_ts, start_after):
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO job (type, args, slack_channel, start_after) VALUES (?, ?, ?, ?)",
-            [type_, args, slack_channel, start_after],
+            "INSERT INTO job (type, args, slack_channel, thread_ts, start_after) VALUES (?, ?, ?, ?, ?)",
+            [type_, args, channel, thread_ts, start_after],
         )
 
 
-def _update_job(id_, args, slack_channel, start_after):
+def _update_job(id_, args, channel, thread_ts, start_after):
     with get_connection() as conn:
         conn.execute(
-            "UPDATE job SET args = ?, slack_channel = ?, start_after = ? WHERE id = ?",
-            [args, slack_channel, start_after, id_],
+            "UPDATE job SET args = ?, slack_channel = ?, thread_ts = ?, start_after = ? WHERE id = ?",
+            [args, channel, thread_ts, start_after, id_],
         )
 
 
