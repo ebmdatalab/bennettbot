@@ -50,16 +50,12 @@ class JobDispatcher:
         logger.info("starting job", job_id=job_id)
         self.slack_client = slack_client
         self.job = scheduler.get_job(job_id)
+        self.job_config = config["jobs"][self.job["type"]]
 
         namespace = self.job["type"].split("_")[0]
         self.cwd = os.path.join(settings.WORKSPACE_DIR, namespace)
         self.fabfile_url = config["fabfiles"].get(namespace)
-
-        job_config = config["jobs"][self.job["type"]]
-        self.run_args = build_run_args(
-            job_config["run_args_template"], self.job["args"]
-        )
-        self.report_stdout = bool(job_config.get("report_stdout"))
+        self.run_args = self.build_run_args()
 
     def start_job(self):
         """Start running the job in a new subprocess."""
@@ -118,7 +114,7 @@ class JobDispatcher:
         required."""
 
         if rc == 0:
-            if self.report_stdout:
+            if self.job_config.get("report_stdout"):
                 with open(self.stdout_path) as f:
                     msg = f.read()
             else:
@@ -164,11 +160,10 @@ class JobDispatcher:
         self.stderr_path = os.path.join(self.log_dir, "stderr")
         os.makedirs(self.log_dir)
 
-
-def build_run_args(run_args_template, job_args):
-    """Interpolate job_args into run_args_template, and split into tokens."""
-
-    return shlex.split(run_args_template.format(**job_args))
+    def build_run_args(self):
+        """Interpolate job_args into run_args_template, and split into tokens."""
+        args = self.job_config["run_args_template"].format(**self.job["args"])
+        return shlex.split(args)
 
 
 if __name__ == "__main__":
