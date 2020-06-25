@@ -44,7 +44,9 @@ def verify_signature(request):
     signature = header[5:]
 
     try:
-        validate_hmac(request.data, settings.GITHUB_WEBHOOK_SECRET, signature.encode("utf8"))
+        validate_hmac(
+            request.data, settings.GITHUB_WEBHOOK_SECRET, signature.encode("utf8")
+        )
     except InvalidHMAC:
         abort(403)
 

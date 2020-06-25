@@ -4,7 +4,6 @@ from ebmbot import signatures
 
 from .time_helpers import TS, T
 
-
 TS = TS.encode("utf8")
 pytestmark = pytest.mark.freeze_time(T(10))
 

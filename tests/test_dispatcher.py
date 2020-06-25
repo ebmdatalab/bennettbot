@@ -5,13 +5,12 @@ from unittest.mock import Mock
 import pytest
 from slackbot.slackclient import SlackClient
 
-from ebmbot import scheduler, settings
+from ebmbot import scheduler, settings, webserver
 from ebmbot.dispatcher import JobDispatcher, run_once
-from ebmbot import webserver
 
 from .assertions import assert_slack_client_sends_messages
 from .job_configs import config
-from .time_helpers import T0, T, TS
+from .time_helpers import T0, TS, T
 
 # Make sure all tests run when datetime.now() returning T0
 pytestmark = pytest.mark.freeze_time(T0)
@@ -150,9 +149,7 @@ def test_job_with_callback():
         url = f.read().strip()
 
     client = webserver.app.test_client()
-    with assert_slack_client_sends_messages(
-        web_api=[("channel", "Job done", TS)]
-    ):
+    with assert_slack_client_sends_messages(web_api=[("channel", "Job done", TS)]):
         rsp = client.post(url, data="Job done",)
         assert rsp.status_code == 200
 

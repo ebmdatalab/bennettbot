@@ -10,8 +10,8 @@ from slackbot.slackclient import SlackClient
 
 from . import job_configs, scheduler, settings
 from .logger import logger
-from .slack import notify_slack
 from .signatures import generate_hmac
+from .slack import notify_slack
 
 
 def run():  # pragma: no cover
