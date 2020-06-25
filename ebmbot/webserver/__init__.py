@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from flask import Flask
 
 from ..logger import logger
@@ -12,9 +14,10 @@ app.route("/callback/", methods=["POST"])(handle_callback_webhook)
 
 if __name__ == "__main__":
     logger.info("running ebmbot.webserver")
+    port = urlparse(settings.WEBHOOK_ORIGIN).port
     app.run(
         host="0.0.0.0",
-        port=settings.GITHUB_WEBHOOK_PORT,
+        port=port,
         load_dotenv=False,
         debug=False,
     )

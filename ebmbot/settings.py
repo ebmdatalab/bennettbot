@@ -15,4 +15,4 @@ SLACKBOT_API_TOKEN = os.environ["SLACKBOT_API_TOKEN"]
 GITHUB_WEBHOOK_SECRET = os.environ["GITHUB_WEBHOOK_SECRET"].encode("ascii")
 
 # From "Payload URL" from https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
-GITHUB_WEBHOOK_PORT = int(os.environ["GITHUB_WEBHOOK_PORT"])
+WEBHOOK_ORIGIN = os.environ["WEBHOOK_ORIGIN"]
