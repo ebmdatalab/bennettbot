@@ -17,3 +17,6 @@ pytest-freezegun
 
 # for op commands
 django-dotenv
+
+# for os commands
+opensafely-cohort-extractor
