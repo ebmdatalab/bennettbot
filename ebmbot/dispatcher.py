@@ -10,6 +10,7 @@ from slackbot.slackclient import SlackClient
 
 from . import job_configs, scheduler, settings
 from .logger import logger
+from .slack import notify_slack
 
 
 def run():  # pragma: no cover
@@ -168,13 +169,6 @@ def build_run_args(run_args_template, job_args):
     """Interpolate job_args into run_args_template, and split into tokens."""
 
     return shlex.split(run_args_template.format(**job_args))
-
-
-def notify_slack(slack_client, channel, message):
-    """Send message to Slack."""
-
-    logger.info("Sending message", channel=channel, message=message)
-    slack_client.send_message(channel, message)
 
 
 if __name__ == "__main__":
