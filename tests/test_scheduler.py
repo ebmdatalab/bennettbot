@@ -30,7 +30,7 @@ def test_schedule_job_with_no_jobs_of_same_type_already_scheduled():
 def test_schedule_job_with_job_of_same_type_scheduled():
     scheduler.schedule_job("good_job", {"k": "v"}, "channel")
 
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", 10)
+    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", delay_seconds=10)
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 1
@@ -42,7 +42,7 @@ def test_schedule_job_with_job_of_same_type_running(freezer):
     freezer.move_to(T(5))
     scheduler.reserve_job()
 
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", 5)
+    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", delay_seconds=5)
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 2
@@ -54,9 +54,9 @@ def test_schedule_job_with_job_of_same_type_running_and_another_scheduled(freeze
     scheduler.schedule_job("good_job", {"k": "v"}, "channel")
     freezer.move_to(T(5))
     scheduler.reserve_job()
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", 5)
+    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", delay_seconds=5)
 
-    scheduler.schedule_job("good_job", ["args2"], "channel2", 15)
+    scheduler.schedule_job("good_job", ["args2"], "channel2", delay_seconds=15)
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 2
@@ -148,13 +148,13 @@ def test_reserve_job_with_no_jobs_scheduled():
 
 
 def test_reserve_job_with_no_jobs_due_to_run():
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
 
     assert not scheduler.reserve_job()
 
 
 def test_reserve_job_with_one_job_due_to_run(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
     freezer.move_to(T(10))
 
     job_id = scheduler.reserve_job()
@@ -163,8 +163,8 @@ def test_reserve_job_with_one_job_due_to_run(freezer):
 
 
 def test_reserve_job_with_two_jobs_due_to_run(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
-    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", 6)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
+    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", delay_seconds=6)
     freezer.move_to(T(10))
 
     job_id = scheduler.reserve_job()
@@ -177,20 +177,20 @@ def test_reserve_job_with_two_jobs_due_to_run(freezer):
 
 
 def test_reserve_job_with_job_running(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
     freezer.move_to(T(10))
     scheduler.reserve_job()
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", 5)
+    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", delay_seconds=5)
     freezer.move_to(T(20))
 
     assert not scheduler.reserve_job()
 
 
 def test_reserve_job_with_another_job_running(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
     freezer.move_to(T(10))
     scheduler.reserve_job()
-    scheduler.schedule_job("odd_job", {"k": "w"}, "channel1", 5)
+    scheduler.schedule_job("odd_job", {"k": "w"}, "channel1", delay_seconds=5)
     freezer.move_to(T(20))
 
     job_id = scheduler.reserve_job()
@@ -199,7 +199,7 @@ def test_reserve_job_with_another_job_running(freezer):
 
 
 def test_reserve_job_with_suppression_in_progress(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
     scheduler.schedule_suppression("good_job", T(10), T(20))
     freezer.move_to(T(15))
 
@@ -207,7 +207,7 @@ def test_reserve_job_with_suppression_in_progress(freezer):
 
 
 def test_reserve_job_with_suppression_in_progress_for_another_job_type(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
     scheduler.schedule_suppression("odd_job", T(10), T(20))
     freezer.move_to(T(15))
 
@@ -218,7 +218,7 @@ def test_reserve_job_with_suppression_in_progress_for_another_job_type(freezer):
 
 def test_reserve_job_with_suppression_in_future(freezer):
     scheduler.schedule_suppression("good_job", T(15), T(20))
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", 5)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", delay_seconds=5)
     freezer.move_to(T(10))
 
     job_id = scheduler.reserve_job()

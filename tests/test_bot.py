@@ -136,7 +136,7 @@ def test_status():
 
 def test_build_status():
     scheduler.schedule_job("good_job", {"k": "v"}, "channel")
-    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", 10)
+    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", delay_seconds=10)
     scheduler.schedule_suppression("odd_job", T(-5), T(5))
     scheduler.schedule_suppression("good_job", T(5), T(15))
     scheduler.reserve_job()

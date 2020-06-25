@@ -162,7 +162,9 @@ def handle_schedule_job(message, slack_config):
     job_args = dict(zip(slack_config["template_params"], match.groups()))
     channel = message._body["channel"]
     delay_seconds = slack_config.get("delay_seconds", 0)
-    scheduler.schedule_job(slack_config["job_type"], job_args, channel, delay_seconds)
+    scheduler.schedule_job(
+        slack_config["job_type"], job_args, channel, delay_seconds=delay_seconds
+    )
 
 
 @log_call
