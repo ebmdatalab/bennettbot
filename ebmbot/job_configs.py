@@ -151,6 +151,7 @@ raw_config = {
         "jobs": {
             "cohort_generate": {
                 "run_args_template": "cohortextractor remote generate_cohort --ref {ref}",
+                "add_callback_args": True,
             },
         },
         "slack": [
@@ -238,7 +239,7 @@ def validate_job_config(job_type, job_config):
     """Validate that job_config contains expected keys."""
 
     required_keys = {"run_args_template"}
-    optional_keys = {"report_stdout"}
+    optional_keys = {"report_stdout", "add_callback_args"}
     allowed_keys = required_keys | optional_keys
 
     if required_keys - job_config.keys():

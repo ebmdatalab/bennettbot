@@ -162,7 +162,11 @@ class JobDispatcher:
 
     def build_run_args(self):
         """Interpolate job_args into run_args_template, and split into tokens."""
+
         args = self.job_config["run_args_template"].format(**self.job["args"])
+        if self.job_config.get("add_callback_args"):
+            args += " --ebmbot-slack-channel {}".format(self.job["slack_channel"])
+            args += " --ebmbot-slack-thread-ts {}".format(self.job["thread_ts"])
         return shlex.split(args)
 
 

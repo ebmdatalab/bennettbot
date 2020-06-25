@@ -14,6 +14,10 @@ raw_config = {
                 "run_args_template": "cat poem",
                 "report_stdout": True,
             },
+            "job_with_callback": {
+                "run_args_template": "cat poem",
+                "add_callback_args": True,
+            },
             "bad_job": {
                 "run_args_template": "cat no-poem",
             },
