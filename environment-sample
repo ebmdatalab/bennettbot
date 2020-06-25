@@ -1,3 +1,4 @@
+# See comments in embbot/settings.py
 export LOGS_DIR=changeme
 export SLACK_LOGS_CHANNEL=changeme
 export SLACKBOT_API_TOKEN=changeme
