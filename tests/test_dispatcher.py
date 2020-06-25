@@ -150,7 +150,7 @@ def test_job_with_callback():
 
     client = webserver.app.test_client()
     with assert_slack_client_sends_messages(web_api=[("channel", "Job done", TS)]):
-        rsp = client.post(url, data="Job done",)
+        rsp = client.post(url, data='{"message": "Job done"}')
         assert rsp.status_code == 200
 
 
