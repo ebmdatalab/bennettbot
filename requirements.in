@@ -9,6 +9,7 @@ structlog
 coverage
 flake8
 isort
+pip-tools
 pytest
 pytest-cov
 pytest-env
