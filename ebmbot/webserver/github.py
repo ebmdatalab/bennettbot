@@ -1,15 +1,12 @@
 import hmac
 import json
 
-from flask import Flask, abort, request
+from flask import abort, request
 
-from . import scheduler, settings
-from .logger import logger
-
-app = Flask(__name__)
+from .. import scheduler, settings
+from ..logger import logger
 
 
-@app.route("/github/", methods=["POST"])
 def handle_github_webhook():
     """Respond to webhooks from GitHub, and schedule a deploy of
     openprescribing if required.
@@ -68,13 +65,3 @@ def schedule_deploy():
 
     logger.info("Scheduling deploy")
     scheduler.schedule_job("op_deploy", {}, "#general", 60)
-
-
-if __name__ == "__main__":
-    logger.info("running ebmbot.webserver")
-    app.run(
-        host="0.0.0.0",
-        port=settings.GITHUB_WEBHOOK_PORT,
-        load_dotenv=False,
-        debug=False,
-    )
