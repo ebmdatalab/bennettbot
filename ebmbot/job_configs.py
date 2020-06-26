@@ -150,13 +150,13 @@ raw_config = {
     "os": {
         "jobs": {
             "cohort_generate": {
-                "run_args_template": 'cohortextractor remote generate_cohort --ref {ref} --repo {repo}',
+                "run_args_template": 'cohortextractor remote generate_cohort --ref {ref} --repo {repo} --db {db}',
             },
         },
         "slack": [
             {
-                "command": "cohort generate [repo] [ref]",
-                "help": "Generate a cohort. `repo` is a full URL; `ref` is the name of a branch or a tag",
+                "command": "cohort generate [repo] [ref] [db]",
+                "help": "Generate a cohort. `repo` is a full URL; `ref` is the name of a branch or a tag; `db` can be `full`, `slice`, or `dummy`",
                 "type": "schedule_job",
                 "job_type": "cohort_generate",
             },
