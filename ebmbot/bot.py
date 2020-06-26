@@ -154,15 +154,26 @@ def handle_command(message, slack_config):
     handler(message, slack_config)
 
 
+def _remove_url_formatting(arg):
+    """Slack adds `<...>` around URLs. We want to pass them on without the
+    formatting.
+
+    """
+    if arg.startswith("<http") and arg.endswith(">"):
+        arg = arg[1:-1]
+    return arg
+
+
 @log_call
 def handle_schedule_job(message, slack_config):
     """Schedule a job."""
 
     match = slack_config["regex"].match(message.body["text"])
     job_args = dict(zip(slack_config["template_params"], match.groups()))
+    deformatted_args = {k: _remove_url_formatting(v) for k, v in job_args.items()}
     scheduler.schedule_job(
         slack_config["job_type"],
-        job_args,
+        deformatted_args,
         channel=message.body["channel"],
         thread_ts=message.thread_ts,
         delay_seconds=slack_config.get("delay_seconds", 0),

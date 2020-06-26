@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -56,7 +57,8 @@ class JobDispatcher:
         namespace = self.job["type"].split("_")[0]
         self.cwd = os.path.join(settings.WORKSPACE_DIR, namespace)
         self.fabfile_url = config["fabfiles"].get(namespace)
-        self.run_args = self.job_config["run_args_template"].format(**self.job["args"])
+        escaped_args = {k: shlex.quote(v) for k, v in self.job["args"].items()}
+        self.run_args = self.job_config["run_args_template"].format(**escaped_args)
         self.callback_url = self.build_callback_url()
 
     def start_job(self):
