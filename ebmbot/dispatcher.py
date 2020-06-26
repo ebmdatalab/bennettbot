@@ -100,7 +100,10 @@ class JobDispatcher:
                     cwd=self.cwd,
                     stdout=stdout,
                     stderr=stderr,
-                    env={"EBMBOT_CALLBACK_URL": self.callback_url},
+                    env={
+                        "EBMBOT_CALLBACK_URL": self.callback_url,
+                        "PATH": settings.EBMBOT_PATH or os.environ["PATH"],
+                    },
                     shell=True,
                 )
                 rc = rv.returncode
