@@ -23,7 +23,7 @@ def check_environment():
 
 def create_venv():
     if not exists("venv"):
-        run("python3.5 -m venv venv")
+        run("python3.6 -m venv venv")
 
 
 def update_from_git():
