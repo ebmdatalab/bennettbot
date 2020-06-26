@@ -23,3 +23,5 @@ EBMBOT_WEBHOOK_SECRET = os.environ["EBMBOT_WEBHOOK_SECRET"].encode("ascii")
 
 # TTL in seconds for webhook token
 EBMBOT_WEBHOOK_TOKEN_TTL = 60 * 60
+
+EBMBOT_PATH = os.environ["EBMBOT_PATH"]
