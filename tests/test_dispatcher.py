@@ -44,6 +44,24 @@ def test_run_once():
     assert not os.path.exists(build_log_dir("test_really_bad_job"))
 
 
+def test_job_success_with_unsafe_shell_args():
+    log_dir = build_log_dir("test_paramaterised_job_2")
+
+    scheduler.schedule_job(
+        "test_paramaterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS
+    )
+    job = scheduler.reserve_job()
+    with assert_slack_client_sends_messages(
+        web_api=[("logs", "about to start"), ("channel", "succeeded")]
+    ):
+        do_job(job)
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == "<poem>\n"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
 def test_job_success():
     log_dir = build_log_dir("test_good_job")
 

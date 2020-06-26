@@ -10,6 +10,9 @@ raw_config = {
             "paramaterised_job": {
                 "run_args_template": "cat {path}",
             },
+            "paramaterised_job_2": {
+                "run_args_template": "echo {thing_to_echo}",
+            },
             "reported_job": {
                 "run_args_template": "cat poem",
                 "report_stdout": True,
@@ -22,6 +25,9 @@ raw_config = {
             },
             "really_bad_job": {
                 "run_args_template": "dog poem",
+            },
+            "job_with_url": {
+                "run_args_template": "curl {url}",
             },
         },
         "slack": [
@@ -49,6 +55,13 @@ raw_config = {
                 "help": "don't suppress the job",
                 "type": "cancel_suppression",
                 "job_type": "good_job",
+            },
+            {
+                "command": "do url [url]",
+                "help": "do a job with a url",
+                "type": "schedule_job",
+                "job_type": "job_with_url",
+                "delay_seconds": 0,
             },
         ],
     }

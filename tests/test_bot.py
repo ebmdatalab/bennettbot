@@ -32,6 +32,15 @@ def test_schedule_job():
     assert_job_matches(jj[0], "test_good_job", {"n": "10"}, "channel", T(60), None)
 
 
+def test_url_formatting_removed():
+    handle_message("test do url <http://www.foo.com>")
+    jj = scheduler.get_jobs_of_type("test_job_with_url")
+    assert len(jj) == 1
+    assert_job_matches(
+        jj[0], "test_job_with_url", {"url": "http://www.foo.com"}, "channel", T(0), None
+    )
+
+
 def test_cancel_job():
     handle_message("test do job 10")
     assert scheduler.get_jobs_of_type("test_good_job")
