@@ -150,7 +150,7 @@ raw_config = {
     "os": {
         "jobs": {
             "cohort_generate": {
-                "run_args_template": "cohortextractor remote generate_cohort --ref {ref}",
+                "run_args_template": 'OPENSAFELY_REMOTE_WEBHOOK="$EBMBOT_CALLBACK_URL" cohortextractor remote generate_cohort --ref {ref}',
             },
         },
         "slack": [
