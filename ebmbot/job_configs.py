@@ -155,8 +155,8 @@ raw_config = {
         },
         "slack": [
             {
-                "command": "cohort generate [ref]",
-                "help": "generate a cohort",
+                "command": "cohort generate [repo] [ref]",
+                "help": "Generate a cohort. `repo` is a full URL; `ref` is the name of a branch or a tag",
                 "type": "schedule_job",
                 "job_type": "cohort_generate",
             },
