@@ -11,53 +11,51 @@ env.path = "/var/www/ebmbot"
 
 
 def make_directory():
-    run("mkdir -p {}".format(env.path))
+    run(f"mkdir -p {env.path}")
 
 
 def check_environment():
-    environment_path = "{}/environment".format(env.path)
+    environment_path = "{env.path}/environment"
 
     if not exists(environment_path):
-        abort("Create {} before proceeding".format(environment_path))
+        abort(f"Create {environment_path} before proceeding")
 
 
 def create_venv():
-    if not exists("venv"):
-        run("python3.8 -m venv venv")
+    if not exists(f"venv"):
+        run(f"python3.8 -m venv venv")
 
 
 def update_from_git():
-    if not exists(".git"):
-        run("git clone -q git@github.com:ebmdatalab/ebmbot.git")
+    if not exists(f".git"):
+        run(f"git clone -q git@github.com:ebmdatalab/ebmbot.git")
 
-    run("git fetch --all")
-    run("git checkout --force origin/master")
+    run(f"git fetch --all")
+    run(f"git checkout --force origin/master")
 
 
 def install_requirements():
-    with prefix("source venv/bin/activate"):
-        run("pip install -q -r requirements.txt")
+    with prefix(f"source venv/bin/activate"):
+        run(f"pip install -q -r requirements.txt")
 
 
 def chown_everything():
-    run("chown -R ebmbot:ebmbot {}".format(env.path))
+    run(f"chown -R ebmbot:ebmbot {env.path}")
 
 
 def set_up_systemd():
     for service in ["bot", "webserver", "dispatcher"]:
         run(
-            "ln -sf {}/deploy/systemd/app.ebmbot.{}.service /etc/systemd/system".format(
-                env.path, service
-            )
+            "ln -sf {env.path}/deploy/systemd/app.ebmbot.{service}.service /etc/systemd/system"
         )
         run(f"sudo systemctl enable app.ebmbot.{service}.service")
 
-    run("systemctl daemon-reload")
+    run(f"systemctl daemon-reload")
 
 
 def restart_ebmbot():
     for service in ["bot", "webserver", "dispatcher"]:
-        run("systemctl restart app.ebmbot.{}.service".format(service))
+        run(f"systemctl restart app.ebmbot.{service}.service")
 
 
 @task
