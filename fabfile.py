@@ -50,6 +50,7 @@ def set_up_systemd():
                 env.path, service
             )
         )
+        run(f"sudo systemctl enable app.ebmbot.{service}.service")
 
     run("systemctl daemon-reload")
 
