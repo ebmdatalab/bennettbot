@@ -1,7 +1,9 @@
 [run]
 branch = True
 source = .
-omit = fabfile.py
+omit =
+  fabfile.py
+  */__main__.py
 
 [report]
 exclude_lines =
