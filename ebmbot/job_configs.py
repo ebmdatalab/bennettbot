@@ -178,16 +178,14 @@ def build_config(raw_config):
         helps = []
 
         for job_type, job_config in raw_config[namespace]["jobs"].items():
-            namespaced_job_type = "{}_{}".format(namespace, job_type)
+            namespaced_job_type = f"{namespace}_{job_type}"
             validate_job_config(namespaced_job_type, job_config)
             config["jobs"][namespaced_job_type] = job_config
 
         for slack_config in raw_config[namespace]["slack"]:
-            command = "{} {}".format(namespace, slack_config["command"])
+            command = f"{namespace} {slack_config['command']}"
             slack_config["command"] = command
-            slack_config["job_type"] = "{}_{}".format(
-                namespace, slack_config["job_type"]
-            )
+            slack_config["job_type"] = f"{namespace}_{slack_config['job_type']}"
             slack_config["regex"] = build_regex_from_command(command)
             slack_config["template_params"] = get_template_params(command)
 
@@ -205,9 +203,7 @@ def build_config(raw_config):
 
     for slack_config in config["slack"]:
         if slack_config["job_type"] not in config["jobs"]:
-            msg = "Slack command {} references unknown job type {}".format(
-                slack_config["command"], slack_config["job_type"]
-            )
+            msg = f"Slack command {slack_config['command']} references unknown job type {slack_config['job_type']}"
             raise RuntimeError(msg)
 
     return config
@@ -242,15 +238,11 @@ def validate_job_config(job_type, job_config):
     allowed_keys = required_keys | optional_keys
 
     if required_keys - job_config.keys():
-        msg = "Job {} is missing keys {}".format(
-            job_type, required_keys - job_config.keys()
-        )
+        msg = f"Job {job_type} is missing keys {required_keys - job_config.keys()}"
         raise RuntimeError(msg)
 
     if job_config.keys() - allowed_keys:
-        msg = "Job {} has extra keys {}".format(
-            job_type, job_config.keys() - allowed_keys
-        )
+        msg = f"Job {job_type} has extra keys {job_config.keys() - allowed_keys}"
         raise RuntimeError(msg)
 
 
@@ -264,15 +256,11 @@ def validate_slack_config(slack_config):
     command = slack_config["command"]
 
     if required_keys - slack_config.keys():
-        msg = "Slack command `{}` is missing keys {}".format(
-            command, required_keys - slack_config.keys()
-        )
+        msg = f"Slack command `{command}` is missing keys {required_keys - slack_config.keys()}"
         raise RuntimeError(msg)
 
     if slack_config.keys() - allowed_keys:
-        msg = "Slack command `{}` has extra keys {}".format(
-            command, slack_config.keys() - allowed_keys
-        )
+        msg = f"Slack command `{command}` has extra keys {slack_config.keys() - allowed_keys}"
         raise RuntimeError(msg)
 
 

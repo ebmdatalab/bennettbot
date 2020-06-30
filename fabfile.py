@@ -15,28 +15,28 @@ def make_directory():
 
 
 def check_environment():
-    environment_path = "{env.path}/environment"
+    environment_path = f"{env.path}/environment"
 
     if not exists(environment_path):
         abort(f"Create {environment_path} before proceeding")
 
 
 def create_venv():
-    if not exists(f"venv"):
-        run(f"python3.8 -m venv venv")
+    if not exists("venv"):
+        run("python3.8 -m venv venv")
 
 
 def update_from_git():
-    if not exists(f".git"):
-        run(f"git clone -q git@github.com:ebmdatalab/ebmbot.git")
+    if not exists(".git"):
+        run("git clone -q git@github.com:ebmdatalab/ebmbot.git")
 
-    run(f"git fetch --all")
-    run(f"git checkout --force origin/master")
+    run("git fetch --all")
+    run("git checkout --force origin/master")
 
 
 def install_requirements():
-    with prefix(f"source venv/bin/activate"):
-        run(f"pip install -q -r requirements.txt")
+    with prefix("source venv/bin/activate"):
+        run("pip install -q -r requirements.txt")
 
 
 def chown_everything():
@@ -46,11 +46,11 @@ def chown_everything():
 def set_up_systemd():
     for service in ["bot", "webserver", "dispatcher"]:
         run(
-            "ln -sf {env.path}/deploy/systemd/app.ebmbot.{service}.service /etc/systemd/system"
+            f"ln -sf {env.path}/deploy/systemd/app.ebmbot.{service}.service /etc/systemd/system"
         )
         run(f"sudo systemctl enable app.ebmbot.{service}.service")
 
-    run(f"systemctl daemon-reload")
+    run("systemctl daemon-reload")
 
 
 def restart_ebmbot():
