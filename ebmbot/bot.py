@@ -45,8 +45,8 @@ def register_handler(config):
                 return
 
         for namespace, help_config in config["help"].items():
-            for pattern in ["^{} help$", "^help {}$"]:
-                if re.match(pattern.format(namespace), text):
+            for pattern in [f"^{namespace} help$", f"^help {namespace}$"]:
+                if re.match(pattern, text):
                     handle_namespace_help(message, help_config)
                     return
 
@@ -80,15 +80,13 @@ def _build_status():
             active_suppressions.append(suppression)
         else:
             scheduled_suppressions.append(suppression)
-    lines = ["The time is {}".format(_now()), ""]
+    lines = [f"The time is {_now()}", ""]
 
     if running_jobs:
         lines.append(_pluralise(len(running_jobs), "running job:"))
         lines.append("")
         for j in running_jobs:
-            lines.append(
-                "* [{}] {} (started at {})".format(j["id"], j["type"], j["started_at"])
-            )
+            lines.append(f"* [{j['id']}] {j['type']} (started at {j['started_at']})")
         lines.append("")
 
     if scheduled_jobs:
@@ -96,9 +94,7 @@ def _build_status():
         lines.append("")
         for j in scheduled_jobs:
             lines.append(
-                "* [{}] {} (starting after {})".format(
-                    j["id"], j["type"], j["start_after"]
-                )
+                f"* [{j['id']}] {j['type']} (starting after {j['start_after']})"
             )
         lines.append("")
 
@@ -107,9 +103,7 @@ def _build_status():
         lines.append("")
         for s in active_suppressions:
             lines.append(
-                "* [{}] {} (from {} to {})".format(
-                    s["id"], s["job_type"], s["start_at"], s["end_at"]
-                )
+                f"* [{s['id']}] {s['job_type']} (from {s['start_at']} to {s['end_at']})"
             )
         lines.append("")
 
@@ -118,9 +112,7 @@ def _build_status():
         lines.append("")
         for s in scheduled_suppressions:
             lines.append(
-                "* [{}] {} (from {} to {})".format(
-                    s["id"], s["job_type"], s["start_at"], s["end_at"]
-                )
+                f"* [{s['id']}] {s['job_type']} (from {s['start_at']} to {s['end_at']})"
             )
         lines.append("")
 
@@ -134,9 +126,9 @@ def _build_status():
 
 def _pluralise(n, noun):
     if n == 1:
-        return "There is 1 {}".format(noun)
+        return f"There is 1 {noun}"
     else:
-        return "There are {} {}s".format(n, noun)
+        return f"There are {n} {noun}s"
 
 
 def handle_command(message, slack_config):
@@ -218,7 +210,7 @@ def handle_namespace_help(message, help_config):
     lines = ["The following commands are available:", ""]
 
     for (command, help_) in help_config:
-        lines.append("`{}`: {}".format(command, help_))
+        lines.append(f"`{command}`: {help_}")
 
     message.reply("\n".join(lines))
 
@@ -235,12 +227,10 @@ def handle_help(message, help_configs, include_apology):
     lines.extend(["Commands in the following namespaces are available:", ""])
 
     for namespace in sorted(help_configs):
-        lines.append("* `{}`".format(namespace))
+        lines.append(f"* `{namespace}`")
 
     lines.append(
-        "Enter `@ebmbot [namespace] help` (eg `@ebmbot {} help`) for more help".format(
-            random.choice(list(help_configs))
-        )
+        f"Enter `@ebmbot [namespace] help` (eg `@ebmbot {random.choice(list(help_configs))} help`) for more help"
     )
 
     message.reply("\n".join(lines))

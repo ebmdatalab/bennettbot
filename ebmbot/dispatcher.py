@@ -118,7 +118,7 @@ class JobDispatcher:
     def notify_start(self):
         """Send notification that command is about to start."""
 
-        msg = "Command `{}` about to start".format(self.job["type"])
+        msg = f"Command `{self.job['type']}` about to start"
         notify_slack(self.slack_client, settings.SLACK_LOGS_CHANNEL, msg)
 
     def notifiy_end(self, rc):
@@ -130,11 +130,9 @@ class JobDispatcher:
                 with open(self.stdout_path) as f:
                     msg = f.read()
             else:
-                msg = "Command `{}` succeeded".format(self.job["type"])
+                msg = f"Command `{self.job['type']}` succeeded"
         else:
-            msg = "Command `{}` failed (find logs in {})".format(
-                self.job["type"], self.log_dir
-            )
+            msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir})"
 
         notify_slack(self.slack_client, self.job["channel"], msg)
 
@@ -156,7 +154,7 @@ class JobDispatcher:
             rsp = requests.get(self.fabfile_url)
             rsp.raise_for_status()
         except requests.RequestException as e:
-            msg = "Could not refresh {}: {}".format(self.fabfile_url, str(e))
+            msg = f"Could not refresh {self.fabfile_url}: {e}"
             notify_slack(self.slack_client, settings.SLACK_LOGS_CHANNEL, msg)
             return
 
@@ -181,7 +179,7 @@ class JobDispatcher:
             {
                 "channel": self.job["channel"],
                 "thread_ts": self.job["thread_ts"],
-                "token": "{}:{}".format(timestamp, hmac),
+                "token": f"{timestamp}:{hmac}",
             }
         )
         parsed_url = urlparse(settings.WEBHOOK_ORIGIN)
