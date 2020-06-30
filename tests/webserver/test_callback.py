@@ -28,9 +28,7 @@ def test_with_valid_payload(web_client):
 def test_with_invalid_payload(web_client, data):
     url = "/callback/?channel=channel&thread_ts=1234567890.098765&token=1575976333.0:43dfc12afbe479453b7ad54bbca9250923d80d51"
 
-    with assert_slack_client_sends_messages(
-        web_api=[]
-    ):
+    with assert_slack_client_sends_messages(web_api=[]):
         rsp = web_client.post(url, data=data)
         assert rsp.status_code == 400
 
