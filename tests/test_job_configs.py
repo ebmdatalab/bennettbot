@@ -23,8 +23,8 @@ def test_build_config():
         },
         "ns2": {
             "jobs": {
-                "good_job": {"run_args_template": "cat [poem]"},
-                "bad_job": {"run_args_template": "dog [poem]"},
+                "good_job": {"run_args_template": "cat [poem]", "report_stdout": True},
+                "bad_job": {"run_args_template": "dog [poem]", "report_success": False},
             },
             "slack": [
                 {
@@ -41,10 +41,26 @@ def test_build_config():
 
     assert config == {
         "jobs": {
-            "ns1_good_job": {"run_args_template": "cat [poem]"},
-            "ns1_bad_job": {"run_args_template": "dog [poem]"},
-            "ns2_good_job": {"run_args_template": "cat [poem]"},
-            "ns2_bad_job": {"run_args_template": "dog [poem]"},
+            "ns1_good_job": {
+                "run_args_template": "cat [poem]",
+                "report_stdout": False,
+                "report_success": True,
+            },
+            "ns1_bad_job": {
+                "run_args_template": "dog [poem]",
+                "report_stdout": False,
+                "report_success": True,
+            },
+            "ns2_good_job": {
+                "run_args_template": "cat [poem]",
+                "report_stdout": True,
+                "report_success": True,
+            },
+            "ns2_bad_job": {
+                "run_args_template": "dog [poem]",
+                "report_stdout": False,
+                "report_success": False,
+            },
         },
         "slack": [
             {
@@ -54,6 +70,7 @@ def test_build_config():
                 "type": "schedule_job",
                 "regex": re.compile("^ns1 read poem (.+?)$"),
                 "template_params": ["poem"],
+                "delay_seconds": 0,
             },
             {
                 "command": "ns2 read poem [poem]",
@@ -62,6 +79,7 @@ def test_build_config():
                 "type": "schedule_job",
                 "regex": re.compile("^ns2 read poem (.+?)$"),
                 "template_params": ["poem"],
+                "delay_seconds": 0,
             },
         ],
         "help": {
