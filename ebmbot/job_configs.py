@@ -150,7 +150,8 @@ raw_config = {
     "os": {
         "jobs": {
             "cohort_generate": {
-                "run_args_template": 'cohortextractor remote generate_cohort --ref {ref} --repo {repo} --db {db}',
+                "run_args_template": "cohortextractor remote generate_cohort --ref {ref} --repo {repo} --db {db}",
+                "report_success": False,
             },
         },
         "slack": [
