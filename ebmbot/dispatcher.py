@@ -126,11 +126,13 @@ class JobDispatcher:
         required."""
 
         if rc == 0:
-            if self.job_config.get("report_stdout"):
+            if self.job_config["report_stdout"]:
                 with open(self.stdout_path) as f:
                     msg = f.read()
-            else:
+            elif self.job_config["report_success"]:
                 msg = f"Command `{self.job['type']}` succeeded"
+            else:
+                return
         else:
             msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir})"
 

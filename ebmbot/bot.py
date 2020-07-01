@@ -168,7 +168,7 @@ def handle_schedule_job(message, slack_config):
         deformatted_args,
         channel=message.body["channel"],
         thread_ts=message.thread_ts,
-        delay_seconds=slack_config.get("delay_seconds", 0),
+        delay_seconds=slack_config["delay_seconds"],
     )
 
 

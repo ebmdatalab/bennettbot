@@ -116,6 +116,22 @@ def test_job_success_and_report():
         assert f.read() == ""
 
 
+def test_job_success_with_no_report():
+    log_dir = build_log_dir("test_unreported_job")
+
+    scheduler.schedule_job("test_unreported_job", {}, "channel", TS)
+    job = scheduler.reserve_job()
+
+    with assert_slack_client_sends_messages(web_api=[("logs", "about to start")]):
+        do_job(job)
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == "the owl and the pussycat\n"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
 def test_job_failure():
     log_dir = build_log_dir("test_bad_job")
 
