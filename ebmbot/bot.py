@@ -32,7 +32,7 @@ def register_handler(config):
         us to define handlers dynamically based on the job config.
         """
 
-        text = message.body["text"]
+        text = " ".join(message.body["text"].split())
         logger.info("Received message", message=text)
 
         if text == "status":

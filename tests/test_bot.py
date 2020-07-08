@@ -141,6 +141,16 @@ def test_status():
         handle_message("status", expect_reaction=False)
 
 
+@pytest.mark.parametrize(
+    "message", [" test help", "test help ", "test  help"],
+)
+def test_message_with_spaces(message):
+    with assert_slack_client_sends_messages(
+        websocket=[("channel", "`test do job [n]`: do the job")]
+    ):
+        handle_message(message, expect_reaction=False)
+
+
 def test_build_status():
     scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS)
     scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, delay_seconds=10)
