@@ -33,6 +33,7 @@ def register_handler(config):
         """
 
         text = " ".join(message.body["text"].split())
+        message.body["text"] = text
         logger.info("Received message", message=text)
 
         if text == "status":
