@@ -8,6 +8,8 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
         * "run_args_template": template of bash command to be run
         * "report_stdout": optional, whether the stdout of the command is
             reported to Slack
+        * "report_success": optional, whether the success of the command is
+            reported to Slack
     * "slack": a list of dicts with keys:
         * "command": Slack command which starts the given job
         * "help: help text to display to the user
@@ -64,7 +66,8 @@ raw_config = {
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
         "jobs": {
             "deploy": {
-                "run_args_template": "fab deploy:production"
+                "run_args_template": "fab deploy:production",
+                "report_success": False,
             },
             "deploy_staging": {
                 "run_args_template": "fab deploy:staging,branch={branch_name}"
