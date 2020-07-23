@@ -1,6 +1,11 @@
 import pytest
 
 from ebmbot import scheduler, webserver
+from ..assertions import assert_job_matches
+from ..time_helpers import T0, T
+
+# Make sure all tests run when datetime.now() returning T0
+pytestmark = pytest.mark.freeze_time(T0)
 
 
 @pytest.fixture()
@@ -43,6 +48,7 @@ def test_on_closed_merged_pr(web_client):
     assert rsp.status_code == 200
     jj = scheduler.get_jobs_of_type("op_deploy")
     assert len(jj) == 1
+    assert_job_matches(jj[0], "op_deploy", {}, "#general", T(60), None)
 
 
 def test_on_closed_unmerged_pr(web_client):
