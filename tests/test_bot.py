@@ -152,8 +152,8 @@ def test_message_with_spaces(message):
 
 
 def test_build_status():
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS)
-    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, delay_seconds=10)
+    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, 10)
     scheduler.schedule_suppression("odd_job", T(-5), T(5))
     scheduler.schedule_suppression("good_job", T(5), T(15))
     scheduler.reserve_job()

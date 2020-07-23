@@ -66,4 +66,4 @@ def schedule_deploy():
     """Schedule a deploy of openprescribing."""
 
     logger.info("Scheduling deploy")
-    scheduler.schedule_job("op_deploy", {}, "#general", 60)
+    scheduler.schedule_job("op_deploy", {}, "#general", "", delay_seconds=60)

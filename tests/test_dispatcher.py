@@ -30,9 +30,9 @@ def test_run_once():
     scheduler.schedule_suppression("test_bad_job", T(-15), T(-5))
     scheduler.schedule_suppression("test_really_bad_job", T(-5), T(5))
 
-    scheduler.schedule_job("test_good_job", {}, "channel", TS)
-    scheduler.schedule_job("test_bad_job", {}, "channel", TS)
-    scheduler.schedule_job("test_really_bad_job", {}, "channel", TS)
+    scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
+    scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
+    scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
 
     processes = run_once(slack_client, config)
 
@@ -48,7 +48,7 @@ def test_job_success_with_unsafe_shell_args():
     log_dir = build_log_dir("test_paramaterised_job_2")
 
     scheduler.schedule_job(
-        "test_paramaterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS
+        "test_paramaterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS, 0
     )
     job = scheduler.reserve_job()
     with assert_slack_client_sends_messages(
@@ -65,7 +65,7 @@ def test_job_success_with_unsafe_shell_args():
 def test_job_success():
     log_dir = build_log_dir("test_good_job")
 
-    scheduler.schedule_job("test_good_job", {}, "channel", TS)
+    scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
@@ -83,7 +83,7 @@ def test_job_success():
 def test_job_success_with_parameterised_args():
     log_dir = build_log_dir("test_paramaterised_job")
 
-    scheduler.schedule_job("test_paramaterised_job", {"path": "poem"}, "channel", TS)
+    scheduler.schedule_job("test_paramaterised_job", {"path": "poem"}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
@@ -101,7 +101,7 @@ def test_job_success_with_parameterised_args():
 def test_job_success_and_report():
     log_dir = build_log_dir("test_reported_job")
 
-    scheduler.schedule_job("test_reported_job", {}, "channel", TS)
+    scheduler.schedule_job("test_reported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
@@ -119,7 +119,7 @@ def test_job_success_and_report():
 def test_job_success_with_no_report():
     log_dir = build_log_dir("test_unreported_job")
 
-    scheduler.schedule_job("test_unreported_job", {}, "channel", TS)
+    scheduler.schedule_job("test_unreported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(web_api=[("logs", "about to start")]):
@@ -135,7 +135,7 @@ def test_job_success_with_no_report():
 def test_job_failure():
     log_dir = build_log_dir("test_bad_job")
 
-    scheduler.schedule_job("test_bad_job", {}, "channel", TS)
+    scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
@@ -153,7 +153,7 @@ def test_job_failure():
 def test_job_failure_when_command_not_found():
     log_dir = build_log_dir("test_really_bad_job")
 
-    scheduler.schedule_job("test_really_bad_job", {}, "channel", TS)
+    scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
@@ -171,7 +171,7 @@ def test_job_failure_when_command_not_found():
 def test_job_with_callback():
     log_dir = build_log_dir("test_job_to_test_callback")
 
-    scheduler.schedule_job("test_job_to_test_callback", {}, "channel", TS)
+    scheduler.schedule_job("test_job_to_test_callback", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(

@@ -6,7 +6,7 @@ from .logger import log_call
 
 
 @log_call
-def schedule_job(type_, args, channel, thread_ts, delay_seconds=0):
+def schedule_job(type_, args, channel, thread_ts, delay_seconds):
     """Schedule job to be run.
 
     Only one job of any type may be scheduled.  If a job is already scheduled
