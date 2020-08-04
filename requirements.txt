@@ -33,7 +33,7 @@ matplotlib==3.2.2         # via seaborn
 mccabe==0.6.1             # via flake8
 more-itertools==8.4.0     # via pytest
 numpy==1.19.0             # via matplotlib, pandas, scipy, seaborn
-opensafely-cohort-extractor==0.6.0  # via -r requirements.in
+opensafely-cohort-extractor==0.8.0  # via -r requirements.in
 packaging==20.4           # via pytest
 pandas==1.0.5             # via opensafely-cohort-extractor, seaborn
 paramiko==2.4.2           # via fabric3
