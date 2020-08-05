@@ -135,7 +135,7 @@ def _pluralise(n, noun):
 def handle_command(message, slack_config):
     """Give a thumbs-up to the message, and dispatch to another handler."""
 
-    message.react("+1")
+    message.react("crossed_fingers")
 
     handler = {
         "schedule_job": handle_schedule_job,
