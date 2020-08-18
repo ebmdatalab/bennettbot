@@ -24,7 +24,7 @@ freezegun==0.3.15         # via pytest-freezegun
 gunicorn==20.0.4          # via -r requirements.in
 idna==2.8                 # via cryptography, requests
 iniconfig==1.0.1          # via pytest
-isort==5.2.2              # via -r requirements.in
+isort==5.4.2              # via -r requirements.in
 itsdangerous==1.1.0       # via flask
 jinja2==2.10.1            # via flask
 kiwisolver==1.2.0         # via matplotlib
