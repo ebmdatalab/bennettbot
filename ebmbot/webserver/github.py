@@ -30,7 +30,7 @@ def verify_signature(request):
 
     Raises 403 if it has not been.
 
-    See https://developer.github.com/webhooks/securing/.
+    See https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks
     """
 
     header = request.headers.get("X-Hub-Signature")
