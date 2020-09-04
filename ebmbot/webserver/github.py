@@ -17,7 +17,7 @@ def handle_github_webhook(project):
     """
 
     verify_signature(request)
-    logger.info("Received webhook")
+    logger.info("Received webhook", project=project)
 
     if should_deploy(request):
         schedule_deploy(project)
@@ -66,5 +66,5 @@ def schedule_deploy(project):
     """Schedule a deploy of the given project."""
 
     job = f"{project}_deploy"
-    logger.info("Scheduling deploy")
+    logger.info("Scheduling deploy", project=project)
     scheduler.schedule_job(job, {}, "#general", "", delay_seconds=60)
