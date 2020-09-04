@@ -141,9 +141,7 @@ def test_status():
         handle_message("status", expect_reaction=False)
 
 
-@pytest.mark.parametrize(
-    "message", [" test help", "test help ", "test  help"],
-)
+@pytest.mark.parametrize("message", [" test help", "test help ", "test  help"])
 def test_message_with_spaces(message):
     with assert_slack_client_sends_messages(
         websocket=[("channel", "`test do job [n]`: do the job")]

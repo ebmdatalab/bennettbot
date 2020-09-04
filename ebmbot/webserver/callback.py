@@ -9,8 +9,7 @@ from ..slack import notify_slack
 
 
 def handle_callback_webhook():
-    """Respond to callback webhook.
-    """
+    """Respond to callback webhook."""
     try:
         channel = request.args["channel"]
         thread_ts = request.args["thread_ts"]

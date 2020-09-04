@@ -44,7 +44,7 @@ def test_with_invalid_payload(web_client, data):
 )
 def test_with_invalid_url(web_client, url):
     with assert_slack_client_sends_messages(web_api=[]):
-        rsp = web_client.post(url, data="Job done",)
+        rsp = web_client.post(url, data="Job done")
         assert rsp.status_code == 400
 
 
@@ -58,5 +58,5 @@ def test_with_invalid_url(web_client, url):
 def test_with_invalid_auth(freezer, web_client, url):
     freezer.move_to(T(60 * 60 + 1))
     with assert_slack_client_sends_messages(web_api=[]):
-        rsp = web_client.post(url, data="Job done",)
+        rsp = web_client.post(url, data="Job done")
         assert rsp.status_code == 403
