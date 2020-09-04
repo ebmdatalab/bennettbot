@@ -62,6 +62,23 @@ raw_config = {
             },
         ],
     },
+    "oc": {
+        "fabfile": "https://raw.githubusercontent.com/opensafely/opencodelists/master/fabfile.py",
+        "jobs": {
+            "deploy": {
+                "run_args_template": "fab deploy",
+                "report_success": True,
+            },
+        },
+        "slack": [
+            {
+                "command": "deploy",
+                "help": "deploy to production after a 60s delay",
+                "type": "schedule_job",
+                "job_type": "deploy",
+            },
+        ],
+    },
     "op": {
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
         "jobs": {
