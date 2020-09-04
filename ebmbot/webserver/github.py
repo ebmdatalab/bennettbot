@@ -4,12 +4,12 @@ from flask import abort, request
 
 from .. import scheduler, settings
 from ..logger import logger
-from ..signatures import validate_hmac, InvalidHMAC
+from ..signatures import InvalidHMAC, validate_hmac
 
 
-def handle_github_webhook():
+def handle_github_webhook(project):
     """Respond to webhooks from GitHub, and schedule a deploy of
-    openprescribing if required.
+    the relevant project if required.
 
     The webhook is configured at:
 
@@ -20,7 +20,7 @@ def handle_github_webhook():
     logger.info("Received webhook")
 
     if should_deploy(request):
-        schedule_deploy()
+        schedule_deploy(project)
 
     return ""
 
@@ -62,8 +62,9 @@ def should_deploy(request):
     return data["action"] == "closed" and data["pull_request"]["merged"]
 
 
-def schedule_deploy():
-    """Schedule a deploy of openprescribing."""
+def schedule_deploy(project):
+    """Schedule a deploy of the given project."""
 
+    job = f"{project}_deploy"
     logger.info("Scheduling deploy")
-    scheduler.schedule_job("op_deploy", {}, "#general", "", delay_seconds=60)
+    scheduler.schedule_job(job, {}, "#general", "", delay_seconds=60)
