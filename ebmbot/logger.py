@@ -9,8 +9,7 @@ logger = structlog.get_logger()
 
 
 def log_call(fn):
-    """Decorate fn to log its arguments and return value each time it's called.
-    """
+    """Decorate fn to log its arguments and return value each time it's called."""
 
     spec = inspect.getfullargspec(fn)
 

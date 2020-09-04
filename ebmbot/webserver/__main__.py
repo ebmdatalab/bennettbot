@@ -7,6 +7,4 @@ from .. import settings
 
 logger.info("running ebmbot.webserver")
 port = urlparse(settings.WEBHOOK_ORIGIN).port
-app.run(
-    host="0.0.0.0", port=port, load_dotenv=False, debug=False,
-)
+app.run(host="0.0.0.0", port=port, load_dotenv=False, debug=False)
