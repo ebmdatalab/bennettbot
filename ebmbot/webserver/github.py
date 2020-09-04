@@ -1,8 +1,9 @@
 import json
 
-from flask import abort, request
+from flask import Response, abort, request
 
 from .. import scheduler, settings
+from ..job_configs import config
 from ..logger import logger
 from ..signatures import InvalidHMAC, validate_hmac
 
@@ -66,5 +67,8 @@ def schedule_deploy(project):
     """Schedule a deploy of the given project."""
 
     job = f"{project}_deploy"
+    if job not in config["jobs"]:
+        abort(Response(f"Unknown project: {project}", 400))
+
     logger.info("Scheduling deploy", project=project)
     scheduler.schedule_job(job, {}, "#general", "", delay_seconds=60)
