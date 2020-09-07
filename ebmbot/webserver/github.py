@@ -1,15 +1,16 @@
 import json
 
-from flask import abort, request
+from flask import Response, abort, request
 
 from .. import scheduler, settings
+from ..job_configs import config
 from ..logger import logger
-from ..signatures import validate_hmac, InvalidHMAC
+from ..signatures import InvalidHMAC, validate_hmac
 
 
-def handle_github_webhook():
+def handle_github_webhook(project):
     """Respond to webhooks from GitHub, and schedule a deploy of
-    openprescribing if required.
+    the relevant project if required.
 
     The webhook is configured at:
 
@@ -17,10 +18,10 @@ def handle_github_webhook():
     """
 
     verify_signature(request)
-    logger.info("Received webhook")
+    logger.info("Received webhook", project=project)
 
     if should_deploy(request):
-        schedule_deploy()
+        schedule_deploy(project)
 
     return ""
 
@@ -30,7 +31,7 @@ def verify_signature(request):
 
     Raises 403 if it has not been.
 
-    See https://developer.github.com/webhooks/securing/.
+    See https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks
     """
 
     header = request.headers.get("X-Hub-Signature")
@@ -62,8 +63,12 @@ def should_deploy(request):
     return data["action"] == "closed" and data["pull_request"]["merged"]
 
 
-def schedule_deploy():
-    """Schedule a deploy of openprescribing."""
+def schedule_deploy(project):
+    """Schedule a deploy of the given project."""
 
-    logger.info("Scheduling deploy")
-    scheduler.schedule_job("op_deploy", {}, "#general", "", delay_seconds=60)
+    job = f"{project}_deploy"
+    if job not in config["jobs"]:
+        abort(Response(f"Unknown project: {project}", 400))
+
+    logger.info("Scheduling deploy", project=project)
+    scheduler.schedule_job(job, {}, "#general", "", delay_seconds=60)
