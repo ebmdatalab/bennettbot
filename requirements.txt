@@ -31,7 +31,6 @@ kiwisolver==1.2.0         # via matplotlib
 markupsafe==1.1.1         # via jinja2
 matplotlib==3.2.2         # via seaborn
 mccabe==0.6.1             # via flake8
-more-itertools==8.4.0     # via pytest
 mypy-extensions==0.4.3    # via black
 numpy==1.19.0             # via matplotlib, pandas, scipy, seaborn
 opensafely-cohort-extractor==0.13.1  # via -r requirements.in
@@ -52,7 +51,7 @@ pyparsing==2.4.7          # via matplotlib, packaging
 pytest-cov==2.10.1        # via -r requirements.in
 pytest-env==0.6.2         # via -r requirements.in
 pytest-freezegun==0.4.2   # via -r requirements.in
-pytest==6.0.1             # via -r requirements.in, pytest-cov, pytest-env, pytest-freezegun
+pytest==6.1.0             # via -r requirements.in, pytest-cov, pytest-env, pytest-freezegun
 python-dateutil==2.8.1    # via freezegun, matplotlib, pandas
 pytz==2020.1              # via pandas
 pyyaml==5.3.1             # via opensafely-cohort-extractor
