@@ -37,6 +37,17 @@ def assert_slack_client_sends_messages(web_api=(), websocket=()):
     check_slack_client_calls(p2, websocket)
 
 
+@contextmanager
+def assert_slack_client_sends_no_messages(web_api=(), websocket=()):
+    with patch("slackbot.slackclient.SlackClient.rtm_connect"):
+        with patch("slackbot.slackclient.SlackClient.send_message") as p1:
+            with patch("slackbot.slackclient.SlackClient.rtm_send_message") as p2:
+                yield
+
+    check_slack_client_calls(p1, ())
+    check_slack_client_calls(p2, ())
+
+
 def check_slack_client_calls(p, expected_calls):
     assert len(expected_calls) == len(p.call_args_list)
     for exp_call, call in zip(expected_calls, p.call_args_list):
