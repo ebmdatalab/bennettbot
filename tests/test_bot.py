@@ -10,6 +10,7 @@ from .assertions import (
     assert_slack_client_doesnt_react_to_message,
     assert_slack_client_reacts_to_message,
     assert_slack_client_sends_messages,
+    assert_slack_client_sends_no_messages,
     assert_suppression_matches,
 )
 from .job_configs import config
@@ -22,6 +23,11 @@ pytestmark = pytest.mark.freeze_time(T0)
 @pytest.fixture(autouse=True)
 def register_handler():
     bot.register_handler(config)
+
+
+def test_defalut_plugins_not_loaded():
+    with assert_slack_client_sends_no_messages():
+        handle_message("hey!", category="listen_to", expect_reaction=False)
 
 
 def test_schedule_job():
@@ -188,12 +194,13 @@ def test_pluralise():
     assert bot._pluralise(2, "bot") == "There are 2 bots"
 
 
-def handle_message(text, expect_reaction=True):
+def handle_message(text, *, category="respond_to", expect_reaction=True):
     client = SlackClient("api_token", connect=False)
     plugins = PluginsManager()
+    plugins.init_plugins()
     dispatcher = MessageDispatcher(client, plugins, None)
     msg = [
-        "respond_to",
+        category,
         {"text": text, "channel": "channel", "ts": TS},
     ]
 
