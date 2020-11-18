@@ -17,7 +17,7 @@ coverage==5.3             # via -r requirements.in, pytest-cov
 cryptography==2.4.2       # via paramiko
 django-dotenv==1.4.2      # via -r requirements.in
 fabric3==1.14.post1       # via -r requirements.in
-flake8==3.8.3             # via -r requirements.in
+flake8==3.8.4             # via -r requirements.in
 flask==1.1.2              # via -r requirements.in
 freezegun==0.3.15         # via pytest-freezegun
 gunicorn==20.0.4          # via -r requirements.in
