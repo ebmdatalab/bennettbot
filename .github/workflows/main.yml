@@ -1,0 +1,40 @@
+name: "EBMBot CI"
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  unit_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: "Unit tests"
+        run: pytest -v
+      - name: "Coverage"
+        run: pytest --cov=. --cov-fail-under=100
+
+  linting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: "Linting"
+        run: ./check_formatting.sh
