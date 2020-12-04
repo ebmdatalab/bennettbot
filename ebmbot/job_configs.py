@@ -107,6 +107,14 @@ raw_config = {
                 "run_args_template": "fab --hide=running,stdout,status call_management_command:send_ncso_concessions_alerts,production",
                 "report_stdout": True,
             },
+            "import_measure_definition": {
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,--definition-only,{measure_id},production",
+                "report_stdout": True,
+            },
+            "recalculate_measure": {
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,{measure_id},production",
+                "report_stdout": True,
+            },
         },
         "slack": [{
             "command": "deploy",
@@ -164,7 +172,16 @@ raw_config = {
             "help": "send alerts for NCSO concessions",
             "type": "schedule_job",
             "job_type": "ncso_send_alerts",
-            "job_type": "ncso_send_alerts",
+        }, {
+            "command": "measures import [measure_id]",
+            "help": "import measure definition",
+            "type": "schedule_job",
+            "job_type": "import_measure_definition",
+        }, {
+            "command": "measures recalculate [measure_id]",
+            "help": "recalculate measure values",
+            "type": "schedule_job",
+            "job_type": "recalculate_measure",
         }],
     },
 }
