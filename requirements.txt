@@ -31,7 +31,7 @@ mypy-extensions==0.4.3    # via black
 packaging==20.4           # via pytest
 paramiko==2.4.2           # via fabric3
 pathspec==0.8.0           # via black
-pip-tools==5.3.1          # via -r requirements.in
+pip-tools==5.5.0          # via -r requirements.in
 pluggy==0.13.1            # via pytest
 py==1.8.2                 # via pytest
 pyasn1==0.4.5             # via paramiko
@@ -47,7 +47,7 @@ pytest==6.2.1             # via -r requirements.in, pytest-cov, pytest-env, pyte
 python-dateutil==2.8.1    # via freezegun
 regex==2020.6.8           # via black
 requests==2.25.1          # via -r requirements.in, slackbot, slacker
-six==1.12.0               # via bcrypt, cryptography, fabric3, freezegun, packaging, pip-tools, pynacl, python-dateutil, slackbot, structlog, websocket-client
+six==1.12.0               # via bcrypt, cryptography, fabric3, freezegun, packaging, pynacl, python-dateutil, slackbot, structlog, websocket-client
 slackbot==1.0.0           # via -r requirements.in
 slacker==0.13.0           # via slackbot
 structlog==20.1.0         # via -r requirements.in
