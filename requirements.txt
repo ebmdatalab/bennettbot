@@ -46,7 +46,7 @@ pytest-freezegun==0.4.2   # via -r requirements.in
 pytest==6.2.1             # via -r requirements.in, pytest-cov, pytest-env, pytest-freezegun
 python-dateutil==2.8.1    # via freezegun
 regex==2020.6.8           # via black
-requests==2.25.0          # via -r requirements.in, slackbot, slacker
+requests==2.25.1          # via -r requirements.in, slackbot, slacker
 six==1.12.0               # via bcrypt, cryptography, fabric3, freezegun, packaging, pip-tools, pynacl, python-dateutil, slackbot, structlog, websocket-client
 slackbot==1.0.0           # via -r requirements.in
 slacker==0.13.0           # via slackbot
