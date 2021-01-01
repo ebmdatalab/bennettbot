@@ -47,10 +47,10 @@ pytest==6.2.1             # via -r requirements.in, pytest-cov, pytest-env, pyte
 python-dateutil==2.8.1    # via freezegun
 regex==2020.6.8           # via black
 requests==2.25.1          # via -r requirements.in, slackbot, slacker
-six==1.12.0               # via bcrypt, cryptography, fabric3, freezegun, packaging, pynacl, python-dateutil, slackbot, structlog, websocket-client
+six==1.12.0               # via bcrypt, cryptography, fabric3, freezegun, packaging, pynacl, python-dateutil, slackbot, websocket-client
 slackbot==1.0.0           # via -r requirements.in
 slacker==0.13.0           # via slackbot
-structlog==20.1.0         # via -r requirements.in
+structlog==20.2.0         # via -r requirements.in
 toml==0.10.1              # via black, pytest
 typed-ast==1.4.1          # via black
 typing-extensions==3.7.4.3  # via black
