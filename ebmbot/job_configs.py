@@ -134,7 +134,7 @@ raw_config = {
             "job_type": "deploy",
         }, {
             "command": "deploy suppress from [start_at] to [end_at]",
-            "help": "suppress production deploys between these times today (times in UTC)",
+            "help": "suppress production deploys between these times today (times in UTC as 'HH:MM')",
             "type": "schedule_suppression",
             "job_type": "deploy",
         }, {
