@@ -190,7 +190,7 @@ def handle_schedule_suppression(message, slack_config):
 
     if start_at is None or end_at is None or start_at >= end_at:
         message.reply(
-            "[start_at] and [end_at] must be HH:MM with [start_at] > [end_at]"
+            "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]"
         )
         return
 
