@@ -19,7 +19,7 @@ cffi==1.12.3
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+charset-normalizer==2.0.4
     # via requests
 click==7.1.2
     # via
@@ -100,7 +100,7 @@ python-dateutil==2.8.1
     # via freezegun
 regex==2020.6.8
     # via black
-requests==2.25.1
+requests==2.26.0
     # via
     #   -r requirements.in
     #   slackbot
