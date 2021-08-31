@@ -90,7 +90,7 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-env
     #   pytest-freezegun
-pytest-cov==2.10.1
+pytest-cov==2.12.1
     # via -r requirements.in
 pytest-env==0.6.2
     # via -r requirements.in
@@ -127,6 +127,7 @@ toml==0.10.1
     # via
     #   black
     #   pytest
+    #   pytest-cov
 typed-ast==1.4.1
     # via black
 typing-extensions==3.7.4.3
