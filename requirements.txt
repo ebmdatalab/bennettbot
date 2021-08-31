@@ -115,13 +115,12 @@ six==1.12.0
     #   pynacl
     #   python-dateutil
     #   slackbot
-    #   structlog
     #   websocket-client
 slackbot==1.0.0
     # via -r requirements.in
 slacker==0.13.0
     # via slackbot
-structlog==20.1.0
+structlog==21.1.0
     # via -r requirements.in
 toml==0.10.1
     # via
