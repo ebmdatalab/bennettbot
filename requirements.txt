@@ -48,7 +48,7 @@ idna==2.8
     # via requests
 iniconfig==1.0.1
     # via pytest
-isort==5.7.0
+isort==5.9.3
     # via -r requirements.in
 itsdangerous==1.1.0
     # via flask
