@@ -38,7 +38,7 @@ fabric3==1.14.post1
     # via -r requirements.in
 flake8==3.8.4
     # via -r requirements.in
-flask==1.1.2
+flask==2.0.1
     # via -r requirements.in
 freezegun==0.3.15
     # via pytest-freezegun
@@ -50,11 +50,11 @@ iniconfig==1.0.1
     # via pytest
 isort==5.7.0
     # via -r requirements.in
-itsdangerous==1.1.0
+itsdangerous==2.0.1
     # via flask
-jinja2==2.10.1
+jinja2==3.0.1
     # via flask
-markupsafe==1.1.1
+markupsafe==2.0.1
     # via jinja2
 mccabe==0.6.1
     # via flake8
@@ -135,7 +135,7 @@ urllib3==1.24.3
     # via requests
 websocket-client==0.44.0
     # via slackbot
-werkzeug==1.0.1
+werkzeug==2.0.1
     # via flask
 
 # The following packages are considered to be unsafe in a requirements file:
