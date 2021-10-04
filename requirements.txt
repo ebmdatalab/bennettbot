@@ -24,7 +24,7 @@ click==8.0.1
     #   black
     #   flask
     #   pip-tools
-coverage==5.5
+coverage[toml]==5.5
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -90,7 +90,7 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-env
     #   pytest-freezegun
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements.in
 pytest-env==0.6.2
     # via -r requirements.in
@@ -121,8 +121,8 @@ structlog==21.1.0
     # via -r requirements.in
 toml==0.10.2
     # via
+    #   coverage
     #   pytest
-    #   pytest-cov
 tomli==1.2.1
     # via
     #   black
