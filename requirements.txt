@@ -24,7 +24,7 @@ click==8.0.1
     #   black
     #   flask
     #   pip-tools
-coverage==5.5
+coverage==6.0.2
     # via
     #   -r requirements.in
     #   pytest-cov
