@@ -80,7 +80,7 @@ raw_config = {
         ],
     },
     "op": {
-        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
+        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
             "deploy": {
                 "run_args_template": "fab deploy:production",
