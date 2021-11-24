@@ -108,11 +108,11 @@ raw_config = {
                 "report_stdout": True,
             },
             "import_measure_definition": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,--definition-only,{measure_id},production",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,--definition-only,{measure_id}",
                 "report_stdout": True,
             },
             "recalculate_measure": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,{measure_id},production",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,{measure_id}",
                 "report_stdout": True,
             },
         },
