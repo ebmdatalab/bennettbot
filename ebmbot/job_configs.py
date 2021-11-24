@@ -116,11 +116,11 @@ raw_config = {
                 "report_stdout": True,
             },
             "preview_measure": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:preview_measure,{github_measure_url}",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:preview_measure,production,{github_measure_url}",
                 "report_stdout": True,
             },
             "delete_preview": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:delete_measure,{measure_id}",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:delete_measure,production,{measure_id}",
                 "report_stdout": True,
             },
         },
