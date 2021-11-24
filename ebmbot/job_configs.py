@@ -115,6 +115,14 @@ raw_config = {
                 "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,--print-confirmation,--measure,{measure_id}",
                 "report_stdout": True,
             },
+            "preview_measure": {
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:preview_measure,{github_measure_url}",
+                "report_stdout": True,
+            },
+            "delete_preview": {
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:delete_measure,{measure_id}",
+                "report_stdout": True,
+            },
         },
         "slack": [{
             "command": "deploy",
@@ -182,6 +190,16 @@ raw_config = {
             "help": "recalculate measure values",
             "type": "schedule_job",
             "job_type": "recalculate_measure",
+        }, {
+            "command": "measures preview [github_measure_url]",
+            "help": "import hidden preview version of measure direct from Github",
+            "type": "schedule_job",
+            "job_type": "preview_measure",
+        }, {
+            "command": "measures delete_preview [measure_id]",
+            "help": "delete preview measure from site",
+            "type": "schedule_job",
+            "job_type": "delete_preview",
         }],
     },
 }
