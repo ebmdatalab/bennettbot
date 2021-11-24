@@ -80,7 +80,7 @@ raw_config = {
         ],
     },
     "op": {
-        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/master/fabfile.py",
+        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
             "deploy": {
                 "run_args_template": "fab deploy:production",
@@ -108,11 +108,11 @@ raw_config = {
                 "report_stdout": True,
             },
             "import_measure_definition": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,--definitions_only,--measure,{measure_id}",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,--print-confirmation,--definitions_only,--measure,{measure_id}",
                 "report_stdout": True,
             },
             "recalculate_measure": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,--measure,{measure_id}",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:import_measures,production,--print-confirmation,--measure,{measure_id}",
                 "report_stdout": True,
             },
         },
