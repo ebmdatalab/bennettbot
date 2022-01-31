@@ -8,7 +8,7 @@ attrs==21.2.0
     # via pytest
 bcrypt==3.2.0
     # via paramiko
-black==21.8b0
+black==22.1.0
     # via -r requirements.in
 certifi==2021.5.30
     # via requests
@@ -98,8 +98,6 @@ pytest-freezegun==0.4.2
     # via -r requirements.in
 python-dateutil==2.8.2
     # via freezegun
-regex==2021.8.28
-    # via black
 requests==2.26.0
     # via
     #   -r requirements.in
@@ -127,8 +125,6 @@ tomli==1.2.1
     # via
     #   black
     #   pep517
-typing-extensions==3.10.0.2
-    # via black
 urllib3==1.26.6
     # via requests
 websocket-client==0.44.0
