@@ -84,7 +84,7 @@ pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.5
+pytest==7.1.1
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -120,13 +120,12 @@ slacker==0.14.0
 structlog==21.1.0
     # via -r requirements.in
 toml==0.10.2
-    # via
-    #   pytest
-    #   pytest-cov
+    # via pytest-cov
 tomli==1.2.1
     # via
     #   black
     #   pep517
+    #   pytest
 typing-extensions==3.10.0.2
     # via black
 urllib3==1.26.6
