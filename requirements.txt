@@ -60,7 +60,7 @@ mypy-extensions==0.4.3
     # via black
 packaging==21.0
     # via pytest
-paramiko==2.7.2
+paramiko==2.10.1
     # via fabric3
 pathspec==0.9.0
     # via black
@@ -109,6 +109,7 @@ six==1.16.0
     # via
     #   bcrypt
     #   fabric3
+    #   paramiko
     #   pynacl
     #   python-dateutil
     #   slackbot
