@@ -10,6 +10,8 @@ bcrypt==3.2.0
     # via paramiko
 black==21.8b0
     # via -r requirements.in
+build==0.8.0
+    # via pip-tools
 certifi==2021.5.30
     # via requests
 cffi==1.14.6
@@ -59,14 +61,16 @@ mccabe==0.6.1
 mypy-extensions==0.4.3
     # via black
 packaging==21.0
-    # via pytest
+    # via
+    #   build
+    #   pytest
 paramiko==2.7.2
     # via fabric3
 pathspec==0.9.0
     # via black
 pep517==0.11.0
-    # via pip-tools
-pip-tools==6.2.0
+    # via build
+pip-tools==6.8.0
     # via -r requirements.in
 platformdirs==2.3.0
     # via black
@@ -126,6 +130,7 @@ toml==0.10.2
 tomli==1.2.1
     # via
     #   black
+    #   build
     #   pep517
 typing-extensions==3.10.0.2
     # via black
