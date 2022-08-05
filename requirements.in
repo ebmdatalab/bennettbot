@@ -3,6 +3,7 @@ flask
 gunicorn
 requests
 slackbot
+git+https://github.com/ebmdatalab/slackbot.git@d37d27ff470c0991b70fd8cd448d2d1d3a0eda45
 structlog
 
 # development
