@@ -7,9 +7,10 @@ DB_PATH = os.environ.get("DB_PATH", join(APPLICATION_ROOT, "ebmbot.db"))
 WORKSPACE_DIR = os.environ.get("WORKSPACE_DIR", join(APPLICATION_ROOT, "workspace"))
 LOGS_DIR = os.environ["LOGS_DIR"]
 SLACK_LOGS_CHANNEL = os.environ["SLACK_LOGS_CHANNEL"]
-
-# "Bot User OAuth Access Token" from https://api.slack.com/apps/A6B85C8KC/oauth
-SLACKBOT_API_TOKEN = os.environ["SLACKBOT_API_TOKEN"]
+SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
+SLACK_APP_TOKEN = os.environ["SLACK_APP_TOKEN"]
+SLACK_SIGNING_SECRET = os.environ["SLACK_SIGNING_SECRET"]
+SLACK_APP_USERNAME = os.environ["SLACK_APP_USERNAME"]
 
 # Should match "Payload URL" from
 # https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427

@@ -27,45 +27,41 @@ def assert_subdict(d1, d2):
 
 
 @contextmanager
-def assert_slack_client_sends_messages(web_api=(), websocket=()):
-    with patch("slackbot.slackclient.SlackClient.rtm_connect"):
-        with patch("slackbot.slackclient.SlackClient.send_message") as p1:
-            with patch("slackbot.slackclient.SlackClient.rtm_send_message") as p2:
-                yield
+def assert_slack_client_sends_messages(messages_kwargs=None):
+    messages_kwargs = messages_kwargs or {}
+    with patch("slack_sdk.WebClient.chat_postMessage") as p:
+        yield
 
-    check_slack_client_calls(p1, web_api)
-    check_slack_client_calls(p2, websocket)
+    check_slack_client_calls(p, messages_kwargs)
 
 
 @contextmanager
-def assert_slack_client_sends_no_messages(web_api=(), websocket=()):
-    with patch("slackbot.slackclient.SlackClient.rtm_connect"):
-        with patch("slackbot.slackclient.SlackClient.send_message") as p1:
-            with patch("slackbot.slackclient.SlackClient.rtm_send_message") as p2:
-                yield
+def assert_slack_client_sends_no_messages():
+    with patch("slack_sdk.WebClient.chat_postMessage") as p:
+        yield
 
-    check_slack_client_calls(p1, ())
-    check_slack_client_calls(p2, ())
+    check_slack_client_calls(p, ())
 
 
-def check_slack_client_calls(p, expected_calls):
-    assert len(expected_calls) == len(p.call_args_list)
-    for exp_call, call in zip(expected_calls, p.call_args_list):
-        assert exp_call[0] == call[0][0]  # channel
-        assert exp_call[1] in call[0][1]  # message
-        if len(exp_call) == 3:
-            assert exp_call[2] == call[1]["thread_ts"]
+def check_slack_client_calls(p, expected_messages_kwargs):
+    assert len(expected_messages_kwargs) == len(p.call_args_list)    
+    for exp_call_kwargs, call in zip(expected_messages_kwargs, p.call_args_list):
+        for key, value in exp_call_kwargs.items():
+            if key == "text":
+                assert value in call.kwargs[key]
+            else:
+                assert call.kwargs[key] == value
 
 
 @contextmanager
 def assert_slack_client_reacts_to_message():
-    with patch("slackbot.slackclient.SlackClient.react_to_message") as p:
+    with patch("slack_sdk.WebClient.reactions_add") as p:
         yield
         assert p.call_count == 1
 
 
 @contextmanager
 def assert_slack_client_doesnt_react_to_message():
-    with patch("slackbot.slackclient.SlackClient.react_to_message") as p:
+    with patch("slack_sdk.WebClient.reactions_add") as p:
         yield
         assert p.call_count == 0

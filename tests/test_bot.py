@@ -1,16 +1,17 @@
+import os
+from unittest.mock import patch
+
 import pytest
-from slackbot.dispatcher import MessageDispatcher
-from slackbot.manager import PluginsManager
-from slackbot.slackclient import SlackClient
+from slack_bolt import Ack, Say
 
 from ebmbot import bot, scheduler
+from ebmbot.app import app
 
 from .assertions import (
     assert_job_matches,
     assert_slack_client_doesnt_react_to_message,
     assert_slack_client_reacts_to_message,
     assert_slack_client_sends_messages,
-    assert_slack_client_sends_no_messages,
     assert_suppression_matches,
 )
 from .job_configs import config
@@ -22,12 +23,7 @@ pytestmark = pytest.mark.freeze_time(T0)
 
 @pytest.fixture(autouse=True)
 def register_handler():
-    bot.register_handler(config)
-
-
-def test_defalut_plugins_not_loaded():
-    with assert_slack_client_sends_no_messages():
-        handle_message("hey!", category="listen_to", expect_reaction=False)
+    bot.register_handler(config, "U1234", {"techsupport": "C1234"})
 
 
 def test_schedule_job():
@@ -65,17 +61,17 @@ def test_schedule_suppression():
 
 def test_schedule_suppression_with_bad_start_at():
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 11:60 to 11:30")
 
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 24:20 to 11:30")
 
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from xx:20 to 11:30")
 
@@ -84,17 +80,17 @@ def test_schedule_suppression_with_bad_start_at():
 
 def test_schedule_suppression_with_bad_end_at():
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 11:20 to 11:60")
 
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 11:20 to 24:30")
 
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 11:20 to xx:30")
 
@@ -103,12 +99,12 @@ def test_schedule_suppression_with_bad_end_at():
 
 def test_schedule_suppression_with_start_at_after_end_at():
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 11:30 to 11:20")
 
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "[start_at] and [end_at]")]
+        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}]
     ):
         handle_message("test suppress job from 11:20 to 11:20")
 
@@ -125,24 +121,24 @@ def test_cancel_suppression():
 
 def test_namespace_help():
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "`test do job [n]`: do the job")]
+        messages_kwargs=[{"channel": "channel", "text": "`test do job [n]`: do the job"}]
     ):
         handle_message("test help", expect_reaction=False)
 
 
 def test_help():
-    with assert_slack_client_sends_messages(websocket=[("channel", "* `test`")]):
+    with assert_slack_client_sends_messages(messages_kwargs=[{"channel": "channel", "text": "* `test`"}]):
         handle_message("help", expect_reaction=False)
 
 
 def test_not_understood():
-    with assert_slack_client_sends_messages(websocket=[("channel", "I'm sorry")]):
+    with assert_slack_client_sends_messages(messages_kwargs=[{"channel": "channel", "text": "I'm sorry"}]):
         handle_message("beep boop", expect_reaction=False)
 
 
 def test_status():
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "Nothing is happening")]
+        messages_kwargs=[{"channel": "channel", "text": "Nothing is happening"}]
     ):
         handle_message("status", expect_reaction=False)
 
@@ -150,7 +146,7 @@ def test_status():
 @pytest.mark.parametrize("message", [" test help", "test help ", "test  help"])
 def test_message_with_spaces(message):
     with assert_slack_client_sends_messages(
-        websocket=[("channel", "`test do job [n]`: do the job")]
+        messages_kwargs=[{"channel": "channel", "text": "`test do job [n]`: do the job"}]
     ):
         handle_message(message, expect_reaction=False)
 
@@ -194,19 +190,16 @@ def test_pluralise():
     assert bot._pluralise(2, "bot") == "There are 2 bots"
 
 
-def handle_message(text, *, category="respond_to", expect_reaction=True):
-    client = SlackClient("api_token", connect=False)
-    plugins = PluginsManager()
-    plugins.init_plugins()
-    dispatcher = MessageDispatcher(client, plugins, None)
-    msg = [
-        category,
-        {"text": text, "channel": "channel", "ts": TS},
-    ]
+def handle_message(text, *, type="message", expect_reaction=True):
+    ack = Ack()
+    say = Say(app.client, "channel")
+    msg = {"type": "message", "text": text, "channel": "channel", "ts": TS}
 
+    context = {"matches": [text]}
+    args = (msg, say, ack, context)
     if expect_reaction:
         with assert_slack_client_reacts_to_message():
-            dispatcher.dispatch_msg(msg)
+            app._listeners[0].ack_function(*args)
     else:
         with assert_slack_client_doesnt_react_to_message():
-            dispatcher.dispatch_msg(msg)
+            app._listeners[0].ack_function(*args)

@@ -7,7 +7,8 @@ from multiprocessing import Process
 from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
-from slackbot.slackclient import SlackClient
+
+from slack_sdk import WebClient
 
 from . import job_configs, scheduler, settings
 from .logger import logger
@@ -17,8 +18,7 @@ from .slack import notify_slack
 
 def run():  # pragma: no cover
     """Start the dispatcher running."""
-
-    slack_client = SlackClient(settings.SLACKBOT_API_TOKEN)
+    slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
 
     while True:
         run_once(slack_client, job_configs.config)

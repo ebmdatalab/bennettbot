@@ -3,9 +3,9 @@ import shutil
 from unittest.mock import Mock
 
 import pytest
-from slackbot.slackclient import SlackClient
 
 from ebmbot import scheduler, settings, webserver
+from ebmbot.app import app
 from ebmbot.dispatcher import JobDispatcher, run_once
 
 from .assertions import assert_slack_client_sends_messages
@@ -52,7 +52,10 @@ def test_job_success_with_unsafe_shell_args():
     )
     job = scheduler.reserve_job()
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "succeeded")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "succeeded"}
+        ]
     ):
         do_job(job)
     with open(os.path.join(log_dir, "stdout")) as f:
@@ -69,7 +72,10 @@ def test_job_success():
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "succeeded")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "succeeded"}
+        ]
     ):
         do_job(job)
 
@@ -87,7 +93,10 @@ def test_job_success_with_parameterised_args():
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "succeeded")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "succeeded"}
+        ]
     ):
         do_job(job)
 
@@ -105,7 +114,10 @@ def test_job_success_and_report():
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "the owl")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "the owl"}
+        ]
     ):
         do_job(job)
 
@@ -122,7 +134,8 @@ def test_job_success_with_no_report():
     scheduler.schedule_job("test_unreported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(web_api=[("logs", "about to start")]):
+    with assert_slack_client_sends_messages(
+        messages_kwargs=[{"channel": "logs", "text": "about to start"}]):
         do_job(job)
 
     with open(os.path.join(log_dir, "stdout")) as f:
@@ -139,7 +152,10 @@ def test_job_failure():
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "failed")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "failed"}
+        ]
     ):
         do_job(job)
 
@@ -157,7 +173,10 @@ def test_job_failure_when_command_not_found():
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "failed")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "failed"}
+        ]
     ):
         do_job(job)
 
@@ -175,7 +194,10 @@ def test_job_with_callback():
     job = scheduler.reserve_job()
 
     with assert_slack_client_sends_messages(
-        web_api=[("logs", "about to start"), ("channel", "succeeded")]
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"}, 
+            {"channel": "channel", "text": "succeeded"}
+        ]
     ):
         do_job(job)
 
@@ -183,13 +205,15 @@ def test_job_with_callback():
         url = f.read().strip()
 
     client = webserver.app.test_client()
-    with assert_slack_client_sends_messages(web_api=[("channel", "Job done", TS)]):
+    with assert_slack_client_sends_messages(
+        messages_kwargs=[{"channel": "channel", "text": "Job done", "thread_ts": TS}]
+    ):
         rsp = client.post(url, data='{"message": "Job done"}')
         assert rsp.status_code == 200
 
 
 def do_job(job):
-    slack_client = SlackClient("api_token", connect=False)
+    slack_client = app.client
     job_dispatcher = JobDispatcher(slack_client, job, config)
     job_dispatcher.do_job()
 
