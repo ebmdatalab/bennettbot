@@ -1,6 +1,7 @@
 # See comments in embbot/settings.py
 export LOGS_DIR=changeme
 export SLACK_LOGS_CHANNEL=changeme
+export SLACK_TECH_SUPPORT_CHANNEL=changeme
 export SLACK_BOT_TOKEN=changeme
 export SLACK_APP_TOKEN=changeme
 export SLACK_SIGNING_SECRET=changeme

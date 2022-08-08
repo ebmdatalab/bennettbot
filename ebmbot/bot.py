@@ -16,7 +16,8 @@ def run():  # pragma: no cover
     bot_user_id = get_bot_user_id()
     channels = get_channels()
     join_all_channels(channels, bot_user_id)
-    register_handler(job_configs.config, bot_user_id, channels)
+    register_tech_support_handler(channels)
+    register_handler(job_configs.config, bot_user_id)
     handler.start()
 
 
@@ -41,7 +42,7 @@ def join_all_channels(channels, user_id):
             app.client.conversations_join(channel=channel_id, users=user_id)
 
 
-def register_handler(config, bot_user_id, channels):
+def register_handler(config, bot_user_id):
     """Register single handler for responding to Slack messages.
 
     The handler is defined inside this function to allow different config to be
@@ -81,6 +82,21 @@ def register_handler(config, bot_user_id, channels):
 
         include_apology = text != "help"
         handle_help(message, say, config["help"], include_apology)
+
+
+def register_tech_support_handler(channels):
+
+    tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
+
+    @app.message(re.compile(r".*tech[\s|-]support.*", flags=re.I))
+    def repost_to_tech_support(message, say, ack):
+        logger.info("Received tech-support message", message=message["text"])
+        ack()
+        if message["channel"] != tech_support_channel_id:
+            message_url = app.client.chat_getPermalink(
+                channel=message["channel"], message_ts=message["ts"]
+            )["permalink"]
+            say(message_url, channel=tech_support_channel_id)
 
 
 @log_call

@@ -23,7 +23,8 @@ pytestmark = pytest.mark.freeze_time(T0)
 
 @pytest.fixture(autouse=True)
 def register_handler():
-    bot.register_handler(config, "U1234", {"techsupport": "C1234"})
+    bot.register_tech_support_handler({"techsupport": "C1234"})
+    bot.register_handler(config, "U1234")
 
 
 def test_schedule_job():
@@ -195,11 +196,17 @@ def handle_message(text, *, type="message", expect_reaction=True):
     say = Say(app.client, "channel")
     msg = {"type": "message", "text": text, "channel": "channel", "ts": TS}
 
-    context = {"matches": [text]}
-    args = (msg, say, ack, context)
+    if "support" in text:
+        listener_index = 0
+        args = (msg, say, ack)
+    else:
+        context = {"matches": [text]}
+        listener_index = 1
+        args = (msg, say, ack, context)
+
     if expect_reaction:
         with assert_slack_client_reacts_to_message():
-            app._listeners[0].ack_function(*args)
+            app._listeners[listener_index].ack_function(*args)
     else:
         with assert_slack_client_doesnt_react_to_message():
-            app._listeners[0].ack_function(*args)
+            app._listeners[listener_index].ack_function(*args)
