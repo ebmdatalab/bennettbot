@@ -7,7 +7,6 @@ from multiprocessing import Process
 from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
-
 from slack_sdk import WebClient
 
 from . import job_configs, scheduler, settings
