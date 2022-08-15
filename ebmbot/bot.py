@@ -7,42 +7,54 @@ from .logger import log_call, logger
 
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-from .app import app
+from . import job_configs, scheduler, settings
+from .logger import log_call, logger
 
 
 def run():  # pragma: no cover
-    """Start the slackbot bot running."""
+    """Start the bot running."""
+    app = App(
+        token=settings.SLACK_BOT_TOKEN,
+        signing_secret=settings.SLACK_SIGNING_SECRET,
+        # enable @app.error handler to catch the patterns we don't specifically handle
+        raise_error_for_unhandled_request=True,
+    )
     handler = SocketModeHandler(app, settings.SLACK_APP_TOKEN)
-    bot_user_id = get_bot_user_id()
-    channels = get_channels()
-    join_all_channels(channels, bot_user_id)
-    register_tech_support_handler(channels)
-    register_handler(job_configs.config, bot_user_id)
+
+    bot_user_id = get_bot_user_id(app)
+    channels = get_channels(app)
+    join_all_channels(app, channels, bot_user_id)
+    register_error_handler(app)
+    register_tech_support_handler(app, channels)
+    register_handler(app, job_configs.config, bot_user_id)
     handler.start()
 
 
-def get_bot_user_id():
-    users = {
-        user['name']: user['id'] for user in app.client.users_list()["members"]
-    }
+def get_bot_user_id(app):
+    users = {user["name"]: user["id"] for user in app.client.users_list()["members"]}
     return users[settings.SLACK_APP_USERNAME]
 
 
-def get_channels():
+def get_channels(app):
     return {
-        channel['name']: channel['id'] 
-        for channel in app.client.conversations_list(types="public_channel,private_channel")["channels"]
+        channel["name"]: channel["id"]
+        for channel in app.client.conversations_list(
+            types="public_channel,private_channel"
+        )["channels"]
     }
 
 
-def join_all_channels(channels, user_id):
+def join_all_channels(app, channels, user_id):
     for channel_name, channel_id in channels.items():
-        if user_id not in app.client.conversations_members(channel=channel_id)["members"]:
+        if (
+            user_id
+            not in app.client.conversations_members(channel=channel_id)["members"]
+        ):
             logger.info("Bot user joining channel", channel=channel_name)
             app.client.conversations_join(channel=channel_id, users=user_id)
 
 
-def register_handler(config, bot_user_id):
+def register_handler(app, config, bot_user_id):
     """Register single handler for responding to Slack messages.
 
     The handler is defined inside this function to allow different config to be
@@ -51,7 +63,7 @@ def register_handler(config, bot_user_id):
 
     @app.message(re.compile(rf"<@{bot_user_id}>(?P<text>.*)"))
     def handle(message, say, ack, context):
-        """Respond to every Slack message that mentions the bot and dispatch 
+        """Respond to every Slack message that mentions the bot and dispatch
         to another handler based on the contents of the message.
 
         This allows us to define handlers dynamically based on the job config.
@@ -71,7 +83,7 @@ def register_handler(config, bot_user_id):
 
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
-                handle_command(message, say, slack_config)
+                handle_command(app, message, say, slack_config)
                 return
 
         for namespace, help_config in config["help"].items():
@@ -84,7 +96,7 @@ def register_handler(config, bot_user_id):
         handle_help(message, say, config["help"], include_apology)
 
 
-def register_tech_support_handler(channels):
+def register_tech_support_handler(app, channels):
 
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
 
@@ -99,12 +111,24 @@ def register_tech_support_handler(channels):
             say(message_url, channel=tech_support_channel_id)
 
 
+def register_error_handler(app):
+    @app.error
+    def handle_errors(error):
+        if isinstance(error, BoltUnhandledRequestError):
+            logger.warn(error)
+            return BoltResponse(status=200, body="Unhandled message")
+        else:  # pragma: no cover
+            # other error patterns
+            return BoltResponse(status=500, body="Something went wrong")
+
+
 @log_call
 def handle_status(message, say):
     """Report status of jobs and suppressions back to Slack."""
 
     status = _build_status()
     say(status, thread_ts=message.get("thread_ts"))
+
 
 def _build_status():
     running_jobs = []
@@ -175,7 +199,7 @@ def _pluralise(n, noun):
         return f"There are {n} {noun}s"
 
 
-def handle_command(message, say, slack_config):
+def handle_command(app, message, say, slack_config):
     """Give a thumbs-up to the message, and dispatch to another handler."""
     app.client.reactions_add(
         channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
@@ -234,8 +258,8 @@ def handle_schedule_suppression(message, say, slack_config):
 
     if start_at is None or end_at is None or start_at >= end_at:
         say(
-            "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]", 
-            thread_ts=message.get("thread_ts")
+            "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]",
+            thread_ts=message.get("thread_ts"),
         )
         return
 

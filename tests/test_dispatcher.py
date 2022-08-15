@@ -5,10 +5,12 @@ from unittest.mock import Mock
 import pytest
 
 from ebmbot import scheduler, settings, webserver
-from ebmbot.app import app
 from ebmbot.dispatcher import JobDispatcher, run_once
 
-from .assertions import assert_slack_client_sends_messages
+from .assertions import (
+    assert_patched_slack_client_sends_messages,
+    assert_slack_client_sends_messages,
+)
 from .job_configs import config
 from .time_helpers import T0, TS, T
 
@@ -44,20 +46,22 @@ def test_run_once():
     assert not os.path.exists(build_log_dir("test_really_bad_job"))
 
 
-def test_job_success_with_unsafe_shell_args():
+def test_job_success_with_unsafe_shell_args(mock_client):
     log_dir = build_log_dir("test_paramaterised_job_2")
 
     scheduler.schedule_job(
         "test_paramaterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS, 0
     )
     job = scheduler.reserve_job()
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "succeeded"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "succeeded"},
+        ],
+    )
+
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "<poem>\n"
 
@@ -65,19 +69,20 @@ def test_job_success_with_unsafe_shell_args():
         assert f.read() == ""
 
 
-def test_job_success():
+def test_job_success(mock_client):
     log_dir = build_log_dir("test_good_job")
 
     scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "succeeded"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "succeeded"},
+        ],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "the owl and the pussycat\n"
@@ -86,19 +91,20 @@ def test_job_success():
         assert f.read() == ""
 
 
-def test_job_success_with_parameterised_args():
+def test_job_success_with_parameterised_args(mock_client):
     log_dir = build_log_dir("test_paramaterised_job")
 
     scheduler.schedule_job("test_paramaterised_job", {"path": "poem"}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "succeeded"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "succeeded"},
+        ],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "the owl and the pussycat\n"
@@ -107,19 +113,20 @@ def test_job_success_with_parameterised_args():
         assert f.read() == ""
 
 
-def test_job_success_and_report():
+def test_job_success_and_report(mock_client):
     log_dir = build_log_dir("test_reported_job")
 
     scheduler.schedule_job("test_reported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "the owl"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "the owl"},
+        ],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "the owl and the pussycat\n"
@@ -128,15 +135,17 @@ def test_job_success_and_report():
         assert f.read() == ""
 
 
-def test_job_success_with_no_report():
+def test_job_success_with_no_report(mock_client):
     log_dir = build_log_dir("test_unreported_job")
 
     scheduler.schedule_job("test_unreported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(
-        messages_kwargs=[{"channel": "logs", "text": "about to start"}]):
-        do_job(job)
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[{"channel": "logs", "text": "about to start"}],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "the owl and the pussycat\n"
@@ -145,19 +154,19 @@ def test_job_success_with_no_report():
         assert f.read() == ""
 
 
-def test_job_failure():
+def test_job_failure(mock_client):
     log_dir = build_log_dir("test_bad_job")
 
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "failed"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "failed"},
+        ],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == ""
@@ -166,19 +175,20 @@ def test_job_failure():
         assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
-def test_job_failure_when_command_not_found():
+def test_job_failure_when_command_not_found(mock_client):
     log_dir = build_log_dir("test_really_bad_job")
 
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "failed"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "failed"},
+        ],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == ""
@@ -187,34 +197,35 @@ def test_job_failure_when_command_not_found():
         assert f.read() == "/bin/sh: 1: dog: not found\n"
 
 
-def test_job_with_callback():
+def test_job_with_callback(mock_client):
     log_dir = build_log_dir("test_job_to_test_callback")
 
     scheduler.schedule_job("test_job_to_test_callback", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    with assert_slack_client_sends_messages(
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
         messages_kwargs=[
-            {"channel": "logs", "text": "about to start"}, 
-            {"channel": "channel", "text": "succeeded"}
-        ]
-    ):
-        do_job(job)
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "succeeded"},
+        ],
+    )
 
     with open(os.path.join(log_dir, "stdout")) as f:
         url = f.read().strip()
 
     client = webserver.app.test_client()
-    with assert_slack_client_sends_messages(
+
+    with assert_patched_slack_client_sends_messages(
         messages_kwargs=[{"channel": "channel", "text": "Job done", "thread_ts": TS}]
     ):
         rsp = client.post(url, data='{"message": "Job done"}')
         assert rsp.status_code == 200
 
 
-def do_job(job):
-    slack_client = app.client
-    job_dispatcher = JobDispatcher(slack_client, job, config)
+def do_job(client, job):
+    job_dispatcher = JobDispatcher(client, job, config)
     job_dispatcher.do_job()
 
 

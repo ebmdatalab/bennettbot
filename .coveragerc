@@ -4,6 +4,7 @@ source = .
 omit =
   fabfile.py
   */__main__.py
+  tests/mock_web_api_server.py
 
 [report]
 exclude_lines =
