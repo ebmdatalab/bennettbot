@@ -2,6 +2,7 @@ from fabric.api import abort, env, prefix, run, task
 from fabric.context_managers import cd
 from fabric.contrib.files import exists
 
+
 env.forward_agent = True
 env.colorize_errors = True
 
@@ -15,7 +16,7 @@ def make_directory():
 
 
 def check_environment():
-    environment_path = f"{env.path}/environment"
+    environment_path = f"{env.path}/.env"
 
     if not exists(environment_path):
         abort(f"Create {environment_path} before proceeding")
@@ -36,7 +37,7 @@ def update_from_git():
 
 def install_requirements():
     with prefix("source venv/bin/activate"):
-        run("pip install -q -r requirements.txt")
+        run("pip install -q -r requirements.prod.txt")
 
 
 def chown_everything():

@@ -1,0 +1,14 @@
+# Main prod requirements
+
+# To generate requirements file, run:
+# pip-compile --generate-hashes --output-file=requirements.prod.txt requirements.prod.in
+
+fabric3
+flask
+gunicorn
+requests
+slack_bolt
+structlog
+
+# for op commands
+django-dotenv

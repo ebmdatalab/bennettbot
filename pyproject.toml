@@ -1,0 +1,57 @@
+[tool.black]
+exclude = '''
+(
+  /(
+      \.git         # exclude a few common directories
+    | \.direnv
+    | \.github
+    | \.pytest_cache
+    | \.venv
+    | htmlcov
+    | venv
+  )/
+)
+'''
+
+[tool.coverage.run]
+branch = true
+omit = [
+    ".venv/*",
+    "venv/*",
+    "fabfile.py",
+    "*/__main__.py",
+    "tests/mock_web_api_server.py"
+]
+
+[tool.coverage.report]
+fail_under = 100
+skip_covered = true
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "assert False"
+]
+
+[tool.coverage.html]
+
+[tool.isort]
+profile = "black"
+lines_after_imports = 2
+skip_glob = [".direnv", "venv", ".venv"]
+
+[tool.pytest.ini_options]
+env = [
+    "DB_PATH=tests/ebmbot.db",
+    "WORKSPACE_DIR=tests/workspace",
+    "LOGS_DIR=tests/logs",
+    "SLACK_LOGS_CHANNEL=logs",
+    "SLACK_TECH_SUPPORT_CHANNEL=techsupport",
+    "SLACK_SIGNING_SECRET=secret",
+    "SLACK_BOT_TOKEN=xoxb-token",
+    "SLACK_APP_TOKEN=xapp-token",
+    "SLACK_APP_USERNAME=test_username",
+    "GITHUB_WEBHOOK_SECRET=github_webhook_secret",
+    "EBMBOT_WEBHOOK_SECRET=ebmbot_webhook_secret",
+    "WEBHOOK_ORIGIN=http://localhost:9999",
+    "EBMBOT_PATH="
+]
