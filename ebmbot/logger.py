@@ -3,6 +3,7 @@ import inspect
 
 import structlog
 
+
 # Configure structlog to write to stdout without timstamps.
 structlog.configure(processors=[structlog.dev.ConsoleRenderer()])
 logger = structlog.get_logger()

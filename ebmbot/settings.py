@@ -1,6 +1,7 @@
 import os
 from os.path import abspath, dirname, join
 
+
 APPLICATION_ROOT = dirname(dirname(abspath(__file__)))
 
 DB_PATH = os.environ.get("DB_PATH", join(APPLICATION_ROOT, "ebmbot.db"))

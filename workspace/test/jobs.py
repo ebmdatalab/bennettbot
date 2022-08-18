@@ -1,3 +1,6 @@
+# noqa: INP001
+
+
 def hello_world(name=None):
     if name:
         return f"Hello {name}!"
