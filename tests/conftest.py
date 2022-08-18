@@ -1,3 +1,8 @@
+"""
+Configuration for pytest.
+"""
+
+import os
 from dataclasses import dataclass
 from unittest.mock import Mock
 
@@ -5,7 +10,20 @@ import pytest
 from slack_bolt import App
 from slack_sdk import WebClient
 
+from ebmbot import settings
+
 from .mock_web_api_server import cleanup_mock_web_api_server, setup_mock_web_api_server
+
+
+pytest.register_assert_rewrite("tests.assertions")
+
+
+@pytest.fixture(autouse=True)
+def reset_db():
+    try:
+        os.remove(settings.DB_PATH)
+    except FileNotFoundError:
+        pass
 
 
 @dataclass
