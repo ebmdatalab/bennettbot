@@ -6,6 +6,10 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
 
     * "jobs": a dict mapping a job_type to a further dict with keys:
         * "run_args_template": template of bash command to be run
+        * "python_function": optional, a python function to execute within the
+           specified `python_file`.  Every python function is called with the
+           slack client as the first positional argument, plus and keyword args
+           defined in the slack command
         * "report_stdout": optional, whether the stdout of the command is
             reported to Slack
         * "report_success": optional, whether the success of the command is
@@ -21,6 +25,7 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
             and the job being run
     * "fabfile": optional, the URL of a fabfile which is required to run
         commands in the namespace
+    * "python_file": optional, the path to a python file within the namespace
 """
 
 
@@ -30,11 +35,17 @@ from operator import itemgetter
 # fmt: off
 raw_config = {
     "test": {
+        "python_file": "jobs.py",
         "jobs": {
             "read_poem": {
                 "run_args_template": "cat poem",
                 "report_stdout": True,
             },
+            "hello_world": {
+                "run_args_template": "",
+                "python_function": "hello_world",
+                "report_stdout": True,
+            }
         },
         "slack": [
             {
@@ -44,7 +55,37 @@ raw_config = {
                 "job_type": "read_poem",
                 "delay_seconds": 1,
             },
+            {
+                "command": "hello [name]",
+                "help": "say hello to [name]",
+                "type": "schedule_job",
+                "job_type": "hello_world",
+            },
+            {
+                "command": "hello",
+                "help": "say hello",
+                "type": "schedule_job",
+                "job_type": "hello_world",
+            },
         ],
+    },
+    "bot": {
+        "python_file": "jobs.py",
+        "jobs": {
+            "join_channels": {
+                "run_args_template": "",
+                "python_function": "join_channels",
+                "report_stdout": True,
+            },
+        },
+        "slack": [
+            {
+                "command": "join channels",
+                "help": "ensure bot is in all channels",
+                "type": "schedule_job",
+                "job_type": "join_channels",
+            }
+        ]
     },
     "fdaaa": {
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
@@ -195,7 +236,7 @@ def build_config(raw_config):
     See test_job_configs for an example.
     """
 
-    config = {"jobs": {}, "slack": [], "help": {}, "fabfiles": {}}
+    config = {"jobs": {}, "slack": [], "help": {}, "fabfiles": {}, "python_files": {}}
 
     for namespace in raw_config:
         helps = []
@@ -203,6 +244,7 @@ def build_config(raw_config):
         for job_type, job_config in raw_config[namespace]["jobs"].items():
             job_config["report_stdout"] = job_config.get("report_stdout", False)
             job_config["report_success"] = job_config.get("report_success", True)
+            job_config["python_function"] = job_config.get("python_function")
             namespaced_job_type = f"{namespace}_{job_type}"
             validate_job_config(namespaced_job_type, job_config)
             config["jobs"][namespaced_job_type] = job_config
@@ -224,6 +266,9 @@ def build_config(raw_config):
 
         if "fabfile" in raw_config[namespace]:
             config["fabfiles"][namespace] = raw_config[namespace]["fabfile"]
+
+        if "python_file" in raw_config[namespace]:
+            config["python_files"][namespace] = raw_config[namespace]["python_file"]
 
     config["slack"] = sorted(config["slack"], key=itemgetter("command"))
 
@@ -259,7 +304,12 @@ def get_template_params(command):
 def validate_job_config(job_type, job_config):
     """Validate that job_config contains expected keys."""
 
-    expected_keys = {"run_args_template", "report_stdout", "report_success"}
+    expected_keys = {
+        "run_args_template",
+        "report_stdout",
+        "report_success",
+        "python_function",
+    }
 
     if missing_keys := (expected_keys - job_config.keys()):
         msg = f"Job {job_type} is missing keys {missing_keys}"

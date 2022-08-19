@@ -1,6 +1,8 @@
+import importlib
 import os
 import shlex
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from multiprocessing import Process
@@ -53,11 +55,15 @@ class JobDispatcher:
         self.job = scheduler.get_job(job_id)
         self.job_config = config["jobs"][self.job["type"]]
 
-        namespace = self.job["type"].split("_")[0]
-        self.cwd = os.path.join(settings.WORKSPACE_DIR, namespace)
-        self.fabfile_url = config["fabfiles"].get(namespace)
+        self.namespace = self.job["type"].split("_")[0]
+        self.cwd = os.path.join(settings.WORKSPACE_DIR, self.namespace)
+        self.fabfile_url = config["fabfiles"].get(self.namespace)
         escaped_args = {k: shlex.quote(v) for k, v in self.job["args"].items()}
         self.run_args = self.job_config["run_args_template"].format(**escaped_args)
+        self.python_file = config["python_files"].get(self.namespace)
+        if self.python_file:
+            self.python_file = os.path.join(self.cwd, self.python_file)
+        self.python_function = self.job_config["python_function"]
         self.callback_url = self.build_callback_url()
 
     def start_job(self):
@@ -78,12 +84,14 @@ class JobDispatcher:
         self.notifiy_end(rc)
 
     def run_command(self):
-        """Run the bash command, writing stdout/stderr to separate files."""
+        """Run the command, writing stdout/stderr to separate files."""
 
         logger.info("run_command {")
         logger.info(
             "run_command",
             run_args=self.run_args,
+            python_file=self.python_file,
+            python_function=self.python_function,
             callback_url=self.callback_url,
             cwd=self.cwd,
             stdout_path=self.stdout_path,
@@ -94,18 +102,25 @@ class JobDispatcher:
             self.stderr_path, "w"
         ) as stderr:
             try:
-                rv = subprocess.run(
-                    self.run_args,
-                    cwd=self.cwd,
-                    stdout=stdout,
-                    stderr=stderr,
-                    env={
-                        "EBMBOT_CALLBACK_URL": self.callback_url,
-                        "PATH": settings.EBMBOT_PATH or os.environ["PATH"],
-                    },
-                    shell=True,
-                )
-                rc = rv.returncode
+                if self.python_function:
+                    python_module = self.load_module()
+                    python_func = getattr(python_module, self.python_function)
+                    result = python_func(**self.job["args"]) or ""
+                    stdout.write(result)
+                    rc = 0
+                else:
+                    rv = subprocess.run(
+                        self.run_args,
+                        cwd=self.cwd,
+                        stdout=stdout,
+                        stderr=stderr,
+                        env={
+                            "EBMBOT_CALLBACK_URL": self.callback_url,
+                            "PATH": settings.EBMBOT_PATH or os.environ["PATH"],
+                        },
+                        shell=True,
+                    )
+                    rc = rv.returncode
             except Exception as e:  # pragma: no cover
                 rc = -1
                 stderr.write(str(e) + "\n")
@@ -113,6 +128,15 @@ class JobDispatcher:
         logger.info("run_command", rc=rc)
         logger.info("run_command }")
         return rc
+
+    def load_module(self):
+        # Taken from the official recipe for importing a module from a file path:
+        # The name we give the module is arbitrary
+        spec = importlib.util.spec_from_file_location("jobs", self.python_file)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[f"{self.namespace}_jobs"] = module
+        spec.loader.exec_module(module)
+        return module
 
     def notify_start(self):
         """Send notification that command is about to start."""

@@ -3,6 +3,7 @@ from ebmbot.job_configs import build_config
 # fmt: off
 raw_config = {
     "test": {
+        "python_file": "jobs.py",
         "jobs": {
             "good_job": {
                 "run_args_template": "cat poem",
@@ -32,6 +33,21 @@ raw_config = {
             },
             "job_with_url": {
                 "run_args_template": "curl {url}",
+            },
+            "good_python_job": {
+                "run_args_template": "",
+                "python_function": "hello_world",
+                "report_stdout": True
+            },
+            "bad_python_job": {
+                "run_args_template": "",
+                "python_function": "unknown",
+                "report_stdout": True
+            },
+            "parameterised_python_job": {
+                "run_args_template": "",
+                "python_function": "hello_world",
+                "report_stdout": True
             },
         },
         "slack": [
@@ -67,7 +83,22 @@ raw_config = {
                 "job_type": "job_with_url",
                 "delay_seconds": 0,
             },
+            {
+                "command": "do python job",
+                "help": "run a python function",
+                "type": "schedule_job",
+                "job_type": "good_python_job",
+                "delay_seconds": 0,
+            },
         ],
+    },
+    "test1": {
+        "jobs": {
+            "good_job": {
+                "run_args_template": "cat poem",
+            },
+        },
+        "slack": [],
     }
 }
 # fmt: on

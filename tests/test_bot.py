@@ -24,12 +24,12 @@ pytestmark = pytest.mark.freeze_time(T0)
 @pytest.fixture(autouse=True)
 def register_handler(mock_app):
     app = mock_app.app
-    channels = bot.get_channels(app)
-    bot_user_id = bot.get_bot_user_id(app)
+    channels = bot.get_channels(app.client)
+    bot_user_id = bot.get_bot_user_id(app.client)
     bot.register_tech_support_handler(app, channels)
     bot.register_handler(app, config, bot_user_id)
     bot.register_error_handler(app)
-    bot.join_all_channels(app, channels, bot_user_id)
+    bot.join_all_channels(app.client, channels, bot_user_id)
     yield
 
 
@@ -47,6 +47,14 @@ def test_schedule_job(mock_app):
     jj = scheduler.get_jobs_of_type("test_good_job")
     assert len(jj) == 1
     assert_job_matches(jj[0], "test_good_job", {"n": "10"}, "channel", T(60), None)
+
+
+def test_schedule_python_job(mock_app):
+    handle_message(mock_app, "<@U1234> test do python job")
+
+    jj = scheduler.get_jobs_of_type("test_good_python_job")
+    assert len(jj) == 1
+    assert_job_matches(jj[0], "test_good_python_job", {}, "channel", T(0), None)
 
 
 def test_url_formatting_removed(mock_app):
@@ -246,7 +254,6 @@ def handle_message(
     mock_app,
     text,
     *,
-    type="message",
     reaction_count=1,
     channel="channel",
     expected_status=200,

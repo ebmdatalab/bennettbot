@@ -224,6 +224,95 @@ def test_job_with_callback(mock_client):
         assert rsp.status_code == 200
 
 
+def test_python_job_success(mock_client):
+    log_dir = build_log_dir("test_good_python_job")
+
+    scheduler.schedule_job("test_good_python_job", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "Hello World!"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == "Hello World!"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
+def test_python_job_success_with_parameterised_args(mock_client):
+    log_dir = build_log_dir("test_parameterised_python_job")
+
+    scheduler.schedule_job(
+        "test_parameterised_python_job", {"name": "Fred"}, "channel", TS, 0
+    )
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "Hello Fred!"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == "Hello Fred!"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
+def test_python_job_failure(mock_client):
+    log_dir = build_log_dir("test_bad_python_job")
+
+    scheduler.schedule_job("test_bad_python_job", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "failed"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == ""
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == "module 'jobs' has no attribute 'unknown'\n"
+
+
+def test_job_success_config_with_no_python_file(mock_client):
+    log_dir = build_log_dir("test1_good_job")
+
+    scheduler.schedule_job("test1_good_job", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "succeeded"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == "the owl and the pussycat\n"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
 def do_job(client, job):
     job_dispatcher = JobDispatcher(client, job, config)
     job_dispatcher.do_job()

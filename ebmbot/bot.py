@@ -20,37 +20,37 @@ def run():  # pragma: no cover
     )
     handler = SocketModeHandler(app, settings.SLACK_APP_TOKEN)
 
-    bot_user_id = get_bot_user_id(app)
-    channels = get_channels(app)
-    join_all_channels(app, channels, bot_user_id)
+    bot_user_id = get_bot_user_id(app.client)
+    channels = get_channels(app.client)
+    join_all_channels(app.client, channels, bot_user_id)
     register_error_handler(app)
     register_tech_support_handler(app, channels)
     register_handler(app, job_configs.config, bot_user_id)
     handler.start()
 
 
-def get_bot_user_id(app):
-    users = {user["name"]: user["id"] for user in app.client.users_list()["members"]}
+def get_bot_user_id(client):
+    users = {user["name"]: user["id"] for user in client.users_list()["members"]}
     return users[settings.SLACK_APP_USERNAME]
 
 
-def get_channels(app):
+def get_channels(client):
     return {
         channel["name"]: channel["id"]
-        for channel in app.client.conversations_list(
+        for channel in client.conversations_list(
             types="public_channel,private_channel"
         )["channels"]
     }
 
 
-def join_all_channels(app, channels, user_id):
+def join_all_channels(client, channels, user_id):
+    joined = []
     for channel_name, channel_id in channels.items():
-        if (
-            user_id
-            not in app.client.conversations_members(channel=channel_id)["members"]
-        ):
+        if user_id not in client.conversations_members(channel=channel_id)["members"]:
             logger.info("Bot user joining channel", channel=channel_name)
-            app.client.conversations_join(channel=channel_id, users=user_id)
+            client.conversations_join(channel=channel_id, users=user_id)
+            joined.append(channel_name)
+    return joined
 
 
 def register_handler(app, config, bot_user_id):
@@ -227,7 +227,6 @@ def _remove_url_formatting(arg):
 @log_call
 def handle_schedule_job(message, say, slack_config):
     """Schedule a job."""
-
     match = slack_config["regex"].match(message["text"])
     job_args = dict(zip(slack_config["template_params"], match.groups()))
     deformatted_args = {k: _remove_url_formatting(v) for k, v in job_args.items()}
