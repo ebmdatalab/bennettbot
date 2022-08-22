@@ -248,19 +248,35 @@ def test_no_listener_found(mock_app):
     assert resp.body == "Unhandled message"
 
 
+def test_new_channel_created(mock_app):
+    # When a channel_created event is received, the bot user joins that channel
+    handle_event(
+        mock_app,
+        event_type="channel_created",
+        event_kwargs={"channel": {"id": "C0NEW", "name": "new-channel"}},
+    )
+    assert_slack_client_sends_messages(mock_app.recorder, messages_kwargs=[])
+    assert mock_app.recorder.mock_received_requests_kwargs["/conversations.join"][
+        -1
+    ] == {"channel": "C0NEW", "users": "U1234"}
+
+
 def handle_message(
     mock_app,
     text,
     *,
     reaction_count=1,
     channel="channel",
+    event_kwargs=None,
     expected_status=200,
 ):
-    request = get_mock_request(text, channel)
-
-    resp = mock_app.app.dispatch(request)
-    time.sleep(0.1)
-    assert resp.status == expected_status
+    event_kwargs = {"channel": channel, "text": text}
+    resp = handle_event(
+        mock_app,
+        event_type="message",
+        event_kwargs=event_kwargs,
+        expected_status=expected_status,
+    )
 
     if reaction_count:
         assert_slack_client_reacts_to_message(mock_app.recorder, reaction_count)
@@ -270,7 +286,16 @@ def handle_message(
     return resp
 
 
-def get_mock_request(text, channel):
+def handle_event(mock_app, event_type, event_kwargs, expected_status=200):
+    request = get_mock_request(event_type, event_kwargs)
+    resp = mock_app.app.dispatch(request)
+    time.sleep(0.1)
+    assert resp.status == expected_status
+    return resp
+
+
+def get_mock_request(event_type, event_kwargs):
+    event_kwargs = event_kwargs or {}
     body = {
         "token": "verification_token",
         "team_id": "T111",
@@ -278,12 +303,10 @@ def get_mock_request(text, channel):
         "api_app_id": "A111",
         "event": {
             "client_msg_id": "a8744611-0210-4f85-9f15-5faf7fb225c8",
-            "type": "message",
-            "text": text,
+            "type": event_type,
             "user": "W111",
             "ts": "1596183880.004200",
             "team": "T111",
-            "channel": channel,
             "event_ts": "1596183880.004200",
             "channel_type": "channel",
         },
@@ -291,6 +314,7 @@ def get_mock_request(text, channel):
         "event_id": "Ev111",
         "event_time": 1596183880,
     }
+    body["event"].update(event_kwargs)
     timestamp, body = str(int(time.time())), json.dumps(body)
     signature = SignatureVerifier("secret").generate_signature(
         body=body,

@@ -43,6 +43,7 @@ Add event subscriptions to allow the app to be notified of events in Slack/
    - message.groups
    - message.im
    - message.mpim
+   - channel_created
 3. Save changes
 
 ### Add Bot scopes
@@ -54,10 +55,10 @@ events.  We need to add some more:
    - `groups:history`
    - `im:history`
    - `mpim:history`
+   - `channels:read`
 2.Add the following additional scopes:
    - `channels:join`
    - `users:read`
-   - `channels:read`
    - `groups:read`
    - `mpim:read`
    - `im:read`

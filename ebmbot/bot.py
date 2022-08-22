@@ -58,6 +58,7 @@ def register_listeners(app, config, channels, bot_user_id):
     - A single listener for job requests
     - A tech-support listener
     - An error handler
+    - A listener for new channels
 
     The listeners are defined inside this function to allow different config to be
     passed in for tests.
@@ -108,6 +109,14 @@ def register_listeners(app, config, channels, bot_user_id):
                 channel=message["channel"], message_ts=message["ts"]
             )["permalink"]
             say(message_url, channel=tech_support_channel_id)
+
+    @app.event("channel_created")
+    def join_channel(event, ack):
+        channel = event["channel"]
+        logger.info("Received new channel event", channel=channel["id"])
+        ack()
+        logger.info("Bot user joining channel", name=channel["name"], id=channel["id"])
+        app.client.conversations_join(channel=channel["id"], users=bot_user_id)
 
     @app.error
     def handle_errors(error):
