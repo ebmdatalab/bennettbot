@@ -36,7 +36,7 @@ def get_channels(client):
     return {
         channel["name"]: channel["id"]
         for channel in client.conversations_list(
-            types="public_channel,private_channel"
+            types="public_channel,private_channel", limit=1000
         )["channels"]
         if not channel["is_archived"]
     }
