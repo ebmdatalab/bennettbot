@@ -38,6 +38,7 @@ def get_channels(client):
         for channel in client.conversations_list(
             types="public_channel,private_channel"
         )["channels"]
+        if not channel["is_archived"]
     }
 
 
