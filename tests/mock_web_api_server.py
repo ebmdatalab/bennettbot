@@ -136,9 +136,10 @@ class MockHandler(SimpleHTTPRequestHandler):
             {
                 "ok": True,
                 "channels": [
-                    {"name": "techsupport", "id": "C0001"},
-                    {"name": "channel", "id": "C0002"},
-                    {"name": "channel1", "id": "C0003"},
+                    {"name": "techsupport", "id": "C0001", "is_archived": False},
+                    {"name": "channel", "id": "C0002", "is_archived": False},
+                    {"name": "channel1", "id": "C0003", "is_archived": False},
+                    {"name": "archived-channel", "id": "C0004", "is_archived": True},
                 ],
             }
         ).encode("utf-8"),
