@@ -23,9 +23,7 @@ def run():  # pragma: no cover
     bot_user_id = get_bot_user_id(app.client)
     channels = get_channels(app.client)
     join_all_channels(app.client, channels, bot_user_id)
-    register_error_handler(app)
-    register_tech_support_handler(app, channels)
-    register_handler(app, job_configs.config, bot_user_id)
+    register_listeners(app, job_configs.config, channels, bot_user_id)
     handler.start()
 
 
@@ -53,15 +51,22 @@ def join_all_channels(client, channels, user_id):
     return joined
 
 
-def register_handler(app, config, bot_user_id):
-    """Register single handler for responding to Slack messages.
+def register_listeners(app, config, channels, bot_user_id):
+    """
+    Register listeners for this app
 
-    The handler is defined inside this function to allow different config to be
+    - A single listener for job requests
+    - A tech-support listener
+    - An error handler
+
+    The listeners are defined inside this function to allow different config to be
     passed in for tests.
     """
 
+    tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
+
     @app.message(re.compile(rf"<@{bot_user_id}>(?P<text>.*)"))
-    def handle(message, say, ack, context):
+    def listener(message, say, ack, context):
         """Respond to every Slack message that mentions the bot and dispatch
         to another handler based on the contents of the message.
 
@@ -94,11 +99,6 @@ def register_handler(app, config, bot_user_id):
         include_apology = text != "help"
         handle_help(message, say, config["help"], include_apology)
 
-
-def register_tech_support_handler(app, channels):
-
-    tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
-
     @app.message(re.compile(r".*tech[\s|-]support.*", flags=re.I))
     def repost_to_tech_support(message, say, ack):
         logger.info("Received tech-support message", message=message["text"])
@@ -109,8 +109,6 @@ def register_tech_support_handler(app, channels):
             )["permalink"]
             say(message_url, channel=tech_support_channel_id)
 
-
-def register_error_handler(app):
     @app.error
     def handle_errors(error):
         if isinstance(error, BoltUnhandledRequestError):

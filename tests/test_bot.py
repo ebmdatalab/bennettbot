@@ -26,10 +26,8 @@ def register_handler(mock_app):
     app = mock_app.app
     channels = bot.get_channels(app.client)
     bot_user_id = bot.get_bot_user_id(app.client)
-    bot.register_tech_support_handler(app, channels)
-    bot.register_handler(app, config, bot_user_id)
-    bot.register_error_handler(app)
     bot.join_all_channels(app.client, channels, bot_user_id)
+    bot.register_listeners(app, config, channels, bot_user_id)
     yield
 
 
