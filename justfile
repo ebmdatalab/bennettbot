@@ -7,6 +7,8 @@ export PIP := BIN + if os_family() == "unix" { "/python -m pip" } else { "/pytho
 
 export DEFAULT_PYTHON := if os_family() == "unix" { "python3.8" } else { "python" }
 
+set dotenv-load := true
+
 
 # list available commands
 default:
@@ -106,4 +108,4 @@ fix: devenv
 
 # Run the dev project
 run SERVICE: devenv
-    . environment && $BIN/python -m ebmbot.{{ SERVICE }}
+    $BIN/python -m ebmbot.{{ SERVICE }}

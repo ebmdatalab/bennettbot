@@ -56,13 +56,13 @@ class JobDispatcher:
         self.job_config = config["jobs"][self.job["type"]]
 
         self.namespace = self.job["type"].split("_")[0]
-        self.cwd = os.path.join(settings.WORKSPACE_DIR, self.namespace)
+        self.cwd = settings.WORKSPACE_DIR / self.namespace
         self.fabfile_url = config["fabfiles"].get(self.namespace)
         escaped_args = {k: shlex.quote(v) for k, v in self.job["args"].items()}
         self.run_args = self.job_config["run_args_template"].format(**escaped_args)
         self.python_file = config["python_files"].get(self.namespace)
         if self.python_file:
-            self.python_file = os.path.join(self.cwd, self.python_file)
+            self.python_file = self.cwd / self.python_file
         self.python_function = self.job_config["python_function"]
         self.callback_url = self.build_callback_url()
 
@@ -163,8 +163,7 @@ class JobDispatcher:
 
     def set_up_cwd(self):
         """Ensure cwd exists, and maybe refresh fabfile."""
-
-        os.makedirs(self.cwd, exist_ok=True)
+        self.cwd.mkdir(parents=True, exist_ok=True)
 
         if self.fabfile_url:  # pragma: no cover
             self.update_fabfile()
@@ -183,17 +182,17 @@ class JobDispatcher:
             notify_slack(self.slack_client, settings.SLACK_LOGS_CHANNEL, msg)
             return
 
-        with open(os.path.join(self.cwd, "fabfile.py"), "w") as f:
+        with open(self.cwd / "fabfile.py", "w") as f:
             f.write(rsp.text)
 
     def set_up_log_dir(self):
         """Create directory for recording stdout/stderr."""
 
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-        self.log_dir = os.path.join(settings.LOGS_DIR, self.job["type"], timestamp)
-        self.stdout_path = os.path.join(self.log_dir, "stdout")
-        self.stderr_path = os.path.join(self.log_dir, "stderr")
-        os.makedirs(self.log_dir)
+        self.log_dir = settings.LOGS_DIR / self.job["type"] / timestamp
+        self.stdout_path = self.log_dir / "stdout"
+        self.stderr_path = self.log_dir / "stderr"
+        self.log_dir.mkdir(parents=True, exist_ok=True)
 
     def build_callback_url(self):
         timestamp = str(time.time())

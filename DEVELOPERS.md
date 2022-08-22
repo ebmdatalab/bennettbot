@@ -35,9 +35,9 @@ Follow the steps to [create a slack app with the required scopes](DEPLOY.md#crea
 and install it into your test workspace.
 
 ### Set up environment
-* Copy environment: `cp environment-sample environment`
+* Copy environment: `cp dotenv-sample .env`
 
-Edit `environment` with the slack app tokens etc for the test slack app.
+Edit `.env` with the slack app tokens etc for the test slack app.
 
 
 ### Run checks
