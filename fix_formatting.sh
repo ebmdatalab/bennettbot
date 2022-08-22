@@ -1,8 +1,8 @@
 #!/bin/bash
 
 declare -a cmds=(
-    "black ."
-    "isort --recursive **/*.py"
+    "black . --exclude .venv"
+    "isort **/*.py"
 )
 
 for cmd in "${cmds[@]}"; do

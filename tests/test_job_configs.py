@@ -35,31 +35,69 @@ def test_build_config():
                 }
             ],
         },
+        "ns3": {
+            "python_file": "jobs.py",
+            "jobs": {
+                "good_python_job": {
+                    "run_args_template": "",
+                    "report_stdout": True,
+                    "python_function": "hello_world",
+                },
+                "bad_python_job": {
+                    "run_args_template": "",
+                    "report_stdout": True,
+                    "python_function": "unknown",
+                },
+            },
+            "slack": [
+                {
+                    "command": "hello world",
+                    "help": "say hello world",
+                    "type": "schedule_job",
+                    "job_type": "good_python_job",
+                }
+            ],
+        },
     }
 
     config = build_config(raw_config)
-
     assert config == {
         "jobs": {
             "ns1_good_job": {
                 "run_args_template": "cat [poem]",
                 "report_stdout": False,
                 "report_success": True,
+                "python_function": None,
             },
             "ns1_bad_job": {
                 "run_args_template": "dog [poem]",
                 "report_stdout": False,
                 "report_success": True,
+                "python_function": None,
             },
             "ns2_good_job": {
                 "run_args_template": "cat [poem]",
                 "report_stdout": True,
                 "report_success": True,
+                "python_function": None,
             },
             "ns2_bad_job": {
                 "run_args_template": "dog [poem]",
                 "report_stdout": False,
                 "report_success": False,
+                "python_function": None,
+            },
+            "ns3_good_python_job": {
+                "run_args_template": "",
+                "report_stdout": True,
+                "report_success": True,
+                "python_function": "hello_world",
+            },
+            "ns3_bad_python_job": {
+                "run_args_template": "",
+                "report_stdout": True,
+                "report_success": True,
+                "python_function": "unknown",
             },
         },
         "slack": [
@@ -81,12 +119,23 @@ def test_build_config():
                 "template_params": ["poem"],
                 "delay_seconds": 0,
             },
+            {
+                "command": "ns3 hello world",
+                "job_type": "ns3_good_python_job",
+                "help": "say hello world",
+                "type": "schedule_job",
+                "regex": re.compile("^ns3 hello world$"),
+                "template_params": [],
+                "delay_seconds": 0,
+            },
         ],
         "help": {
             "ns1": [["ns1 read poem [poem]", "read a poem"]],
             "ns2": [["ns2 read poem [poem]", "read a poem"]],
+            "ns3": [["ns3 hello world", "say hello world"]],
         },
         "fabfiles": {},
+        "python_files": {"ns3": "jobs.py"},
     }
 
 

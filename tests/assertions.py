@@ -26,46 +26,38 @@ def assert_subdict(d1, d2):
         assert d1[k] == d2[k]
 
 
-@contextmanager
-def assert_slack_client_sends_messages(web_api=(), websocket=()):
-    with patch("slackbot.slackclient.SlackClient.rtm_connect"):
-        with patch("slackbot.slackclient.SlackClient.send_message") as p1:
-            with patch("slackbot.slackclient.SlackClient.rtm_send_message") as p2:
-                yield
-
-    check_slack_client_calls(p1, web_api)
-    check_slack_client_calls(p2, websocket)
+def assert_slack_client_sends_messages(test_recorder, messages_kwargs=None):
+    messages_kwargs = messages_kwargs or []
+    actual_call_kwargs = test_recorder.mock_received_requests_kwargs.get(
+        "/chat.postMessage", []
+    )
+    check_slack_client_calls(actual_call_kwargs, messages_kwargs)
 
 
 @contextmanager
-def assert_slack_client_sends_no_messages(web_api=(), websocket=()):
-    with patch("slackbot.slackclient.SlackClient.rtm_connect"):
-        with patch("slackbot.slackclient.SlackClient.send_message") as p1:
-            with patch("slackbot.slackclient.SlackClient.rtm_send_message") as p2:
-                yield
-
-    check_slack_client_calls(p1, ())
-    check_slack_client_calls(p2, ())
-
-
-def check_slack_client_calls(p, expected_calls):
-    assert len(expected_calls) == len(p.call_args_list)
-    for exp_call, call in zip(expected_calls, p.call_args_list):
-        assert exp_call[0] == call[0][0]  # channel
-        assert exp_call[1] in call[0][1]  # message
-        if len(exp_call) == 3:
-            assert exp_call[2] == call[1]["thread_ts"]
-
-
-@contextmanager
-def assert_slack_client_reacts_to_message():
-    with patch("slackbot.slackclient.SlackClient.react_to_message") as p:
+def assert_patched_slack_client_sends_messages(messages_kwargs=None):
+    messages_kwargs = messages_kwargs or []
+    with patch("slack_sdk.WebClient.chat_postMessage") as p:
         yield
-        assert p.call_count == 1
+    actual_call_kwargs = [call.kwargs for call in p.call_args_list]
+    check_slack_client_calls(actual_call_kwargs, messages_kwargs)
 
 
-@contextmanager
-def assert_slack_client_doesnt_react_to_message():
-    with patch("slackbot.slackclient.SlackClient.react_to_message") as p:
-        yield
-        assert p.call_count == 0
+def check_slack_client_calls(actual_call_kwargs_list, expected_messages_kwargs):
+    assert len(expected_messages_kwargs) == len(actual_call_kwargs_list)
+    for exp_call_kwargs, actual_call in zip(
+        expected_messages_kwargs, actual_call_kwargs_list
+    ):
+        for key, value in exp_call_kwargs.items():
+            if key == "text":
+                assert value in actual_call[key]
+            else:
+                assert actual_call[key] == value
+
+
+def assert_slack_client_reacts_to_message(test_recorder, reaction_count):
+    assert test_recorder.mock_received_requests["/reactions.add"] == reaction_count
+
+
+def assert_slack_client_doesnt_react_to_message(test_recorder):
+    assert not test_recorder.mock_received_requests.get("/reactions.add")

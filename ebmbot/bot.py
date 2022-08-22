@@ -2,65 +2,138 @@ import random
 import re
 from datetime import datetime, timezone
 
-from slackbot.bot import Bot, respond_to
+from slack_bolt import App, BoltResponse
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_bolt.error import BoltUnhandledRequestError
 
-from . import job_configs, scheduler
+from . import job_configs, scheduler, settings
 from .logger import log_call, logger
 
 
 def run():  # pragma: no cover
-    """Start the slackbot bot running."""
+    """Start the bot running."""
+    app = App(
+        token=settings.SLACK_BOT_TOKEN,
+        signing_secret=settings.SLACK_SIGNING_SECRET,
+        # enable @app.error handler to catch the patterns we don't specifically handle
+        raise_error_for_unhandled_request=True,
+    )
+    handler = SocketModeHandler(app, settings.SLACK_APP_TOKEN)
 
-    register_handler(job_configs.config)
-    bot = Bot()
-    bot.run()
+    bot_user_id = get_bot_user_id(app.client)
+    channels = get_channels(app.client)
+    join_all_channels(app.client, channels, bot_user_id)
+    register_listeners(app, job_configs.config, channels, bot_user_id)
+    handler.start()
 
 
-def register_handler(config):
-    """Register single handler for responding to Slack messages.
+def get_bot_user_id(client):
+    users = {user["name"]: user["id"] for user in client.users_list()["members"]}
+    return users[settings.SLACK_APP_USERNAME]
 
-    The handler is defined inside this function to allow different config to be
+
+def get_channels(client):
+    return {
+        channel["name"]: channel["id"]
+        for channel in client.conversations_list(
+            types="public_channel,private_channel"
+        )["channels"]
+    }
+
+
+def join_all_channels(client, channels, user_id):
+    joined = []
+    for channel_name, channel_id in channels.items():
+        if user_id not in client.conversations_members(channel=channel_id)["members"]:
+            logger.info("Bot user joining channel", channel=channel_name)
+            client.conversations_join(channel=channel_id, users=user_id)
+            joined.append(channel_name)
+    return joined
+
+
+def register_listeners(app, config, channels, bot_user_id):
+    """
+    Register listeners for this app
+
+    - A single listener for job requests
+    - A tech-support listener
+    - An error handler
+    - A listener for new channels
+
+    The listeners are defined inside this function to allow different config to be
     passed in for tests.
     """
 
-    @respond_to(".*")
-    def handle(message):
-        """Respond to every Slack message and dispatch to another handler based
-        on the contents of the message.
+    tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
 
-        This duplicates a little bit of the work that slackbot does, but allows
-        us to define handlers dynamically based on the job config.
+    @app.message(re.compile(rf"<@{bot_user_id}>(?P<text>.*)"))
+    def listener(message, say, ack, context):
+        """Respond to every Slack message that mentions the bot and dispatch
+        to another handler based on the contents of the message.
+
+        This allows us to define handlers dynamically based on the job config.
         """
-
-        text = " ".join(message.body["text"].split())
-        message.body["text"] = text
+        logger.info(message)
+        text = context["matches"][0]
+        # handle extra whitespace
+        text = " ".join(text.strip().split())
+        message["text"] = text
         logger.info("Received message", message=text)
+        # acknowledge this message to avoid slack retrying in 3s
+        ack()
 
         if text == "status":
-            handle_status(message)
+            handle_status(message, say)
             return
 
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
-                handle_command(message, slack_config)
+                handle_command(app, message, say, slack_config)
                 return
 
         for namespace, help_config in config["help"].items():
             for pattern in [f"^{namespace} help$", f"^help {namespace}$"]:
                 if re.match(pattern, text):
-                    handle_namespace_help(message, help_config)
+                    handle_namespace_help(message, say, help_config)
                     return
 
         include_apology = text != "help"
-        handle_help(message, config["help"], include_apology)
+        handle_help(message, say, config["help"], include_apology)
+
+    @app.message(re.compile(r".*tech[\s|-]support.*", flags=re.I))
+    def repost_to_tech_support(message, say, ack):
+        logger.info("Received tech-support message", message=message["text"])
+        ack()
+        if message["channel"] != tech_support_channel_id:
+            message_url = app.client.chat_getPermalink(
+                channel=message["channel"], message_ts=message["ts"]
+            )["permalink"]
+            say(message_url, channel=tech_support_channel_id)
+
+    @app.event("channel_created")
+    def join_channel(event, ack):
+        channel = event["channel"]
+        logger.info("Received new channel event", channel=channel["id"])
+        ack()
+        logger.info("Bot user joining channel", name=channel["name"], id=channel["id"])
+        app.client.conversations_join(channel=channel["id"], users=bot_user_id)
+
+    @app.error
+    def handle_errors(error):
+        if isinstance(error, BoltUnhandledRequestError):
+            logger.warn(error)
+            return BoltResponse(status=200, body="Unhandled message")
+        else:  # pragma: no cover
+            # other error patterns
+            return BoltResponse(status=500, body="Something went wrong")
 
 
 @log_call
-def handle_status(message):
+def handle_status(message, say):
     """Report status of jobs and suppressions back to Slack."""
 
     status = _build_status()
-    message.reply(status)
+    say(status, thread_ts=message.get("thread_ts"))
 
 
 def _build_status():
@@ -132,10 +205,11 @@ def _pluralise(n, noun):
         return f"There are {n} {noun}s"
 
 
-def handle_command(message, slack_config):
+def handle_command(app, message, say, slack_config):
     """Give a thumbs-up to the message, and dispatch to another handler."""
-
-    message.react("crossed_fingers")
+    app.client.reactions_add(
+        channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
+    )
 
     handler = {
         "schedule_job": handle_schedule_job,
@@ -144,7 +218,7 @@ def handle_command(message, slack_config):
         "cancel_suppression": handle_cancel_suppression,
     }[slack_config["type"]]
 
-    handler(message, slack_config)
+    handler(message, say, slack_config)
 
 
 def _remove_url_formatting(arg):
@@ -158,39 +232,39 @@ def _remove_url_formatting(arg):
 
 
 @log_call
-def handle_schedule_job(message, slack_config):
+def handle_schedule_job(message, say, slack_config):
     """Schedule a job."""
-
-    match = slack_config["regex"].match(message.body["text"])
+    match = slack_config["regex"].match(message["text"])
     job_args = dict(zip(slack_config["template_params"], match.groups()))
     deformatted_args = {k: _remove_url_formatting(v) for k, v in job_args.items()}
     scheduler.schedule_job(
         slack_config["job_type"],
         deformatted_args,
-        channel=message.body["channel"],
-        thread_ts=message.thread_ts,
+        channel=message["channel"],
+        thread_ts=message["ts"],
         delay_seconds=slack_config["delay_seconds"],
     )
 
 
 @log_call
-def handle_cancel_job(message, slack_config):
+def handle_cancel_job(message, say, slack_config):
     """Cancel a job."""
 
     scheduler.cancel_job(slack_config["job_type"])
 
 
 @log_call
-def handle_schedule_suppression(message, slack_config):
+def handle_schedule_suppression(message, say, slack_config):
     """Schedule a suppression."""
 
-    match = slack_config["regex"].match(message.body["text"])
+    match = slack_config["regex"].match(message["text"])
     start_at = _get_datetime(match.groups()[0])
     end_at = _get_datetime(match.groups()[1])
 
     if start_at is None or end_at is None or start_at >= end_at:
-        message.reply(
-            "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]"
+        say(
+            "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]",
+            thread_ts=message.get("thread_ts"),
         )
         return
 
@@ -198,14 +272,14 @@ def handle_schedule_suppression(message, slack_config):
 
 
 @log_call
-def handle_cancel_suppression(message, slack_config):
+def handle_cancel_suppression(message, say, slack_config):
     """Cancel a suppression."""
 
     scheduler.cancel_suppressions(slack_config["job_type"])
 
 
 @log_call
-def handle_namespace_help(message, help_config):
+def handle_namespace_help(message, say, help_config):
     """Report commands available in namespace."""
 
     lines = ["The following commands are available:", ""]
@@ -213,11 +287,11 @@ def handle_namespace_help(message, help_config):
     for (command, help_) in help_config:
         lines.append(f"`{command}`: {help_}")
 
-    message.reply("\n".join(lines))
+    say("\n".join(lines), thread_ts=message.get("thread_ts"))
 
 
 @log_call
-def handle_help(message, help_configs, include_apology):
+def handle_help(message, say, help_configs, include_apology):
     """Report all available namespaces."""
 
     if include_apology:
@@ -230,11 +304,12 @@ def handle_help(message, help_configs, include_apology):
     for namespace in sorted(help_configs):
         lines.append(f"* `{namespace}`")
 
+    bot_username = settings.SLACK_APP_USERNAME
     lines.append(
-        f"Enter `@ebmbot [namespace] help` (eg `@ebmbot {random.choice(list(help_configs))} help`) for more help"
+        f"Enter `@{bot_username} [namespace] help` (eg `@{bot_username} {random.choice(list(help_configs))} help`) for more help"
     )
 
-    message.reply("\n".join(lines))
+    say("\n".join(lines), thread_ts=message.get("thread_ts"))
 
 
 def _get_datetime(hhmm):

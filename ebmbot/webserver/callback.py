@@ -1,7 +1,8 @@
 import json
 
 from flask import abort, request
-from slackbot.slackclient import SlackClient
+
+from slack_sdk import WebClient
 
 from .. import settings
 from ..signatures import validate_hmac, InvalidHMAC
@@ -41,7 +42,7 @@ def handle_callback_webhook():
     except KeyError:
         abort(400)
 
-    client = SlackClient(settings.SLACKBOT_API_TOKEN)
-    notify_slack(client, channel=channel, thread_ts=thread_ts, message=message)
+    client = WebClient(token=settings.SLACK_BOT_TOKEN)
+    notify_slack(client, channel=channel, thread_ts=thread_ts, message_text=message)
 
     return ""

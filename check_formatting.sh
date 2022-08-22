@@ -1,9 +1,9 @@
 #!/bin/bash
 
 declare -a cmds=(
-    "black --check ."
+    "black --check . --exclude .venv"
     "flake8"
-    "isort --check-only --recursive **/*.py"
+    "isort --check-only **/*.py"
 )
 
 for cmd in "${cmds[@]}"; do
