@@ -69,24 +69,6 @@ raw_config = {
             },
         ],
     },
-    "bot": {
-        "python_file": "jobs.py",
-        "jobs": {
-            "join_channels": {
-                "run_args_template": "",
-                "python_function": "join_channels",
-                "report_stdout": True,
-            },
-        },
-        "slack": [
-            {
-                "command": "join channels",
-                "help": "ensure bot is in all channels",
-                "type": "schedule_job",
-                "job_type": "join_channels",
-            }
-        ]
-    },
     "fdaaa": {
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
         "jobs": {

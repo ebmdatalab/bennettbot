@@ -56,7 +56,8 @@ def register_listeners(app, config, channels, bot_user_id):
     """
     Register listeners for this app
 
-    - A single listener for job requests
+    - A single listener for slack requests that mention the bot
+    - A single listener for slack requests in DMs with the bot
     - A tech-support listener
     - An error handler
     - A listener for new channels
@@ -66,50 +67,87 @@ def register_listeners(app, config, channels, bot_user_id):
     """
 
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
+    tech_support_regex = re.compile(r".*tech[\s|-]support.*", flags=re.I)
 
-    @app.message(re.compile(rf"<@{bot_user_id}>(?P<text>.*)"))
-    def listener(message, say, ack, context):
-        """Respond to every Slack message that mentions the bot and dispatch
-        to another handler based on the contents of the message.
+    @app.event(
+        "app_mention",
+        # Don't match app mentions that include tech support keywords; these will be
+        # matched by the tech-support listener
+        matchers=[lambda event: not tech_support_regex.match(event["text"])],
+    )
+    def job_listener(event, say, ack):
+        """Respond to every Slack message that mentions the bot (and is not a
+        tech-support message) and dispatch to another handler based on the contents
+        of the message.
 
         This allows us to define handlers dynamically based on the job config.
         """
-        logger.info(message)
-        text = context["matches"][0]
-        # handle extra whitespace
-        text = " ".join(text.strip().split())
-        message["text"] = text
-        logger.info("Received message", message=text)
+        logger.info(event=event)
         # acknowledge this message to avoid slack retrying in 3s
         ack()
+        _listener(event, say)
+
+    @app.message(
+        ".*",
+        # only match DMs with the bot that are non-tech support messages
+        matchers=[
+            lambda message: message["channel_type"] == "im"
+            and not tech_support_regex.match(message["text"])
+        ],
+    )
+    def im_job_listener(event, say, ack):
+        """Respond to every Slack message in a direct message with the bot and dispatch
+        to another handler based on the contents of the message.
+        """
+        # acknowledge this message to avoid slack retrying in 3s
+        ack()
+        _listener(event, say)
+
+    def _listener(event, say):
+        text = event["text"].replace(f"<@{bot_user_id}>", "")
+
+        # handle extra whitespace
+        text = " ".join(text.strip().split())
+        event["text"] = text
+        logger.info("Received message", message=text)
 
         if text == "status":
-            handle_status(message, say)
+            handle_status(event, say)
             return
 
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
-                handle_command(app, message, say, slack_config)
+                handle_command(app, event, say, slack_config)
                 return
 
         for namespace, help_config in config["help"].items():
             for pattern in [f"^{namespace} help$", f"^help {namespace}$"]:
                 if re.match(pattern, text):
-                    handle_namespace_help(message, say, help_config)
+                    handle_namespace_help(event, say, help_config)
                     return
 
         include_apology = text != "help"
-        handle_help(message, say, config["help"], include_apology)
+        handle_help(event, say, config["help"], include_apology)
 
-    @app.message(re.compile(r".*tech[\s|-]support.*", flags=re.I))
+    @app.message(
+        tech_support_regex,
+        # Only match messages posted outside of the tech support channel itself
+        matchers=[lambda message: message["channel"] != tech_support_channel_id],
+    )
     def repost_to_tech_support(message, say, ack):
-        logger.info("Received tech-support message", message=message["text"])
         ack()
-        if message["channel"] != tech_support_channel_id:
+        # Don't repost messages in DMs with the bot
+        if message["channel_type"] in ["channel", "group"]:
+            logger.info("Received tech-support message", message=message["text"])
             message_url = app.client.chat_getPermalink(
                 channel=message["channel"], message_ts=message["ts"]
             )["permalink"]
             say(message_url, channel=tech_support_channel_id)
+        else:
+            say(
+                "Sorry, I can't call tech-support from this conversation.",
+                channel=message["channel"],
+            )
 
     @app.event("channel_created")
     def join_channel(event, ack):
@@ -299,17 +337,19 @@ def handle_help(message, say, help_configs, include_apology):
         lines = ["I'm sorry, I didn't understand you", ""]
     else:
         lines = []
-
     lines.extend(["Commands in the following namespaces are available:", ""])
 
     for namespace in sorted(help_configs):
         lines.append(f"* `{namespace}`")
 
-    bot_username = settings.SLACK_APP_USERNAME
-    lines.append(
-        f"Enter `@{bot_username} [namespace] help` (eg `@{bot_username} {random.choice(list(help_configs))} help`) for more help"
-    )
+    if message["type"] == "app_mention":
+        prefix = f"@{settings.SLACK_APP_USERNAME} "
+    else:
+        prefix = ""
 
+    lines.append(
+        f"Enter `{prefix}[namespace] help` (eg `{prefix}{random.choice(list(help_configs))} help`) for more help"
+    )
     say("\n".join(lines), thread_ts=message.get("thread_ts"))
 
 

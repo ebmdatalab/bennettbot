@@ -44,6 +44,7 @@ Add event subscriptions to allow the app to be notified of events in Slack/
    - message.im
    - message.mpim
    - channel_created
+   - app_mention
 3. Save changes
 
 ### Add Bot scopes
@@ -56,7 +57,8 @@ events.  We need to add some more:
    - `im:history`
    - `mpim:history`
    - `channels:read`
-2.Add the following additional scopes:
+   - `app_mentions:read`
+2. Add the following additional scopes:
    - `channels:join`
    - `users:read`
    - `groups:read`
@@ -64,6 +66,11 @@ events.  We need to add some more:
    - `im:read`
    - `reactions:write`
    - `chat:write`
+
+### Allow users to DM the app
+1. Features > App Home
+2. Under Messages Tabs, ensure the "Allow users to send Slash commands and messages from
+  the messages tab" is ticked.
 
 ### Install the app
 1. Features > OAuth & Permissions

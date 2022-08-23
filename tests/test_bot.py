@@ -133,9 +133,28 @@ def test_help(mock_app):
 
 def test_not_understood(mock_app):
     handle_message(mock_app, "<@U1234> beep boop", reaction_count=0)
-    assert_slack_client_sends_messages(
-        mock_app.recorder, messages_kwargs=[{"channel": "channel", "text": "I'm sorry"}]
+
+    for expected_fragment in ["I'm sorry", "Enter `@test_username [namespace] help`"]:
+        assert_slack_client_sends_messages(
+            mock_app.recorder,
+            messages_kwargs=[{"channel": "channel", "text": expected_fragment}],
+        )
+
+
+def test_not_understood_direct_message(mock_app):
+    handle_message(
+        mock_app,
+        "beep boop",
+        reaction_count=0,
+        channel="IM0001",
+        event_type="message",
+        event_kwargs={"channel_type": "im"},
     )
+    for expected_fragment in ["I'm sorry", "Enter `[namespace] help`"]:
+        assert_slack_client_sends_messages(
+            mock_app.recorder,
+            messages_kwargs=[{"channel": "IM0001", "text": expected_fragment}],
+        )
 
 
 def test_status(mock_app):
@@ -153,6 +172,25 @@ def test_message_with_spaces(mock_app, message):
         mock_app.recorder,
         messages_kwargs=[
             {"channel": "channel", "text": "`test do job [n]`: do the job"}
+        ],
+    )
+
+
+@pytest.mark.parametrize("message", ["test help", "<@U1234> test help"])
+def test_direct_message(mock_app, message):
+    # The bot can be DM'd with or without mentioning it
+    handle_message(
+        mock_app,
+        message,
+        reaction_count=0,
+        channel="IM0001",
+        event_type="message",
+        event_kwargs={"channel_type": "im"},
+    )
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[
+            {"channel": "IM0001", "text": "`test do job [n]`: do the job"}
         ],
     )
 
@@ -216,7 +254,9 @@ def test_tech_support_listener(mock_app, text, channel, respost_expected):
     for path in tech_support_call_paths:
         assert path not in recorder.mock_received_requests
 
-    handle_message(mock_app, text, channel=channel, reaction_count=0)
+    handle_message(
+        mock_app, text, channel=channel, reaction_count=0, event_type="message"
+    )
 
     # After the dispatched message, each path has been called once
     for path in tech_support_call_paths:
@@ -235,6 +275,32 @@ def test_tech_support_listener(mock_app, text, channel, respost_expected):
         }
 
 
+def test_tech_support_listener_in_direct_message(mock_app):
+    # If the tech support handler is triggered in a DM, it doesn't get
+    # reposted to the techsupport channel
+    recorder = mock_app.recorder
+    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    handle_message(
+        mock_app,
+        "Calling tech-support",
+        channel="IM0001",
+        reaction_count=0,
+        event_type="message",
+        event_kwargs={"channel_type": "im"},
+    )
+
+    # After the dispatched message, each path has been called once
+    assert "/chat.getPermalink" not in recorder.mock_received_requests
+    assert "/chat.postMessage" in recorder.mock_received_requests
+    assert recorder.mock_received_requests_kwargs["/chat.postMessage"][0] == {
+        "text": "Sorry, I can't call tech-support from this conversation.",
+        "channel": "IM0001",
+    }
+
+
 def test_no_listener_found(mock_app):
     # A message must either start with "<@U1234>" (i.e. a user @'d the bot) OR must contain
     # the tech-support pattern
@@ -242,7 +308,12 @@ def test_no_listener_found(mock_app):
     # We use an error handler to deal with unhandled messages, so the resonse status
     # is 200
     resp = handle_message(
-        mock_app, text, channel="C0002", reaction_count=0, expected_status=200
+        mock_app,
+        text,
+        channel="C0002",
+        reaction_count=0,
+        expected_status=200,
+        event_type="message",
     )
     assert_slack_client_sends_messages(mock_app.recorder, messages_kwargs=[])
     assert resp.body == "Unhandled message"
@@ -267,13 +338,15 @@ def handle_message(
     *,
     reaction_count=1,
     channel="channel",
+    event_type="app_mention",
     event_kwargs=None,
     expected_status=200,
 ):
-    event_kwargs = {"channel": channel, "text": text}
+    event_kwargs = event_kwargs or {}
+    event_kwargs.update({"channel": channel, "text": text})
     resp = handle_event(
         mock_app,
-        event_type="message",
+        event_type=event_type,
         event_kwargs=event_kwargs,
         expected_status=expected_status,
     )
