@@ -32,6 +32,7 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
 import re
 from operator import itemgetter
 
+
 # fmt: off
 raw_config = {
     "test": {

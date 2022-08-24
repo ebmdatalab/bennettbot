@@ -5,6 +5,7 @@ from ebmbot import scheduler
 from .assertions import assert_job_matches, assert_suppression_matches
 from .time_helpers import T0, TS, T
 
+
 # Make sure all tests run when datetime.now() returning T0
 pytestmark = pytest.mark.freeze_time(T0)
 

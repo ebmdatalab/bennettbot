@@ -1,5 +1,6 @@
 from ebmbot.job_configs import build_config
 
+
 # fmt: off
 raw_config = {
     "test": {

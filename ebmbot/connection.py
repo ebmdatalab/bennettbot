@@ -2,6 +2,7 @@ import sqlite3
 
 from . import settings
 
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS job (
     id INTEGER PRIMARY KEY,

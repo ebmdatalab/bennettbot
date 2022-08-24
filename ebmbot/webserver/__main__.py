@@ -1,8 +1,8 @@
 from urllib.parse import urlparse
 
-from . import app
-from ..logger import logger
 from .. import settings
+from ..logger import logger
+from . import app
 
 
 logger.info("running ebmbot.webserver")

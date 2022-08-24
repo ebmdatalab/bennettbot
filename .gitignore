@@ -1,4 +1,5 @@
 environment
+.env
 
 # System files
 *.py[co]

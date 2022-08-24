@@ -17,6 +17,7 @@ from .assertions import (
 from .job_configs import config
 from .time_helpers import T0, TS, T
 
+
 # Make sure all tests run when datetime.now() returning T0
 pytestmark = pytest.mark.freeze_time(T0)
 

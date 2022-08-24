@@ -1,11 +1,10 @@
 import json
 
 from flask import abort, request
-
 from slack_sdk import WebClient
 
 from .. import settings
-from ..signatures import validate_hmac, InvalidHMAC
+from ..signatures import InvalidHMAC, validate_hmac
 from ..slack import notify_slack
 
 
