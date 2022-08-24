@@ -160,10 +160,12 @@ def register_listeners(app, config, channels, bot_user_id):
     @app.error
     def handle_errors(error):
         if isinstance(error, BoltUnhandledRequestError):
-            logger.warn(error)
+            # Unhandled messages are common (anything that doesn't get matched
+            # by one of the listeners).  We don't want to log those.
             return BoltResponse(status=200, body="Unhandled message")
         else:  # pragma: no cover
             # other error patterns
+            logger.error("Unexpected error", error=error)
             return BoltResponse(status=500, body="Something went wrong")
 
 
