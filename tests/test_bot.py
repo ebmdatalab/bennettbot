@@ -238,12 +238,13 @@ def test_pluralise():
 @pytest.mark.parametrize(
     "text,channel,respost_expected",
     [
-        ("This message should match the tech support listener", "C0002", True),
+        # We only match the hyphenated keywords "tech-support"
+        ("This message should not match the tech support listener", "C0002", False),
         # a message posted in the techsupport channel (C0001) does not repost
-        ("This message should match the tech support listener", "C0001", False),
+        ("This message should not match the tech-support listener", "C0001", False),
         ("This message should match the tech-support listener", "C0003", True),
-        ("This message should match the Tech support listener", "C0002", True),
-        ("This message should match the tech SUPPORT listener", "C0002", True),
+        ("This message should match the Tech-support listener", "C0002", True),
+        ("This message should match the tech-SUPPORT listener", "C0002", True),
     ],
 )
 def test_tech_support_listener(mock_app, text, channel, respost_expected):

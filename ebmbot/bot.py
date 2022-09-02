@@ -67,7 +67,7 @@ def register_listeners(app, config, channels, bot_user_id):
     """
 
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
-    tech_support_regex = re.compile(r".*tech[\s|-]support.*", flags=re.I)
+    tech_support_regex = re.compile(r".*tech-support.*", flags=re.I)
 
     @app.event(
         "app_mention",
