@@ -236,17 +236,25 @@ def test_pluralise():
 
 
 @pytest.mark.parametrize(
-    "text,channel,respost_expected",
+    "text,channel,event_kwargs,respost_expected",
     [
-        ("This message should match the tech support listener", "C0002", True),
+        # We only match the hyphenated keywords "tech-support"
+        ("This message should not match the tech support listener", "C0002", {}, False),
         # a message posted in the techsupport channel (C0001) does not repost
-        ("This message should match the tech support listener", "C0001", False),
-        ("This message should match the tech-support listener", "C0003", True),
-        ("This message should match the Tech support listener", "C0002", True),
-        ("This message should match the tech SUPPORT listener", "C0002", True),
+        ("This message should not match the tech-support listener", "C0001", {}, False),
+        # a message posted by a bot with the right keywords and channel does not repost
+        (
+            "This message should not match the tech-support listener",
+            "C0002",
+            {"bot_id": "B1"},
+            False,
+        ),
+        ("This message should match the tech-support listener", "C0003", {}, True),
+        ("This message should match the Tech-support listener", "C0002", {}, True),
+        ("This message should match the tech-SUPPORT listener", "C0002", {}, True),
     ],
 )
-def test_tech_support_listener(mock_app, text, channel, respost_expected):
+def test_tech_support_listener(mock_app, text, channel, event_kwargs, respost_expected):
     # the triggered tech support handler will first fetch the url for the message
     # and then post it to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
@@ -256,7 +264,12 @@ def test_tech_support_listener(mock_app, text, channel, respost_expected):
         assert path not in recorder.mock_received_requests
 
     handle_message(
-        mock_app, text, channel=channel, reaction_count=0, event_type="message"
+        mock_app,
+        text,
+        channel=channel,
+        reaction_count=0,
+        event_type="message",
+        event_kwargs=event_kwargs or {},
     )
 
     # After the dispatched message, each path has been called once

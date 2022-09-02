@@ -67,7 +67,7 @@ def register_listeners(app, config, channels, bot_user_id):
     """
 
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
-    tech_support_regex = re.compile(r".*tech[\s|-]support.*", flags=re.I)
+    tech_support_regex = re.compile(r".*tech-support.*", flags=re.I)
 
     @app.event(
         "app_mention",
@@ -132,7 +132,11 @@ def register_listeners(app, config, channels, bot_user_id):
     @app.message(
         tech_support_regex,
         # Only match messages posted outside of the tech support channel itself
-        matchers=[lambda message: message["channel"] != tech_support_channel_id],
+        # and messages that are not posted by a bot (to avoid reposting reminders etc)
+        matchers=[
+            lambda message: message["channel"] != tech_support_channel_id,
+            lambda message: "bot_id" not in message,
+        ],
     )
     def repost_to_tech_support(message, say, ack):
         ack()
