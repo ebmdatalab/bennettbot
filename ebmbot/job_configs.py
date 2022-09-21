@@ -209,7 +209,7 @@ raw_config = {
             "job_type": "delete_preview",
         }],
     },
-    "team_data": {
+    "teamdata": {
         "python_file": "generate_report.py",
         "jobs": {
             "generate_report": {
@@ -240,6 +240,9 @@ def build_config(raw_config):
     config = {"jobs": {}, "slack": [], "help": {}, "fabfiles": {}, "python_files": {}}
 
     for namespace in raw_config:
+        if "_" in namespace:  # pragma: no cover
+            raise RuntimeError("Namespaces must not contain underscores")
+
         helps = []
 
         for job_type, job_config in raw_config[namespace]["jobs"].items():
