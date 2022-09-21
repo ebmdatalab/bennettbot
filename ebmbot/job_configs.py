@@ -209,6 +209,24 @@ raw_config = {
             "job_type": "delete_preview",
         }],
     },
+    "team_data": {
+        "python_file": "generate_report.py",
+        "jobs": {
+            "generate_report": {
+                "python_function": "main",
+                "run_args_template": "",
+                "report_stdout": True,
+            }
+        },
+        "slack": [
+            {
+                "command": "report",
+                "help": "generate project board report",
+                "type": "schedule_job",
+                "job_type": "generate_report",
+            },
+        ],
+    },
 }
 # fmt: on
 
