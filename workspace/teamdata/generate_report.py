@@ -160,15 +160,16 @@ def get_project_cards(project_id):
 
 def get_slack_username(github_username):
     return {
-        "CarolineMorton": "<@Caroline>",
-        "Jongmassey": "<@Jon>",
-        "StevenMaude": "<@Steve>",
-        "evansd": "<@dave>",
-        "iaindillingham": "<@Iain>",
-        "inglesp": "<@inglesp>",
-        "milanwiedemann": "<@Milan>",
-        "rebkwok": "<@Becky S>",
-        "robinyjpark": "<@Robin>",
+        "CarolineMorton": "<@UMMDD4V2P>",
+        "Jongmassey": "<@U023ZG5H24R>",
+        "StevenMaude": "<@U01TJP3CG76>",
+        "evansd": "<@UAXE5V4RG>",
+        "iaindillingham": "<@U01S6BLGK28>",
+        "inglesp": "<@U4N1YPAP7>",
+        "milanwiedemann": "<@U02GPV8NNU9>",
+        "rebkwok": "<@U03QEJQSUVC>",
+        "robinyjpark": "<@U021UP18T52>",
+        "LisaHopcroft": "<@U029ER915GX>",
     }.get(github_username) or f"<@{github_username}>"
 
 
