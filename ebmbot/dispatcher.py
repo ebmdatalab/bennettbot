@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import shlex
 import subprocess
@@ -151,7 +152,10 @@ class JobDispatcher:
         if rc == 0:
             if self.job_config["report_stdout"]:
                 with open(self.stdout_path) as f:
-                    msg = f.read()
+                    if self.job_config["report_format"] == "blocks":
+                        msg = json.load(f)
+                    else:
+                        msg = f.read()
             elif self.job_config["report_success"]:
                 msg = f"Command `{self.job['type']}` succeeded"
             else:
@@ -159,7 +163,12 @@ class JobDispatcher:
         else:
             msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir})"
 
-        notify_slack(self.slack_client, self.job["channel"], msg)
+        notify_slack(
+            self.slack_client,
+            self.job["channel"],
+            msg,
+            message_format=self.job_config["report_format"],
+        )
 
     def set_up_cwd(self):
         """Ensure cwd exists, and maybe refresh fabfile."""

@@ -9,9 +9,14 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
         * "python_function": optional, a python function to execute within the
            specified `python_file`.  Every python function is called with the
            slack client as the first positional argument, plus and keyword args
-           defined in the slack command
+           defined in the slack command.
         * "report_stdout": optional, whether the stdout of the command is
-            reported to Slack
+            reported to Slack. If a python_function is intended to report to slack,
+            it must return either a string or an array representing valid block format
+            to be provided to the Slack API.
+            Docs: https://api.slack.com/methods/chat.postMessage#arg_blocks
+            Test your blocks here: https://app.slack.com/block-kit-builder
+        * report_format": optional, whether the report format is plain text or blocks
         * "report_success": optional, whether the success of the command is
             reported to Slack
     * "slack": a list of dicts with keys:
@@ -216,6 +221,7 @@ raw_config = {
                 "python_function": "main",
                 "run_args_template": "",
                 "report_stdout": True,
+                "report_format": "blocks",
             }
         },
         "slack": [
@@ -247,6 +253,7 @@ def build_config(raw_config):
 
         for job_type, job_config in raw_config[namespace]["jobs"].items():
             job_config["report_stdout"] = job_config.get("report_stdout", False)
+            job_config["report_format"] = job_config.get("report_format", "text")
             job_config["report_success"] = job_config.get("report_success", True)
             job_config["python_function"] = job_config.get("python_function")
             namespaced_job_type = f"{namespace}_{job_type}"
@@ -311,6 +318,7 @@ def validate_job_config(job_type, job_config):
     expected_keys = {
         "run_args_template",
         "report_stdout",
+        "report_format",
         "report_success",
         "python_function",
     }
@@ -321,6 +329,10 @@ def validate_job_config(job_type, job_config):
 
     if extra_keys := (job_config.keys() - expected_keys):
         msg = f"Job {job_type} has extra keys {extra_keys}"
+        raise RuntimeError(msg)
+
+    if job_config["report_format"] not in ["text", "blocks"]:
+        msg = f"Job {job_type} has an invalid report_format; must be either 'text' or 'blocks'"
         raise RuntimeError(msg)
 
 

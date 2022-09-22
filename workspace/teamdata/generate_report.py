@@ -1,3 +1,4 @@
+import json
 import os
 
 import requests
@@ -31,15 +32,43 @@ def main():
             continue
         tickets_by_status[status].append(summary)
 
-    print(
-        "[Project Board Summary](https://github.com/orgs/opensafely-core/projects/13/views/1)"
-    )
-    print()
+    # report_output = ["[Project Board Summary](https://github.com/orgs/opensafely-core/projects/13/views/1)\n"]
+
+    report_output = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": ":newspaper: Project Board Summary :newspaper:",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://github.com/orgs/opensafely-core/projects/13/views/1>",
+            },
+        },
+    ]
 
     for status, tickets in tickets_by_status.items():
-        print(f"* {status}")
-        for ticket in tickets:
-            print(f"  * {ticket}")
+
+        report_output.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*{status}*"},
+                },
+            ]
+        )
+        ticket_sections = [
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"• {ticket}"}}
+            for ticket in tickets
+        ]
+        report_output.extend(ticket_sections)
+
+    return json.dumps(report_output)
 
 
 def get_project_id():
@@ -131,16 +160,16 @@ def get_project_cards(project_id):
 
 def get_slack_username(github_username):
     return {
-        "CarolineMorton": "@Caroline",
-        "Jongmassey": "@Jon",
-        "StevenMaude": "@Steve",
-        "evansd": "@dave",
-        "iaindillingham": "@Iain",
-        "inglesp": "@inglesp",
-        "milanwiedemann": "@Milan",
-        "rebkwok": "@Becky S",
-        "robinyjpark": "@Robin",
-    }.get(github_username) or github_username
+        "CarolineMorton": "<@Caroline>",
+        "Jongmassey": "<@Jon>",
+        "StevenMaude": "<@Steve>",
+        "evansd": "<@dave>",
+        "iaindillingham": "<@Iain>",
+        "inglesp": "<@inglesp>",
+        "milanwiedemann": "<@Milan>",
+        "rebkwok": "<@Becky S>",
+        "robinyjpark": "<@Robin>",
+    }.get(github_username) or f"<@{github_username}>"
 
 
 def get_status_and_summary(card):
@@ -153,7 +182,7 @@ def get_status_and_summary(card):
     )
 
     if url:
-        summary = f"[{title}]({url})]"
+        summary = f"<{url}|{title}>"
     else:
         summary = title
 

@@ -10,3 +10,4 @@ GITHUB_WEBHOOK_SECRET=changeme
 EBMBOT_WEBHOOK_SECRET=changeme
 WEBHOOK_ORIGIN=http(s)://changeme:1234
 EBMBOT_PATH=$PATH:/var/www/ebmbot/venv/bin/
+DATA_TEAM_GITHUB_API_TOKEN=changeme
