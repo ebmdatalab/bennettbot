@@ -50,6 +50,12 @@ raw_config = {
                 "python_function": "hello_world",
                 "report_stdout": True
             },
+            "good_python_job_with_blocks": {
+                "run_args_template": "",
+                "python_function": "hello_world_blocks",
+                "report_stdout": True,
+                "report_format": "blocks"
+            },
         },
         "slack": [
             {
@@ -89,6 +95,13 @@ raw_config = {
                 "help": "run a python function",
                 "type": "schedule_job",
                 "job_type": "good_python_job",
+                "delay_seconds": 0,
+            },
+            {
+                "command": "do python blocks job",
+                "help": "run a python function",
+                "type": "schedule_job",
+                "job_type": "good_python_job_with_blocks",
                 "delay_seconds": 0,
             },
         ],

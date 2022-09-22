@@ -66,36 +66,42 @@ def test_build_config():
             "ns1_good_job": {
                 "run_args_template": "cat [poem]",
                 "report_stdout": False,
+                "report_format": "text",
                 "report_success": True,
                 "python_function": None,
             },
             "ns1_bad_job": {
                 "run_args_template": "dog [poem]",
                 "report_stdout": False,
+                "report_format": "text",
                 "report_success": True,
                 "python_function": None,
             },
             "ns2_good_job": {
                 "run_args_template": "cat [poem]",
                 "report_stdout": True,
+                "report_format": "text",
                 "report_success": True,
                 "python_function": None,
             },
             "ns2_bad_job": {
                 "run_args_template": "dog [poem]",
                 "report_stdout": False,
+                "report_format": "text",
                 "report_success": False,
                 "python_function": None,
             },
             "ns3_good_python_job": {
                 "run_args_template": "",
                 "report_stdout": True,
+                "report_format": "text",
                 "report_success": True,
                 "python_function": "hello_world",
             },
             "ns3_bad_python_job": {
                 "run_args_template": "",
                 "report_stdout": True,
+                "report_format": "text",
                 "report_success": True,
                 "python_function": "unknown",
             },
@@ -242,3 +248,22 @@ def test_build_config_with_bad_slack_config():
     with pytest.raises(RuntimeError) as e:
         build_config(raw_config)
     assert "unknown job type" in str(e)
+
+
+def test_build_config_with_invalid_report_format():
+    # fmt: off
+    raw_config = {
+        "ns": {
+            "jobs": {
+                "good_job": {
+                    "run_args_template": "cat [poem]",
+                    "report_format": "unknown"
+                }
+            },
+            "slack": []
+        }
+    }
+
+    with pytest.raises(RuntimeError) as e:
+        build_config(raw_config)
+    assert "invalid report_format" in str(e)

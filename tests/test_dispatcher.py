@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 from unittest.mock import Mock
@@ -266,6 +267,35 @@ def test_python_job_success_with_parameterised_args(mock_client):
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "Hello Fred!"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
+def test_python_job_success_with_blocks(mock_client):
+    log_dir = build_log_dir("test_good_python_job_with_blocks")
+
+    scheduler.schedule_job("test_good_python_job_with_blocks", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+    expected_blocks = [
+        {"type": "section", "text": {"type": "plain_text", "text": "Hello World!"}}
+    ]
+
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {
+                "channel": "channel",
+                "text": "{'type': 'plain_text', 'text': 'Hello World!'}",
+                "blocks": expected_blocks,
+            },
+        ],
+    )
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert json.load(f) == expected_blocks
 
     with open(os.path.join(log_dir, "stderr")) as f:
         assert f.read() == ""
