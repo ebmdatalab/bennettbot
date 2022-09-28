@@ -16,7 +16,7 @@ HEADERS = {
 ORG_NAME = "opensafely-core"
 
 
-def post_request(payload):
+def post_request(payload):  # pragma: no cover
     rsp = requests.post(URL, headers=HEADERS, json=payload)
     rsp.raise_for_status()
     return rsp.json()["data"]["organization"]["projectV2"]["id"]
@@ -27,7 +27,7 @@ def main(project_num, statuses):
     cards = get_project_cards(project_id)
     tickets_by_status = dict.fromkeys(statuses, [])
 
-    for card in cards:
+    for card in cards:  # pragma: no cover
         status, summary = get_status_and_summary(card)
         if status in statuses:
             tickets_by_status[status].append(summary)
@@ -149,7 +149,7 @@ def get_project_cards(project_id):
     return sorted(
         data["data"]["node"]["items"]["nodes"],
         key=lambda card: card["content"]["title"],
-    )
+    )  # pragma: no cover
 
 
 def get_slack_username(github_username):
@@ -174,7 +174,7 @@ def get_slack_username(github_username):
     }.get(github_username) or f"<@{github_username}>"
 
 
-def get_status_and_summary(card):
+def get_status_and_summary(card):  # pragma: no cover
     status = card["fieldValues"]["nodes"][-1]["name"]
     title = card["content"]["title"]
     url = card["content"].get("bodyUrl")

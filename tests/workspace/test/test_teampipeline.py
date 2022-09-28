@@ -39,3 +39,15 @@ def test_generate_report():
 
     statuses = ["Under Review", "Blocked", "In Progress"]
     assert generate_report.main(13, statuses) == json.dumps(response)
+
+
+def test_get_slack_username_returns_github_user_by_default():
+    result = generate_report.get_slack_username("test user")
+
+    assert result == "<@test user>"
+
+
+def test_get_slack_username_returns_slack_user_id():
+    result = generate_report.get_slack_username("lucyb")
+
+    assert result == "<@U035FT48KEK>"
