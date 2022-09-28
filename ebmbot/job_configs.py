@@ -233,6 +233,25 @@ raw_config = {
             },
         ],
     },
+    "teampipeline": {
+        "python_file": "generate_report.py",
+        "jobs": {
+            "generate_pipeline_report": {
+                "python_function": "main",
+                "run_args_template": "--project-num 12 --statuses 'in progress, blocked'",
+                "report_stdout": True,
+                "report_format": "blocks",
+            }
+        },
+        "slack": [
+            {
+                "command": "pipeline report",
+                "help": "generate project board report",
+                "type": "schedule_job",
+                "job_type": "generate_pipeline_report",
+            },
+        ],
+    },
 }
 # fmt: on
 
