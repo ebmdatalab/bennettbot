@@ -237,8 +237,8 @@ raw_config = {
         "python_file": "generate_report.py",
         "jobs": {
             "generate_pipeline_report": {
-                "python_function": "main",
-                "run_args_template": "--project-num 12 --statuses 'in progress, blocked'",
+                "python_function": "main project_num=12 statuses=['in progress', 'blocked']",
+                "run_args_template": "",
                 "report_stdout": True,
                 "report_format": "blocks",
             }
