@@ -19,17 +19,22 @@ ORG_NAME = "opensafely-core"
 def post_request(payload):  # pragma: no cover
     rsp = requests.post(URL, headers=HEADERS, json=payload)
     rsp.raise_for_status()
-    return rsp.json()["data"]["organization"]["projectV2"]["id"]
+    return rsp.json()
 
 
 def main(project_num, statuses):
-    project_id = get_project_id(project_num)
+    # args received from slack commands will be strings; convert to required format
+    project_id = get_project_id(int(project_num))
+    if isinstance(statuses, str):
+        statuses = json.loads(statuses)
+
     cards = get_project_cards(project_id)
+
     tickets_by_status = dict.fromkeys(statuses, [])
 
     for card in cards:  # pragma: no cover
         status, summary = get_status_and_summary(card)
-        if status in statuses:
+        if status and status in statuses:
             tickets_by_status[status].append(summary)
 
     report_output = [
@@ -64,7 +69,6 @@ def main(project_num, statuses):
             for ticket in tickets
         ]
         report_output.extend(ticket_sections)
-
     return json.dumps(report_output)
 
 
@@ -175,6 +179,8 @@ def get_slack_username(github_username):
 
 
 def get_status_and_summary(card):  # pragma: no cover
+    if not card["fieldValues"]["nodes"][-1]:
+        return (None, None)
     status = card["fieldValues"]["nodes"][-1]["name"]
     title = card["content"]["title"]
     url = card["content"].get("bodyUrl")
@@ -196,8 +202,9 @@ def get_status_and_summary(card):  # pragma: no cover
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--project-num", help="The GitHub Project number")
-    parser.add_argument("--statuses", help="List of GitHub Project statuses")
+    parser.add_argument("--project-num", help="The GitHub Project number", type=int)
+    parser.add_argument(
+        "--statuses", type=str, nargs="+", help="List of GitHub Project statuses"
+    )
     args = parser.parse_args()
-
     main(args.project_num, args.statuses)

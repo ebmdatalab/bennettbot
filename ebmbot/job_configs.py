@@ -7,8 +7,7 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
     * "jobs": a dict mapping a job_type to a further dict with keys:
         * "run_args_template": template of bash command to be run
         * "python_function": optional, a python function to execute within the
-           specified `python_file`.  Every python function is called with the
-           slack client as the first positional argument, plus and keyword args
+           specified `python_file`.  Every python function is called with any keyword args
            defined in the slack command.
         * "report_stdout": optional, whether the stdout of the command is
             reported to Slack. If a python_function is intended to report to slack,
@@ -237,7 +236,7 @@ raw_config = {
         "python_file": "generate_report.py",
         "jobs": {
             "generate_pipeline_report": {
-                "python_function": "main project_num=12 statuses=['in progress', 'blocked']",
+                "python_function": "main",
                 "run_args_template": "",
                 "report_stdout": True,
                 "report_format": "blocks",
@@ -245,7 +244,7 @@ raw_config = {
         },
         "slack": [
             {
-                "command": "pipeline report",
+                "command": "pipeline report [project_num] [statuses]",
                 "help": "generate project board report",
                 "type": "schedule_job",
                 "job_type": "generate_pipeline_report",
