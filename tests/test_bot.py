@@ -283,10 +283,9 @@ def test_tech_support_listener(mock_app, text, channel, event_kwargs, respost_ex
         # check the contents of the request kwargs for the postMessage
         # posts to the techsupport channel (C0001), with the url retrieved from the
         # mocked getPermalink call (always "http://test")
-        assert recorder.mock_received_requests_kwargs["/chat.postMessage"][0] == {
-            "text": "http://test",
-            "channel": "C0001",
-        }
+        post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+        assert ("text", "http://test") in post_message.items()
+        assert ("channel", "C0001") in post_message.items()
 
 
 def test_tech_support_listener_in_direct_message(mock_app):
@@ -309,10 +308,12 @@ def test_tech_support_listener_in_direct_message(mock_app):
     # After the dispatched message, each path has been called once
     assert "/chat.getPermalink" not in recorder.mock_received_requests
     assert "/chat.postMessage" in recorder.mock_received_requests
-    assert recorder.mock_received_requests_kwargs["/chat.postMessage"][0] == {
-        "text": "Sorry, I can't call tech-support from this conversation.",
-        "channel": "IM0001",
-    }
+    post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    assert (
+        "text",
+        "Sorry, I can't call tech-support from this conversation.",
+    ) in post_message.items()
+    assert ("channel", "IM0001") in post_message.items()
 
 
 def test_no_listener_found(mock_app):
