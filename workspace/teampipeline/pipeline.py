@@ -1,4 +1,4 @@
-import generate_report
+from workspace import generate_report
 
 
 def report():
