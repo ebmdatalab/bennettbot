@@ -20,7 +20,8 @@ omit = [
     "venv/*",
     "fabfile.py",
     "*/__main__.py",
-    "tests/mock_web_api_server.py"
+    "tests/mock_web_api_server.py",
+    "workspace/teamdata/generate_report.py"
 ]
 
 [tool.coverage.report]
