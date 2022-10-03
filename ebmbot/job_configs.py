@@ -233,10 +233,10 @@ raw_config = {
         ],
     },
     "teampipeline": {
-        "python_file": "generate_report.py",
+        "python_file": "pipeline.py",
         "jobs": {
             "generate_pipeline_report": {
-                "python_function": "main",
+                "python_function": "report",
                 "run_args_template": "",
                 "report_stdout": True,
                 "report_format": "blocks",
@@ -244,7 +244,7 @@ raw_config = {
         },
         "slack": [
             {
-                "command": "pipeline report [project_num] [statuses]",
+                "command": "pipeline report",
                 "help": "generate project board report",
                 "type": "schedule_job",
                 "job_type": "generate_pipeline_report",

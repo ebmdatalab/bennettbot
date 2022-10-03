@@ -23,13 +23,8 @@ def post_request(payload):  # pragma: no cover
 
 
 def main(project_num, statuses):
-    # args received from slack commands will be strings; convert to required format
     project_id = get_project_id(int(project_num))
-    if isinstance(statuses, str):
-        statuses = json.loads(statuses)
-
     cards = get_project_cards(project_id)
-
     tickets_by_status = dict.fromkeys(statuses, [])
 
     for card in cards:  # pragma: no cover
@@ -203,8 +198,6 @@ def get_status_and_summary(card):  # pragma: no cover
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-num", help="The GitHub Project number", type=int)
-    parser.add_argument(
-        "--statuses", type=str, nargs="+", help="List of GitHub Project statuses"
-    )
+    parser.add_argument("--statuses", nargs="+", help="List of GitHub Project statuses")
     args = parser.parse_args()
-    main(args.project_num, args.statuses)
+    print(main(args.project_num, args.statuses))
