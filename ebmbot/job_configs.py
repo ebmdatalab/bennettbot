@@ -244,7 +244,7 @@ raw_config = {
         },
         "slack": [
             {
-                "command": "pipeline report",
+                "command": "report",
                 "help": "generate project board report",
                 "type": "schedule_job",
                 "job_type": "generate_pipeline_report",
