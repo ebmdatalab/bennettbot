@@ -25,7 +25,7 @@ def post_request(payload):  # pragma: no cover
 def main(project_num, statuses):
     project_id = get_project_id(int(project_num))
     cards = get_project_cards(project_id)
-    tickets_by_status = dict.fromkeys(statuses, [])
+    tickets_by_status = {status: [] for status in statuses}
 
     for card in cards:  # pragma: no cover
         status, summary = get_status_and_summary(card)
