@@ -1,6 +1,6 @@
 import json
 
-from workspace.teampipeline import generate_report
+from workspace import generate_report
 
 
 def test_generate_report():
