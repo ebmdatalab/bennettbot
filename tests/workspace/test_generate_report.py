@@ -31,7 +31,7 @@ def test_generate_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<https://github.com/orgs/opensafely-core/projects/13/views/1>",
+                "text": "<https://github.com/orgs/opensafely-core/projects/13/views/1|View board>",
             },
         },
         {"type": "divider"},

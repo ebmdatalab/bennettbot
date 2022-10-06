@@ -44,7 +44,7 @@ def main(project_num, statuses):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/orgs/opensafely-core/projects/{project_num}/views/1>",
+                "text": f"<https://github.com/orgs/opensafely-core/projects/{project_num}/views/1|View board>",
             },
         },
     ]
