@@ -8,7 +8,12 @@ def test_generate_report():
         return {
             "data": {
                 "organization": {"projectV2": {"id": 1}},
-                "node": {"items": {"nodes": ""}},
+                "node": {
+                    "items": {
+                        "nodes": "",
+                        "pageInfo": {"hasNextPage": False, "endCursor": "abc"},
+                    }
+                },
             }
         }
 

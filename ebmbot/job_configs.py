@@ -214,10 +214,10 @@ raw_config = {
         }],
     },
     "teamdata": {
-        "python_file": "generate_report.py",
+        "python_file": "project_report.py",
         "jobs": {
             "generate_report": {
-                "python_function": "main",
+                "python_function": "report",
                 "run_args_template": "",
                 "report_stdout": True,
                 "report_format": "blocks",

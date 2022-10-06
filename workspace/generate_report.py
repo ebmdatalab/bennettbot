@@ -90,10 +90,10 @@ def get_project_id(project_num):
 
 def get_project_cards(project_id):
     query = """
-    query projectCards($project_id: ID!) {
+    query projectCards($project_id: ID!, $cursor: String) {
       node(id: $project_id) {
         ... on ProjectV2 {
-          items(first: 100) {
+          items(first: 100, after: $cursor) {
             nodes {
               fieldValues(last: 100) {
                 nodes {
@@ -135,18 +135,31 @@ def get_project_cards(project_id):
                 }
               }
             }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
           }
         }
       }
     }
     """
 
-    variables = {"project_id": project_id}
-    payload = {"query": query, "variables": variables}
-    data = post_request(payload)
+    cursor = None
+    project_data = []
+    while True:
+        variables = {"project_id": project_id, "cursor": cursor}
+        payload = {"query": query, "variables": variables}
+        data = post_request(payload)
+        node_data = data["data"]["node"]["items"]
+        project_data.extend(node_data["nodes"])
+        if not node_data["pageInfo"]["hasNextPage"]:
+            break
+        # update the cursor we pass into the GraphQL query
+        cursor = node_data["pageInfo"]["endCursor"]  # pragma: no cover
 
     return sorted(
-        data["data"]["node"]["items"]["nodes"],
+        project_data,
         key=lambda card: card["content"]["title"],
     )  # pragma: no cover
 
