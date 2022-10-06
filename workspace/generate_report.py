@@ -180,7 +180,7 @@ def get_slack_username(github_username):
         "CLStables": "<@U036A6LTR7D>",
         "tomodwyer": "<@U01UQ0T2M7V>",
         "bloodearnest": "<@U01AMBZUT47>",
-        "ghickman": "<@U017T76R4DC>",
+        "ghickman": "ghickman",  # George doesn't want to receive Slack notifications
         "madwort": "<@U019R5FJ7G8>",
         "benbc": "<@U01SPCP06Q1>",
     }.get(github_username) or f"<@{github_username}>"
