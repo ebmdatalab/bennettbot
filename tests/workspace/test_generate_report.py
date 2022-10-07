@@ -31,15 +31,36 @@ def test_generate_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<https://github.com/orgs/opensafely-core/projects/13/views/1>",
+                "text": "<https://github.com/orgs/opensafely-core/projects/13/views/1|View board>",
             },
         },
         {"type": "divider"},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "*Under Review*"}},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Under Review*"},
+        },
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": ""},
+        },
         {"type": "divider"},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "*Blocked*"}},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Blocked*"},
+        },
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": ""},
+        },
         {"type": "divider"},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "*In Progress*"}},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*In Progress*"},
+        },
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": ""},
+        },
     ]
 
     statuses = ["Under Review", "Blocked", "In Progress"]
