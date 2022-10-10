@@ -104,10 +104,11 @@ def register_listeners(app, config, channels, bot_user_id):
         _listener(event, say)
 
     def _listener(event, say):
-        text = event["text"].replace(f"<@{bot_user_id}>", "")
+        text = event["text"].replace("Reminder: ", "")
+        text = text.replace(f"<@{bot_user_id}>", "")
 
-        # handle extra whitespace
-        text = " ".join(text.strip().split())
+        # handle extra whitespace and punctuation
+        text = " ".join(text.strip().rstrip(".").split())
         event["text"] = text
         logger.info("Received message", message=text)
 
