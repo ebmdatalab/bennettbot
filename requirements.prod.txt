@@ -244,9 +244,9 @@ six==1.16.0 \
     # via
     #   fabric3
     #   paramiko
-slack-bolt==1.15.1 \
-    --hash=sha256:583a319734ee7de2fca758605c92253de7b3c9ef72d0c38251126c055af0d1c1 \
-    --hash=sha256:8ead9331d7733a1ed364c4c57cf7a10fcb8c4be509ddba778c04e9efee9883cf
+slack-bolt==1.15.2 \
+    --hash=sha256:18d60c99de0ff786a302dd872b2c0a63e46b6922b7ce2e352372effc321d0bdd \
+    --hash=sha256:e234b3305ea55ce8f2e1274bc0c0a2a79531ad501db8d8f70a42881d5001c0ad
     # via -r requirements.prod.in
 slack-sdk==3.18.1 \
     --hash=sha256:63ce5e6253a31873d6c921c9feaa842a93a2f56e6e009cb7daf406f4bc4df798 \
