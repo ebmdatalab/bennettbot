@@ -240,6 +240,26 @@ def test_pluralise():
     [
         # We only match the hyphenated keywords "tech-support"
         ("This message should not match the tech support listener", "C0002", {}, False),
+        # We match only distinct words
+        (
+            "This message should not match the test-tech-support listener",
+            "C0002",
+            {},
+            False,
+        ),
+        (
+            "This message should not match the tech-support-test listener",
+            "C0002",
+            {},
+            False,
+        ),
+        # We ignore mentions embeded in URLs
+        (
+            "This message should not match the /test/tech-support listener",
+            "C0002",
+            {},
+            False,
+        ),
         # a message posted in the techsupport channel (C0001) does not repost
         ("This message should not match the tech-support listener", "C0001", {}, False),
         # a message posted by a bot with the right keywords and channel does not repost
@@ -252,6 +272,11 @@ def test_pluralise():
         ("This message should match the tech-support listener", "C0003", {}, True),
         ("This message should match the Tech-support listener", "C0002", {}, True),
         ("This message should match the tech-SUPPORT listener", "C0002", {}, True),
+        ("This message should match the @tech-support listener", "C0002", {}, True),
+        ("This message should match the #tech-support listener", "C0002", {}, True),
+        ("This message should match the `tech-support` listener", "C0002", {}, True),
+        ("tech-support - this message should match", "C0002", {}, True),
+        ("This message should match - tech-support", "C0002", {}, True),
     ],
 )
 def test_tech_support_listener(mock_app, text, channel, event_kwargs, respost_expected):
