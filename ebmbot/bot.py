@@ -67,7 +67,11 @@ def register_listeners(app, config, channels, bot_user_id):
     """
 
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
-    tech_support_regex = re.compile(r".*tech-support.*", flags=re.I)
+    # Match "tech-support" as a word (treating hyphens as word characters), except if
+    # it's preceded by a slash to avoid matching it in URLs
+    tech_support_regex = re.compile(
+        r".*(^|[^\w\-/])tech-support($|[^\w\-]).*", flags=re.I
+    )
 
     @app.event(
         "app_mention",
