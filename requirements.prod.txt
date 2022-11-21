@@ -146,10 +146,6 @@ idna==3.3 \
     --hash=sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff \
     --hash=sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d
     # via requests
-importlib-metadata==5.0.0 \
-    --hash=sha256:da31db32b304314d044d3c12c79bd59e307889b287ad12ff387b3500835fc2ab \
-    --hash=sha256:ddb0e35065e8938f867ed4928d0ae5bf2a53b7773871bfe6bcc7e4fcdc7dea43
-    # via flask
 itsdangerous==2.1.2 \
     --hash=sha256:2c2349112351b88699d8d4b6b075022c0808887cb7ad10069318a8b0bc88db44 \
     --hash=sha256:5dbbc68b317e5e42f327f9021763545dc3fc3bfe22e6deb96aaf1fc38874156a
@@ -256,9 +252,9 @@ slack-sdk==3.18.1 \
     --hash=sha256:63ce5e6253a31873d6c921c9feaa842a93a2f56e6e009cb7daf406f4bc4df798 \
     --hash=sha256:a25d3d2bf0bf605d54d764d4a463fe7c0659ee24c13d75653e2bec247bd5998b
     # via slack-bolt
-structlog==22.1.0 \
-    --hash=sha256:760d37b8839bd4fe1747bed7b80f7f4de160078405f4b6a1db9270ccbfce6c30 \
-    --hash=sha256:94b29b1d62b2659db154f67a9379ec1770183933d6115d21f21aa25cfc9a7393
+structlog==22.2.0 \
+    --hash=sha256:4edfe1d9f15f8a4bf365a817f7182af5d610596c155434b7564bfe7d40c2753c \
+    --hash=sha256:bb1aa189214c30372a8afaa592f9556756aeb690e1ad7eb34391d7b5fa0f09b2
     # via -r requirements.prod.in
 urllib3==1.26.12 \
     --hash=sha256:3fa96cf423e6987997fc326ae8df396db2a8b7c667747d47ddd8ecba91f4a74e \
@@ -268,10 +264,6 @@ werkzeug==2.2.2 \
     --hash=sha256:7ea2d48322cc7c0f8b3a215ed73eabd7b5d75d0b50e31ab006286ccff9e00b8f \
     --hash=sha256:f979ab81f58d7318e064e99c4506445d60135ac5cd2e177a2de0089bfd4c9bd5
     # via flask
-zipp==3.10.0 \
-    --hash=sha256:4fcb6f278987a6605757302a6e40e896257570d11c51628968ccb2a47e80c6c1 \
-    --hash=sha256:7a7262fd930bd3e36c50b9a64897aec3fafff3dfdeec9623ae22b40e93f99bb8
-    # via importlib-metadata
 
 # WARNING: The following packages were not pinned, but pip requires them to be
 # pinned when the requirements file includes hashes. Consider using the --allow-unsafe flag.
