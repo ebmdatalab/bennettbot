@@ -319,7 +319,9 @@ def test_python_job_failure(mock_client):
         assert f.read() == ""
 
     with open(os.path.join(log_dir, "stderr")) as f:
-        assert f.read() == "module 'jobs' has no attribute 'unknown'\n"
+        stderr = f.read()
+        assert "Traceback (most recent call last):" in stderr
+        assert "module 'jobs' has no attribute 'unknown'" in stderr
 
 
 def test_job_success_config_with_no_python_file(mock_client):

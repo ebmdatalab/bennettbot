@@ -5,6 +5,7 @@ import shlex
 import subprocess
 import sys
 import time
+import traceback
 from datetime import datetime, timezone
 from multiprocessing import Process
 from urllib.parse import urlencode, urlparse, urlunparse
@@ -122,9 +123,9 @@ class JobDispatcher:
                         shell=True,
                     )
                     rc = rv.returncode
-            except Exception as e:  # pragma: no cover
+            except Exception:  # pragma: no cover
+                traceback.print_exception(*sys.exc_info(), file=stderr)
                 rc = -1
-                stderr.write(str(e) + "\n")
 
         logger.info("run_command", rc=rc)
         logger.info("run_command }")
