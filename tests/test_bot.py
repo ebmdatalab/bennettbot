@@ -48,6 +48,14 @@ def test_schedule_job(mock_app):
     assert_job_matches(jj[0], "test_good_job", {"n": "10"}, "channel", T(60), None)
 
 
+def test_schedule_job_from_reminder(mock_app):
+    handle_message(mock_app, "Reminder: <@U1234|test bot> test do job 10")
+
+    jj = scheduler.get_jobs_of_type("test_good_job")
+    assert len(jj) == 1
+    assert_job_matches(jj[0], "test_good_job", {"n": "10"}, "channel", T(60), None)
+
+
 def test_schedule_python_job(mock_app):
     handle_message(mock_app, "<@U1234> test do python job")
 
