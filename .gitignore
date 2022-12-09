@@ -1,5 +1,6 @@
 environment
 .env
+workspace/techsupport/ooo.json
 
 # System files
 *.py[co]
