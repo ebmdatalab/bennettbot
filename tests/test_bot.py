@@ -1,5 +1,7 @@
 import json
 import time
+from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from slack_bolt.request import BoltRequest
@@ -244,7 +246,7 @@ def test_pluralise():
 
 
 @pytest.mark.parametrize(
-    "text,channel,event_kwargs,respost_expected",
+    "text,channel,event_kwargs,repost_expected",
     [
         # We only match the hyphenated keywords "tech-support"
         ("This message should not match the tech support listener", "C0002", {}, False),
@@ -287,7 +289,7 @@ def test_pluralise():
         ("This message should match - tech-support", "C0002", {}, True),
     ],
 )
-def test_tech_support_listener(mock_app, text, channel, event_kwargs, respost_expected):
+def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_expected):
     # the triggered tech support handler will first fetch the url for the message
     # and then post it to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
@@ -300,25 +302,117 @@ def test_tech_support_listener(mock_app, text, channel, event_kwargs, respost_ex
         mock_app,
         text,
         channel=channel,
-        reaction_count=0,
+        reaction_count=1 if repost_expected else 0,
         event_type="message",
         event_kwargs=event_kwargs or {},
     )
 
     # After the dispatched message, each path has been called once
     for path in tech_support_call_paths:
-        if respost_expected:
+        if repost_expected:
             assert recorder.mock_received_requests[path] == 1
         else:
             assert path not in recorder.mock_received_requests
 
-    if respost_expected:
+    if repost_expected:
         # check the contents of the request kwargs for the postMessage
         # posts to the techsupport channel (C0001), with the url retrieved from the
         # mocked getPermalink call (always "http://test")
         post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
         assert ("text", "http://test") in post_message.items()
         assert ("channel", "C0001") in post_message.items()
+
+
+@patch("ebmbot.bot.get_tech_support_dates")
+def test_tech_support_out_of_office_listener(tech_support_dates, mock_app):
+    start = (datetime.today() - timedelta(1)).date()
+    end = (datetime.today() + timedelta(1)).date()
+    tech_support_dates.return_value = start, end
+
+    # If tech-support is OOO, the handler will first reply with the OOO message, then
+    # the repost the message URL to the techsupport channel
+    # Before the dispatched message, neither of these paths have been called
+    recorder = mock_app.recorder
+    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    handle_message(
+        mock_app,
+        "Calling tech-support",
+        channel="C0002",
+        reaction_count=1,
+        event_type="message",
+        event_kwargs={},
+    )
+
+    # After the dispatched message, postMessage has been called twice, for the OOO
+    # reply and the reposted url
+    assert recorder.mock_received_requests["/chat.postMessage"] == 2
+    assert recorder.mock_received_requests["/chat.getPermalink"] == 1
+
+    # check the contents of the request kwargs for the OOO postMessage
+    # posts to the same channel (C0002)
+    ooo_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    assert "tech-support is currently out of office" in ooo_message["text"]
+    assert ooo_message["channel"] == "C0002"
+    # check the contents of the request kwargs for the reposted postMessage
+    # posts to the techsupport channel (C0001), with the url retrieved from the
+    # mocked getPermalink call (always "http://test")
+    repost_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][1]
+    assert repost_message["text"] == "http://test"
+    assert repost_message["channel"] == "C0001"
+
+
+@pytest.mark.parametrize(
+    "start_days_from_today,end_days_from_today,ooo_message",
+    [
+        (-10, -5, False),  # both past
+        (5, 10, False),  # both future
+        (-2, 10, True),  # ooo currently on
+    ],
+)
+@patch("ebmbot.bot.get_tech_support_dates")
+def test_tech_support_out_of_office_dates(
+    tech_support_dates,
+    mock_app,
+    start_days_from_today,
+    end_days_from_today,
+    ooo_message,
+):
+    start = (datetime.today() + timedelta(start_days_from_today)).date()
+    end = (datetime.today() + timedelta(end_days_from_today)).date()
+    tech_support_dates.return_value = start, end
+
+    # If tech-support is OOO, the handler will first reply with the OOO message, then
+    # the repost the message URL to the techsupport channel
+    # Before the dispatched message, neither of these paths have been called
+    recorder = mock_app.recorder
+    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    handle_message(
+        mock_app,
+        "Calling tech-support",
+        channel="C0002",
+        reaction_count=1,
+        event_type="message",
+        event_kwargs={},
+    )
+
+    # After the dispatched message, postMessage has been called twice if OOO, for the OOO
+    # reply and the reposted url
+    assert (
+        recorder.mock_received_requests["/chat.postMessage"] == 2 if ooo_message else 1
+    )
+    assert recorder.mock_received_requests["/chat.getPermalink"] == 1
+
+    first_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    if ooo_message:
+        assert "tech-support is currently out of office" in first_message["text"]
+    else:
+        assert first_message["text"] == "http://test"
 
 
 def test_tech_support_listener_in_direct_message(mock_app):

@@ -251,6 +251,47 @@ raw_config = {
             },
         ],
     },
+    "techsupport": {
+        "python_file": "jobs.py",
+        "jobs": {
+            "out_of_office_on": {
+                "python_function": "out_of_office_on",
+                "run_args_template": "",
+                "report_stdout": True,
+            },
+            "out_of_office_off": {
+                "python_function": "out_of_office_off",
+                "run_args_template": "",
+                "report_stdout": True,
+            },
+            "out_of_office_status": {
+                "python_function": "out_of_office_status",
+                "run_args_template": "",
+                "report_stdout": True,
+            }
+        },
+        "slack": [
+            {
+                "command": "ooo on from [start_date] to [end_date]",
+                "help": "Set tech support out of office between these dates "
+                        "(inclusive, in 'YYYY-MM-DD' format)",
+                "type": "schedule_job",
+                "job_type": "out_of_office_on",
+            },
+            {
+                "command": "ooo off",
+                "help": "Turn tech support out of office off",
+                "type": "schedule_job",
+                "job_type": "out_of_office_off",
+            },
+            {
+                "command": "ooo status",
+                "help": "Report current tech support out of office status",
+                "type": "schedule_job",
+                "job_type": "out_of_office_status",
+            },
+        ],
+    },
 }
 # fmt: on
 
