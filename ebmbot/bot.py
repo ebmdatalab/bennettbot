@@ -6,6 +6,8 @@ from slack_bolt import App, BoltResponse
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt.error import BoltUnhandledRequestError
 
+from workspace.techsupport.jobs import get_dates_from_config as get_tech_support_dates
+
 from . import job_configs, scheduler, settings
 from .logger import log_call, logger
 
@@ -50,6 +52,13 @@ def join_all_channels(client, channels, user_id):
             client.conversations_join(channel=channel_id, users=user_id)
             joined.append(channel_name)
     return joined
+
+
+def tech_support_out_of_office():
+    start, end = get_tech_support_dates()
+    today = datetime.today().date()
+    if start and end and (start <= today <= end):
+        return end
 
 
 def register_listeners(app, config, channels, bot_user_id):
@@ -149,9 +158,25 @@ def register_listeners(app, config, channels, bot_user_id):
     )
     def repost_to_tech_support(message, say, ack):
         ack()
+
         # Don't repost messages in DMs with the bot
         if message["channel_type"] in ["channel", "group"]:
+            # Respond with SOS reaction
+            app.client.reactions_add(
+                channel=message["channel"], timestamp=message["ts"], name="sos"
+            )
             logger.info("Received tech-support message", message=message["text"])
+            # If out of office, respond with an ooo message, but still repost to tech-support channel
+            out_of_office_until = tech_support_out_of_office()
+
+            if out_of_office_until:
+                logger.info("Tech support OOO", until=out_of_office_until)
+                say(
+                    f"tech-support is currently out of office and will respond after {out_of_office_until}",
+                    channel=message["channel"],
+                    thread_ts=message["ts"],
+                )
+
             message_url = app.client.chat_getPermalink(
                 channel=message["channel"], message_ts=message["ts"]
             )["permalink"]
