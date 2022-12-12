@@ -50,20 +50,21 @@ def main(project_num, statuses):
     ]
 
     for status, tickets in tickets_by_status.items():
-        ticket_list = "".join(f"• {ticket}\n" for ticket in tickets)
-        report_output.extend(
-            [
-                {"type": "divider"},
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": f"*{status}*"},
-                },
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": ticket_list},
-                },
-            ]
-        )
+        if tickets:
+            ticket_list = "".join(f"• {ticket}\n" for ticket in tickets)
+            report_output.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"*{status}*"},
+                    },
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": ticket_list},
+                    },
+                ]
+            )
 
     return json.dumps(report_output)
 
