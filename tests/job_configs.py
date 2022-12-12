@@ -56,6 +56,12 @@ raw_config = {
                 "report_stdout": True,
                 "report_format": "blocks"
             },
+            "bad_python_job_with_blocks": {
+                "run_args_template": "",
+                "python_function": "hello_world_blocks_error",
+                "report_stdout": True,
+                "report_format": "blocks"
+            },
         },
         "slack": [
             {
