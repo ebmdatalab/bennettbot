@@ -83,7 +83,7 @@ class JobDispatcher:
         self.notify_start()
         rc = self.run_command()
         scheduler.mark_job_done(self.job["id"])
-        self.notifiy_end(rc)
+        self.notify_end(rc)
 
     def run_command(self):
         """Run the command, writing stdout/stderr to separate files."""
@@ -146,7 +146,7 @@ class JobDispatcher:
         msg = f"Command `{self.job['type']}` about to start"
         notify_slack(self.slack_client, settings.SLACK_LOGS_CHANNEL, msg)
 
-    def notifiy_end(self, rc):
+    def notify_end(self, rc):
         """Send notification that command has ended, reporting stdout if
         required."""
 
@@ -167,7 +167,7 @@ class JobDispatcher:
             self.slack_client,
             self.job["channel"],
             msg,
-            message_format=self.job_config["report_format"],
+            message_format=self.job_config["report_format"] if rc == 0 else "text",
         )
 
     def set_up_cwd(self):
