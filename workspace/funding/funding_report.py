@@ -133,7 +133,7 @@ def main():
         ]
     )
 
-    return json.dumps({"blocks": blocks}, indent=2)
+    return json.dumps(blocks, indent=2)
 
 
 def get_data_from_sheet():  # pragma: no cover

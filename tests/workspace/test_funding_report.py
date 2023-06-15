@@ -2,16 +2,15 @@ import csv
 import json
 from unittest.mock import patch
 
-from workspace import funding_report
+from workspace.funding import funding_report
 
 
-@patch("workspace.funding_report.get_data_from_sheet")
+@patch("workspace.funding.funding_report.get_data_from_sheet")
 def test_funding_report(get_data_from_sheet, freezer):
     freezer.move_to("2023-06-15")
     with open("tests/workspace/funding-calls.csv") as f:
         get_data_from_sheet.return_value = list(csv.reader(f))
-    output = json.loads(funding_report.main())
-    blocks = output["blocks"]
+    blocks = json.loads(funding_report.main())
     assert [block["type"] for block in blocks] == [
         "header",
         "divider",
