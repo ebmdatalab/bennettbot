@@ -13,3 +13,6 @@ structlog
 
 # for op commands
 django-dotenv
+
+# for commands that read from Google Sheets
+google-api-python-client

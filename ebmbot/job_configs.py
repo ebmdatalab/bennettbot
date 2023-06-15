@@ -292,6 +292,25 @@ raw_config = {
             },
         ],
     },
+    "funding": {
+        "python_file": "funding_report.py",
+        "jobs": {
+            "generate_report": {
+                "python_function": "main",
+                "run_args_template": "",
+                "report_stdout": True,
+                "report_format": "blocks",
+            }
+        },
+        "slack": [
+            {
+                "command": "report",
+                "help": "generate funding report",
+                "type": "schedule_job",
+                "job_type": "generate_report",
+            },
+        ],
+    },
 }
 # fmt: on
 
