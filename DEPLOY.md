@@ -72,6 +72,10 @@ If you update any scopes after installing the app, you'll need to reinstall it (
 usually prompt for this).
 
 ### Set environment variables
+
+Copy `dotenv-sample` to `.env` and update with relevant environment variables. See also
+comments in `ebmbot/settings.py`.
+
 The following slack environment variables need to be set:
 - `SLACK_LOGS_CHANNEL`: channel where scheduled job notifications will be posted
 - `SLACK_TECH_SUPPORT_CHANNEL`: channel where tech-support requests will be reposted
@@ -79,3 +83,17 @@ The following slack environment variables need to be set:
 - `SLACK_BOT_TOKEN`: bot token generated above (starts `xoxb-`); found on the app's Oauth and Permissions page
 - `SLACK_SIGNING_SECRET`: Found on the app's Basic Information page, under App Credentials
 - `SLACK_APP_USERNAME`: The app's default name (and the name users will refer to the Bot as in Slack); found under Features > App Home
+
+The following webhook environment variables need to be set. These relate to callbacks from
+OpenPrescribing, and are configured at https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427.
+- `GITHUB_WEBHOOK_SECRET`
+- `WEBHOOK_ORIGIN`
+- `EBMBOT_WEBHOOK_SECRET`
+
+The following environment variable allows the bot to authenticate with Github to retrieve
+project information.
+- `DATA_TEAM_GITHUB_API_TOKEN`: Note that this must be a classic PAT (not fine-grained) and
+  needs the `repo` and `read:project` scope
+
+GCP service account credentials:
+- `GCP_CREDENTIALS_PATH`
