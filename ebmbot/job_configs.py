@@ -268,7 +268,12 @@ raw_config = {
                 "python_function": "out_of_office_status",
                 "run_args_template": "",
                 "report_stdout": True,
-            }
+            },
+            "rota_report": {
+                "python_function": "report_rota",
+                "run_args_template": "",
+                "report_stdout": True,
+            },
         },
         "slack": [
             {
@@ -289,6 +294,12 @@ raw_config = {
                 "help": "Report current tech support out of office status",
                 "type": "schedule_job",
                 "job_type": "out_of_office_status",
+            },
+            {
+                "command": "rota report",
+                "help": "Report who's next on tech support duty",
+                "type": "schedule_job",
+                "job_type": "rota_report",
             },
         ],
     },

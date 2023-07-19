@@ -1,0 +1,10 @@
+Week commencing,Primary,Secondary,,Members,Count primary,Count secondary,,Process for extending the rota
+2023-07-24,Iain,"Peter, Steve",,Becky,3,3,,1. Extend the dates by <num-members> weeks
+2023-07-31,Ben,Becky,,Ben,3,3,,2. Copy the list of members into the Primary slots
+2023-08-07,Dave,Lucy,,Dave,3,3,,3. Use Data > Randomize range
+2023-08-14,George,"Peter, Tom W",,George,3,3,,4. Copy the list of members into the Secondary slots
+2023-08-21,Becky,Simon,,Iain,3,3,,"5. Use Data > Randomize range repeatedly, until there are no clashes (coloured red)"
+2023-08-28,Lucy,Dave,,Lucy,3,3,,6. Tell the team that you've extended the rota so they can check for holidays etc
+2023-09-04,"Peter, Steve",Iain,,"Peter, Steve",3,3,,
+2023-09-11,"Peter, Tom W",Ben,,"Peter, Tom W",3,3,,
+2023-09-18,Simon,George,,Simon,3,3,,

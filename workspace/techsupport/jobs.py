@@ -1,6 +1,11 @@
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
+
+from apiclient import discovery
+from google.oauth2 import service_account
+
+from ebmbot import settings
 
 
 def config_file():
@@ -72,3 +77,63 @@ def out_of_office_status():
         # OOO is on
         assert start <= today() <= end
         return f"Tech support out of office is currently ON until {end}."
+
+
+def report_rota():
+    rows = get_rota_data_from_sheet()
+    rota = {row[0]: (row[1], row[2]) for row in rows[1:]}
+
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Tech support rota",
+            },
+        },
+    ]
+
+    today = date.today()
+    if today.weekday() == 0:  # Monday
+        primary, secondary = rota[str(today)]
+        blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"Primary tech support this week: {primary} (secondary: {secondary})",
+                },
+            }
+        )
+
+    next_monday = today + timedelta(7 - today.weekday())
+    primary, secondary = rota[str(next_monday)]
+    blocks.append(
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"Primary tech support next week: {primary} (secondary: {secondary})",
+            },
+        }
+    )
+
+    return json.dumps(blocks, indent=2)
+
+
+def get_rota_data_from_sheet():  # pragma: no cover
+    credentials = service_account.Credentials.from_service_account_file(
+        settings.GCP_CREDENTIALS_PATH,
+        scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    )
+    service = discovery.build("sheets", "v4", credentials=credentials)
+
+    return (
+        service.spreadsheets()
+        .values()
+        .get(
+            spreadsheetId="1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8",
+            range="Rota",
+        )
+        .execute()
+    )["values"]
