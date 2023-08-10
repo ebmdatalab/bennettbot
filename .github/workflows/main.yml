@@ -15,7 +15,9 @@ jobs:
           python-version: "3.8"
           cache: "pip"
           cache-dependency-path: requirements.*.txt
-      - uses: extractions/setup-just@v1
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
       - name: Check formatting, linting and import sorting
         run: just check
 
@@ -29,7 +31,9 @@ jobs:
           python-version: "3.8"
           cache: "pip"
           cache-dependency-path: requirements.*.txt
-      - uses: extractions/setup-just@v1
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
       - name: Run tests
         run: |
           just test
