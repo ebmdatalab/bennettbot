@@ -179,10 +179,6 @@ idna==3.3 \
     --hash=sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff \
     --hash=sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d
     # via requests
-importlib-metadata==5.0.0 \
-    --hash=sha256:da31db32b304314d044d3c12c79bd59e307889b287ad12ff387b3500835fc2ab \
-    --hash=sha256:ddb0e35065e8938f867ed4928d0ae5bf2a53b7773871bfe6bcc7e4fcdc7dea43
-    # via flask
 itsdangerous==2.1.2 \
     --hash=sha256:2c2349112351b88699d8d4b6b075022c0808887cb7ad10069318a8b0bc88db44 \
     --hash=sha256:5dbbc68b317e5e42f327f9021763545dc3fc3bfe22e6deb96aaf1fc38874156a
@@ -318,13 +314,13 @@ six==1.16.0 \
     #   google-auth
     #   google-auth-httplib2
     #   paramiko
-slack-bolt==1.15.2 \
-    --hash=sha256:18d60c99de0ff786a302dd872b2c0a63e46b6922b7ce2e352372effc321d0bdd \
-    --hash=sha256:e234b3305ea55ce8f2e1274bc0c0a2a79531ad501db8d8f70a42881d5001c0ad
+slack-bolt==1.18.0 \
+    --hash=sha256:43b121acf78440303ce5129e53be36bdfe5d926a193daef7daf2860688e65dd3 \
+    --hash=sha256:63089a401ae3900c37698890249acd008a4651d06e86194edc7b72a00819bbac
     # via -r requirements.prod.in
-slack-sdk==3.18.1 \
-    --hash=sha256:63ce5e6253a31873d6c921c9feaa842a93a2f56e6e009cb7daf406f4bc4df798 \
-    --hash=sha256:a25d3d2bf0bf605d54d764d4a463fe7c0659ee24c13d75653e2bec247bd5998b
+slack-sdk==3.21.3 \
+    --hash=sha256:20829bdc1a423ec93dac903470975ebf3bc76fd3fd91a4dadc0eeffc940ecb0c \
+    --hash=sha256:de3c07b92479940b61cd68c566f49fbc9974c8f38f661d26244078f3903bb9cc
     # via slack-bolt
 structlog==22.1.0 \
     --hash=sha256:760d37b8839bd4fe1747bed7b80f7f4de160078405f4b6a1db9270ccbfce6c30 \
@@ -344,10 +340,6 @@ werkzeug==2.2.2 \
     --hash=sha256:7ea2d48322cc7c0f8b3a215ed73eabd7b5d75d0b50e31ab006286ccff9e00b8f \
     --hash=sha256:f979ab81f58d7318e064e99c4506445d60135ac5cd2e177a2de0089bfd4c9bd5
     # via flask
-zipp==3.10.0 \
-    --hash=sha256:4fcb6f278987a6605757302a6e40e896257570d11c51628968ccb2a47e80c6c1 \
-    --hash=sha256:7a7262fd930bd3e36c50b9a64897aec3fafff3dfdeec9623ae22b40e93f99bb8
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 setuptools==67.8.0 \
