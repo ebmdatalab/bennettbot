@@ -162,7 +162,7 @@ class JobDispatcher:
             else:
                 return
         else:
-            msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir})"
+            msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir}). Calling tech-support."
         notify_slack(
             self.slack_client,
             self.job["channel"],
