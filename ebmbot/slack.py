@@ -12,4 +12,7 @@ def notify_slack(
     logger.info(
         "Sending message", channel=channel, message=message_text, thread_ts=thread_ts
     )
-    slack_client.chat_postMessage(channel=channel, thread_ts=thread_ts, **msg_kwargs)
+    resp = slack_client.chat_postMessage(
+        channel=channel, thread_ts=thread_ts, **msg_kwargs
+    )
+    return resp.data
