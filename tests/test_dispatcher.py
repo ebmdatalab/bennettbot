@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-from unittest.mock import Mock
 
 import pytest
 
@@ -25,10 +24,10 @@ def remove_logs_dir():
     shutil.rmtree(settings.LOGS_DIR, ignore_errors=True)
 
 
-def test_run_once():
+def test_run_once(mock_client):
     # Because this mock gets used in a subprocess (I think) we can't actually
     # get any information out of it about how it was used.
-    slack_client = Mock()
+    slack_client = mock_client.client
 
     scheduler.schedule_suppression("test_good_job", T(-15), T(-5))
     scheduler.schedule_suppression("test_bad_job", T(-15), T(-5))
@@ -167,6 +166,8 @@ def test_job_failure(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
+            # failed message url reposted to tech support channel (C0001 in the mock)
+            {"channel": "C0001", "text": "http://test"},
         ],
     )
 
@@ -189,6 +190,8 @@ def test_job_failure_when_command_not_found(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
+            # failed message url reposted to tech support channel (C0001 in the mock)
+            {"channel": "C0001", "text": "http://test"},
         ],
     )
 
@@ -315,6 +318,8 @@ def test_python_job_failure_with_blocks(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
+            # failed message url reposted to tech support channel (C0001 in the mock)
+            {"channel": "C0001", "text": "http://test"},
         ],
     )
 
@@ -338,6 +343,8 @@ def test_python_job_failure(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
+            # failed message url reposted to tech support channel (C0001 in the mock)
+            {"channel": "C0001", "text": "http://test"},
         ],
     )
 

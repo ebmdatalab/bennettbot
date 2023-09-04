@@ -14,6 +14,7 @@ import requests
 from slack_sdk import WebClient
 
 from . import job_configs, scheduler, settings
+from .bot import get_channels
 from .logger import logger
 from .signatures import generate_hmac
 from .slack import notify_slack
@@ -54,6 +55,9 @@ class JobDispatcher:
     def __init__(self, slack_client, job_id, config):
         logger.info("starting job", job_id=job_id)
         self.slack_client = slack_client
+        self.tech_support_channel = get_channels(self.slack_client)[
+            settings.SLACK_TECH_SUPPORT_CHANNEL
+        ]
         self.job = scheduler.get_job(job_id)
         self.job_config = config["jobs"][self.job["type"]]
 
@@ -150,6 +154,7 @@ class JobDispatcher:
         """Send notification that command has ended, reporting stdout if
         required."""
 
+        error = False
         if rc == 0:
             if self.job_config["report_stdout"]:
                 with open(self.stdout_path) as f:
@@ -163,12 +168,24 @@ class JobDispatcher:
                 return
         else:
             msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir}). Calling tech-support."
-        notify_slack(
+            error = True
+
+        slack_message = notify_slack(
             self.slack_client,
             self.job["channel"],
             msg,
             message_format=self.job_config["report_format"] if rc == 0 else "text",
         )
+        if error:
+            # If the command failed, repost it to tech-support
+            # Note that the bot won't register messages from itself, so we can't just
+            # rely on the tech-support listener
+            message_url = self.slack_client.chat_getPermalink(
+                channel=slack_message["channel"], message_ts=slack_message["ts"]
+            )["permalink"]
+            self.slack_client.chat_postMessage(
+                channel=self.tech_support_channel, text=message_url
+            )
 
     def set_up_cwd(self):
         """Ensure cwd exists, and maybe refresh fabfile."""
