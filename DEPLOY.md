@@ -95,5 +95,6 @@ project information.
 - `DATA_TEAM_GITHUB_API_TOKEN`: Note that this must be a classic PAT (not fine-grained) and
   needs the `repo` and `read:project` scope
 
-GCP service account credentials:
+This is the path to credentials for the gdrive@ebmdatalab.iam.gserviceaccount.com
+service account:
 - `GCP_CREDENTIALS_PATH`
