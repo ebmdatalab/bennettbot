@@ -273,6 +273,7 @@ raw_config = {
                 "python_function": "report_rota",
                 "run_args_template": "",
                 "report_stdout": True,
+                "report_format": "blocks",
             },
         },
         "slack": [
