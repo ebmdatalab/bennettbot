@@ -112,9 +112,9 @@ filelock==3.8.0 \
     --hash=sha256:55447caa666f2198c5b6b13a26d2084d26fa5b115c00d065664b2124680c4edc \
     --hash=sha256:617eb4e5eedc82fc5f47b6d61e4d11cb837c56cb4544e39081099fa17ad109d4
     # via virtualenv
-flake8==5.0.4 \
-    --hash=sha256:6fbe320aad8d6b95cec8b8e47bc933004678dc63095be98528b7bdd2a9f510db \
-    --hash=sha256:7a1cf6b73744f5806ab95e526f6f0d8c01c66d7bbe349562d22dfca20610b248
+flake8==6.1.0 \
+    --hash=sha256:d5b3857f07c030bdb5bf41c7f53799571d75c4491748a3adcd47de929e34cd23 \
+    --hash=sha256:ffdfce58ea94c6580c77888a86506937f9a1a227dfcd15f245d694ae20a6b6e5
     # via
     #   -r requirements.dev.in
     #   flake8-builtins
@@ -196,13 +196,13 @@ pre-commit==2.20.0 \
     --hash=sha256:51a5ba7c480ae8072ecdb6933df22d2f812dc897d5fe848778116129a681aac7 \
     --hash=sha256:a978dac7bc9ec0bcee55c18a277d553b0f419d259dadb4b9418ff2d00eb43959
     # via -r requirements.dev.in
-pycodestyle==2.9.1 \
-    --hash=sha256:2c9607871d58c76354b697b42f5d57e1ada7d261c261efac224b664affdc5785 \
-    --hash=sha256:d1735fc58b418fd7c5f658d28d943854f8a849b01a5d0a1e6f3f3fdd0166804b
+pycodestyle==2.11.1 \
+    --hash=sha256:41ba0e7afc9752dfb53ced5489e89f8186be00e599e712660695b7a75ff2663f \
+    --hash=sha256:44fe31000b2d866f2e41841b18528a505fbd7fef9017b04eff4e2648a0fadc67
     # via flake8
-pyflakes==2.5.0 \
-    --hash=sha256:4579f67d887f804e67edb544428f264b7b24f435b263c4614f384135cea553d2 \
-    --hash=sha256:491feb020dca48ccc562a8c0cbe8df07ee13078df59813b83959cbdada312ea3
+pyflakes==3.1.0 \
+    --hash=sha256:4132f6d49cb4dae6819e5379898f2b8cce3c5f23994194c24b77d5da2e36f774 \
+    --hash=sha256:a0aae034c444db0071aa077972ba4768d40c830d9539fd45bf4cd3f8f6992efc
     # via flake8
 pyparsing==3.0.9 \
     --hash=sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb \
@@ -312,5 +312,6 @@ setuptools==67.8.0 \
     --hash=sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f \
     --hash=sha256:62642358adc77ffa87233bc4d2354c4b2682d214048f500964dbe760ccedf102
     # via
+    #   -c requirements.prod.txt
     #   nodeenv
     #   pip-tools
