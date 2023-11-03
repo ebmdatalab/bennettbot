@@ -189,9 +189,16 @@ def get_slack_username(github_username):
 
 
 def get_status_and_summary(card):  # pragma: no cover
-    if not card["fieldValues"]["nodes"][-1]:
+    for node in card["fieldValues"]["nodes"]:
+        if "field" not in node:
+            continue
+        if node["field"]["name"] != "Status":
+            continue
+        status = node["name"]
+        break
+    else:
+        # This card has no status
         return (None, None)
-    status = card["fieldValues"]["nodes"][-1]["name"]
     title = card["content"]["title"]
     url = card["content"].get("bodyUrl")
     assignees = " / ".join(
