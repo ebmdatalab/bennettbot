@@ -17,21 +17,44 @@ def test_generate_report():
                                     "bodyUrl": "http://card1",
                                     "assignees": {"nodes": []},
                                 },
-                                "fieldValues": {"nodes": [{"name": "Under Review"}]},
+                                "fieldValues": {
+                                    "nodes": [
+                                        {},
+                                        {
+                                            "name": "Under Review",
+                                            "field": {"name": "Status"},
+                                        },
+                                    ]
+                                },
                             },
                             {
                                 "content": {
                                     "title": "Card 2",
                                     "assignees": {"nodes": []},
                                 },
-                                "fieldValues": {"nodes": [{"name": "In Progress"}]},
+                                "fieldValues": {
+                                    "nodes": [
+                                        {
+                                            "name": "In Progress",
+                                            "field": {"name": "Status"},
+                                        },
+                                        {},
+                                    ]
+                                },
                             },
                             {
                                 "content": {
                                     "title": "Card 3",
                                     "assignees": {"nodes": []},
                                 },
-                                "fieldValues": {"nodes": [{"name": "Blocked"}]},
+                                "fieldValues": {
+                                    "nodes": [
+                                        {
+                                            "name": "Blocked",
+                                            "field": {"name": "Status"},
+                                        }
+                                    ]
+                                },
                             },
                         ],
                         "pageInfo": {"hasNextPage": False, "endCursor": "abc"},
