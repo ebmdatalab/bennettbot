@@ -99,7 +99,9 @@ coverage[toml]==6.4.4 \
     --hash=sha256:fcbe3d9a53e013f8ab88734d7e517eb2cd06b7e689bedf22c0eb68db5e4a0a19 \
     --hash=sha256:fde17bc42e0716c94bf19d92e4c9f5a00c5feb401f5bc01101fdf2a8b7cacf60 \
     --hash=sha256:ff934ced84054b9018665ca3967fc48e1ac99e811f6cc99ea65978e1d384454b
-    # via pytest-cov
+    # via
+    #   coverage
+    #   pytest-cov
 distlib==0.3.5 \
     --hash=sha256:a7f75737c70be3b25e2bee06288cec4e4c221de18455b2dd037fe2a795cab2fe \
     --hash=sha256:b710088c59f06338ca514800ad795a132da19fda270e3ce4affc74abf955a26c
@@ -119,9 +121,9 @@ flake8==5.0.4 \
     #   -r requirements.dev.in
     #   flake8-builtins
     #   flake8-no-pep420
-flake8-builtins==2.0.1 \
-    --hash=sha256:5aeb420130efe8acbdaf8708a582492413293a3ca25653518f687937879650a5 \
-    --hash=sha256:a5b9ca9cbc921c4455ea02e2e9963c990ac66d028c15b654625e012a1e3bbb4d
+flake8-builtins==2.2.0 \
+    --hash=sha256:392d5af3a0720c5a863aa93dc47f48c879081345a143fe9f20d995fe9ff5686a \
+    --hash=sha256:7ee5766d9c60e5d579dfda84e65c6d0e6c26005f6f59cb9bf722462d7987a807
     # via -r requirements.dev.in
 flake8-implicit-str-concat==0.3.0 \
     --hash=sha256:a89ebc50567790fb7b83e032ed4014ae0db70e35d89e269c3323967135023600 \
@@ -312,5 +314,6 @@ setuptools==67.8.0 \
     --hash=sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f \
     --hash=sha256:62642358adc77ffa87233bc4d2354c4b2682d214048f500964dbe760ccedf102
     # via
+    #   -c requirements.prod.txt
     #   nodeenv
     #   pip-tools
