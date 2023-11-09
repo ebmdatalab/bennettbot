@@ -113,17 +113,16 @@ test *ARGS: devenv
     $BIN/python -m pytest --cov=. --cov-report html --cov-report term-missing:skip-covered {{ ARGS }}
 
 
-# runs the format (black), sort (isort) and lint (flake8) check but does not change any files
-check: devenv
+# check format and linting
+check *args: devenv
     $BIN/black --check .
-    $BIN/isort --check-only --diff .
-    $BIN/flake8
+    $BIN/ruff .
 
 
-# fix formatting and import sort ordering
+# fix format and linting
 fix: devenv
     $BIN/black .
-    $BIN/isort .
+    $BIN/ruff --fix .
 
 # Run the dev project
 run SERVICE: devenv
