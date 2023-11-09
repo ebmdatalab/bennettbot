@@ -213,6 +213,25 @@ raw_config = {
             "job_type": "delete_preview",
         }],
     },
+    "outputchecking": {
+        "python_file": "jobs.py",
+        "jobs": {
+            "rota_report": {
+                "python_function": "report_rota",
+                "run_args_template": "",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "rota report",
+                "help": "Report who's next on output checking duty",
+                "type": "schedule_job",
+                "job_type": "rota_report",
+            },
+        ],
+    },
     "teamdata": {
         "python_file": "project_report.py",
         "jobs": {
