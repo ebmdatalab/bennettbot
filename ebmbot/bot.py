@@ -363,7 +363,7 @@ def handle_namespace_help(message, say, help_config):
 
     lines = ["The following commands are available:", ""]
 
-    for (command, help_) in help_config:
+    for command, help_ in help_config:
         lines.append(f"`{command}`: {help_}")
 
     say("\n".join(lines), thread_ts=message.get("thread_ts"))

@@ -36,10 +36,28 @@ exclude_lines = [
 
 [tool.coverage.html]
 
-[tool.isort]
-profile = "black"
-lines_after_imports = 2
-skip_glob = [".direnv", "venv", ".venv"]
+[tool.ruff]
+line-length = 88
+exclude = [
+  ".direnv",
+  ".venv/",
+  "venv/",
+  "fabfile.py",
+]
+extend-select = [
+  "A", # flake8-builtins
+  "I",  # isort
+  "INP",  # flake8-no-pep420
+  "ISC",  # flake8-implicit-str-concat
+  "UP",  # pyupgrade
+  "W",  # pycodestyle warning
+]
+extend-ignore = [
+  "E501"
+]
+
+[tool.ruff.isort]
+lines-after-imports = 2
 
 [tool.pytest.ini_options]
 env = [
