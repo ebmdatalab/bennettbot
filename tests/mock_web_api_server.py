@@ -123,7 +123,7 @@ class MockHandler(SimpleHTTPRequestHandler):
 }
 """
     path_responses = {
-        "/webhook": "OK".encode("utf-8"),
+        "/webhook": "OK",
         "/users.list": json.dumps(
             {
                 "ok": True,
@@ -240,7 +240,7 @@ class MockHandler(SimpleHTTPRequestHandler):
                 if pattern.isnumeric():
                     self.send_response(int(pattern))
                     self.set_common_headers()
-                    self.wfile.write("""{"ok":false}""".encode("utf-8"))
+                    self.wfile.write("""{"ok":false}""")
                     return
             else:
                 body = self.invalid_auth

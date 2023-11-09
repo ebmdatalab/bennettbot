@@ -84,7 +84,7 @@ def test_out_of_office_on(config_path, start, end, message):
     with patch("workspace.techsupport.jobs.config_file", return_value=config_path):
         assert out_of_office_on(start, end) == message
     assert config_path.exists()
-    with open(config_path, "r") as f_in:
+    with open(config_path) as f_in:
         config = json.load(f_in)
     assert config == {"start": start, "end": end}
 
