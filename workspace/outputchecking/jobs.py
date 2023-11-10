@@ -16,7 +16,7 @@ def report_rota():
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "Tech support rota",
+                "text": "Output checking rota",
             },
         },
     ]
