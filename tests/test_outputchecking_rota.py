@@ -12,7 +12,10 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
         get_rota_data_from_sheet.return_value = list(csv.reader(f))
     blocks = json.loads(report_rota())
     assert blocks == [
-        {"text": {"text": "Tech support rota", "type": "plain_text"}, "type": "header"},
+        {
+            "text": {"text": "Output checking rota", "type": "plain_text"},
+            "type": "header",
+        },
         {
             "text": {
                 "text": "Lead reviewer this week: Louis Fisher (secondary: Colm Andrews)",
@@ -37,7 +40,10 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
         get_rota_data_from_sheet.return_value = list(csv.reader(f))
     blocks = json.loads(report_rota())
     assert blocks == [
-        {"text": {"text": "Tech support rota", "type": "plain_text"}, "type": "header"},
+        {
+            "text": {"text": "Output checking rota", "type": "plain_text"},
+            "type": "header",
+        },
         {
             "text": {
                 "text": "Lead reviewer next week: Jon Massey (secondary: Lisa Hopcroft)",
