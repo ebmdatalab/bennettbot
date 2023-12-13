@@ -1,17 +1,10 @@
 import pytest
 
-from ebmbot import webserver
-
 from ..assertions import assert_patched_slack_client_sends_messages
 from ..time_helpers import T
 
 
 pytestmark = pytest.mark.freeze_time(T(10))
-
-
-@pytest.fixture()
-def web_client():
-    return webserver.app.test_client()
 
 
 def test_with_valid_payload(web_client):
