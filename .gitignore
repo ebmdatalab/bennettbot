@@ -1,6 +1,7 @@
 environment
 .env
 workspace/techsupport/ooo.json
+gcp-credentials.json
 
 # System files
 *.py[co]
