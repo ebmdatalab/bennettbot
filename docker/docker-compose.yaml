@@ -1,5 +1,11 @@
 # note: we do not run prod service with docker-compose, we use it just for
 # configuring the production build
+# Environment variables:
+# For dev services, env variables are set using the --env-file arg in the justfile
+# For test, variables defined in pyproject.toml are used , so local and docker test
+# runs use the same test env vars
+# For prod, env vars are set manually in the dokku apps
+
 services:
   prod:
     # image name, both locally and public
@@ -49,7 +55,6 @@ services:
     extends:
       service: prod
     image: bennettbot-dev
-    env_file: ../.env
     container_name: bennettbot-dev
     build:
       # the dev stage in the Dockerfile

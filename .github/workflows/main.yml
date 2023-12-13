@@ -31,3 +31,27 @@ jobs:
       - name: Run tests
         run: |
           just test
+
+
+  docker-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
+      - name: Check formatting, linting and import sorting on docker
+        run: just docker/check
+
+
+  docker-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
+      - name: Run tests in docker
+        run: just docker/test
