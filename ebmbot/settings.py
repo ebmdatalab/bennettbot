@@ -8,7 +8,7 @@ env.read_env()
 
 APPLICATION_ROOT = Path(__file__).resolve().parent.parent
 # If running in docker, this is /app/
-EBMBOT_PATH = env.str("EBMBOT_PATH")
+EBMBOT_PATH = env.str("EBMBOT_PATH", default=APPLICATION_ROOT)
 
 DB_PATH = env.path("DB_PATH", default=APPLICATION_ROOT / "ebmbot.db")
 WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace")

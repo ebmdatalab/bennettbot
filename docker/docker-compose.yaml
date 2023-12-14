@@ -29,27 +29,6 @@ services:
     # use dockers builitin PID daemon
     init: true
 
-  bot:
-    extends:
-      service: prod
-    container_name: bennettbot-bot
-    command: python -m ebmbot.bot
-
-  dispatcher:
-    extends:
-      service: prod
-    container_name: bennettbot-dispatcher
-    command: python -m ebmbot.dispatcher
-
-  webserver:
-    extends:
-      service: prod
-    container_name: bennettbot-webserver
-    command: python -m ebmbot.webserver
-    # host:container ports: container port should match the port in WEBHOOK_ORIGIN
-    ports:
-      - "9999:9999"
-
   # main development service
   dev:
     extends:
@@ -87,7 +66,6 @@ services:
     # host:container ports: container port should match the port in WEBHOOK_ORIGIN
     ports:
       - "1234:1234"
-
 
   test:
     extends:
