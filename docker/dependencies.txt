@@ -1,5 +1,5 @@
 # list ubuntu packages needed in production, one per line
-python3.11
-python3.11-distutils
-python3.11-venv
+python3.9
+python3.9-distutils
+python3.9-venv
 sqlite3
