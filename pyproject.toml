@@ -73,7 +73,6 @@ env = [
     "GITHUB_WEBHOOK_SECRET=github_webhook_secret",
     "EBMBOT_WEBHOOK_SECRET=ebmbot_webhook_secret",
     "WEBHOOK_ORIGIN=http://localhost:9999",
-    "EBMBOT_PATH=",
     "GCP_CREDENTIALS_PATH=",
     "DATA_TEAM_GITHUB_API_TOKEN=dummy-token"
 ]

@@ -122,7 +122,7 @@ class JobDispatcher:
                         stderr=stderr,
                         env={
                             "EBMBOT_CALLBACK_URL": self.callback_url,
-                            "PATH": settings.EBMBOT_PATH or os.environ["PATH"],
+                            "PATH": os.environ["PATH"],
                         },
                         shell=True,
                     )

@@ -89,7 +89,7 @@ WORKDIR /app
 
 # This may not be necessary, but it probably doesn't hurt
 ENV PYTHONPATH=/app
-
+ENV PATH=$PATH:/app
 
 ##################################################
 #
