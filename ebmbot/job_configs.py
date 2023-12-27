@@ -270,6 +270,25 @@ raw_config = {
             },
         ],
     },
+    "teamrex": {
+        "python_file": "report.py",
+        "jobs": {
+            "generate_rex_report": {
+                "python_function": "report",
+                "run_args_template": "",
+                "report_stdout": True,
+                "report_format": "blocks",
+            }
+        },
+        "slack": [
+            {
+                "command": "report",
+                "help": "generate project board report",
+                "type": "schedule_job",
+                "job_type": "generate_rex_report",
+            },
+        ],
+    },
     "techsupport": {
         "python_file": "jobs.py",
         "jobs": {
