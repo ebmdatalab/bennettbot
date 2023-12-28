@@ -251,10 +251,10 @@ raw_config = {
             },
         ],
     },
-    "teampipeline": {
-        "python_file": "pipeline.py",
+    "teamrex": {
+        "python_file": "report.py",
         "jobs": {
-            "generate_pipeline_report": {
+            "generate_rex_report": {
                 "python_function": "report",
                 "run_args_template": "",
                 "report_stdout": True,
@@ -266,7 +266,7 @@ raw_config = {
                 "command": "report",
                 "help": "generate project board report",
                 "type": "schedule_job",
-                "job_type": "generate_pipeline_report",
+                "job_type": "generate_rex_report",
             },
         ],
     },

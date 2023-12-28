@@ -73,5 +73,9 @@ env = [
     "GITHUB_WEBHOOK_SECRET=github_webhook_secret",
     "EBMBOT_WEBHOOK_SECRET=ebmbot_webhook_secret",
     "WEBHOOK_ORIGIN=http://localhost:9999",
-    "EBMBOT_PATH="
+    "EBMBOT_PATH=",
+    "GCP_CREDENTIALS_PATH="
+]
+filterwarnings = [
+    "ignore:distutils Version classes are deprecated:DeprecationWarning:pytest_freezegun",
 ]
