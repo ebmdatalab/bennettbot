@@ -232,7 +232,7 @@ raw_config = {
             },
         ],
     },
-    "teamdata": {
+    "teamrap": {
         "python_file": "project_report.py",
         "jobs": {
             "generate_report": {
