@@ -1,4 +1,4 @@
-from workspace.teamdata import project_report
+from workspace.teamrap import project_report
 
 
 def test_report_returns_generated_report(monkeypatch):

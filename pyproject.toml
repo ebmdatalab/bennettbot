@@ -21,7 +21,7 @@ omit = [
     "fabfile.py",
     "*/__main__.py",
     "tests/mock_web_api_server.py",
-    "workspace/teamdata/generate_report.py",
+    "workspace/teamrap/generate_report.py",
     "workspace/test/jobs.py"
 ]
 
