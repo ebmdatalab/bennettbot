@@ -123,8 +123,13 @@ LABEL org.opencontainers.image.created=$BUILD_DATE
 ARG GITREF=unknown
 LABEL org.opencontainers.image.revision=$GITREF
 
-ARG USERID=10001
-ARG GROUPID=10001
+ARG USERID=10004
+ARG GROUPID=10004
+
+# Jobs that run fab commands add fabfiles into the job's workspace, so need
+# to own this folder
+RUN chown -R ${USERID}:${GROUPID} /app/workspace
+
 USER ${USERID}:${GROUPID}
 
 ##################################################
