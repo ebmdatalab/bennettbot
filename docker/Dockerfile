@@ -98,9 +98,7 @@ ENV PATH=$PATH:/app
 # Copy code in, add proper metadata
 FROM bennettbot-base as bennettbot-prod
 
-# Dokku is using port 7000 rather than the default 5000
-# We need to expose it here so that the dokku checks will use the correct port
-EXPOSE 7000
+EXPOSE 9999
 
 # Adjust this metadata to fit project. Note that the base-docker image does set
 # some basic metadata.
@@ -111,9 +109,13 @@ LABEL org.opencontainers.image.title="bennettbot" \
 # copy application code
 COPY . /app
 
-
 # We set command rather than entrypoint, to make it easier to run different
 # things from the cli
+# In production, dokku extract the Procfile and uses the commands defined
+# there as the entrypoints. If we defined an ENTRYPOINT here, the commands
+# in the Procfile would be passed as arguments to that ENTRYPOINT, which is
+# not what we want
+# https://dokku.com/docs/processes/process-management/#procfile
 CMD ["/app/docker/entrypoints/prod.sh"]
 
 # finally, tag with build information. These will change regularly, therefore
@@ -125,6 +127,9 @@ LABEL org.opencontainers.image.revision=$GITREF
 
 ARG USERID=10004
 ARG GROUPID=10004
+
+# Add the user by name, required for ssh
+RUN useradd -u ${USERID} ebmbot
 
 # Jobs that run fab commands add fabfiles into the job's workspace, so need
 # to own this folder

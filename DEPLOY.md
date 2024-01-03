@@ -77,18 +77,48 @@ usually prompt for this).
 
 ### Create app
 
-On dokku3, as the `dokku` user:
-
 ```sh
-dokku$ dokku apps:create bennettbot
+$ dokku apps:create bennettbot
 ```
 
 ### Create storage for sqlite db and logs
 ```sh
-dokku$ mkdir -p /var/lib/dokku/data/storage/bennettbot/logs
-dokku$ chown dokku:dokku /var/lib/dokku/data/storage/bennettbot
-dokku$ dokku storage:mount bennettbot /var/lib/dokku/data/storage/bennettbot/:/storage
+$ mkdir -p /var/lib/dokku/data/storage/bennettbot/logs
+$ dokku storage:mount bennettbot /var/lib/dokku/data/storage/bennettbot/:/storage
 ```
+
+### Set up the user
+
+This is done using the ansible playbook in `https://github.com/ebmdatalab/sysadmin/blob/main/infra`.
+
+See <https://github.com/ebmdatalab/sysadmin/blob/main/infra/README.md> for more details.
+
+To run just the bennettbot tasks:
+
+```sh
+just test dokku3 --tags bennettbot
+```
+And if all looks OK:
+
+```sh
+just apply dokku3 --tags bennettbot
+```
+
+This will create the ebmbot user on dokku3 and chown any mounted volumes.
+
+
+### Create ssh key and mount ebmbot user's home directory
+
+Create an ssh key for the ebmbot user, in the usual $HOME/.ssh/ location.
+
+Mount the user's home directory into the app.
+
+```sh
+$ dokku storage:mount bennettbot /home/ebmbot/:/home/ebmbot
+```
+
+Add the ebmbot user's key to any servers that it requires acces to
+(i.e. any jobs that run `fab` commands).
 
 ### Configure app environment variables
 
@@ -119,20 +149,20 @@ service account:
 
 The path for logs; set this to a directory in the dokku mounted storage so the logs
 persist outside of the containers.
-- LOGS_DIR
+- `LOGS_DIR`
 
 The path for the sqlite db file; set this to a file in the dokku mounted storage
-- DB_PATH
+- `DB_PATH`
 
 Set each env varible with:
 ```sh
-dokku$ dokku config:set bennettbot ENVVAR_NAME=value
+$ dokku config:set bennettbot ENVVAR_NAME=value
 ```
 
 e.g.
 ```sh
-dokku$ dokku config:set bennettbot LOGS_DIR=/storage/logs
-dokku$ dokku config:set bennettbot DB_PATH=/storage/bennettbot.db
+$ dokku config:set bennettbot LOGS_DIR=/storage/logs
+$ dokku config:set bennettbot DB_PATH=/storage/bennettbot.db
 ```
 
 ### Map port 9999 for incoming github hooks
@@ -166,5 +196,5 @@ SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/ebmdatalab/benn
 
 On dokku3, as the `dokku` user:
 ```
-dokku$ dokku git:from-image bennettbot <SHA>
+$ dokku git:from-image bennettbot <SHA>
 ```
