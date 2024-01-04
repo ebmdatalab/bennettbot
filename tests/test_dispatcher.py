@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+from unittest.mock import patch
 
 import pytest
 
@@ -186,7 +187,7 @@ def test_job_failure_when_command_not_found(mock_client):
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "failed"},
+            {"channel": "channel", "text": "failed (find logs in tests/logs/"},
             # failed message url reposted to tech support channel (C0001 in the mock)
             {"channel": "C0001", "text": "http://test"},
         ],
@@ -197,6 +198,27 @@ def test_job_failure_when_command_not_found(mock_client):
 
     with open(os.path.join(log_dir, "stderr")) as f:
         assert f.read() == "/bin/sh: 1: dog: not found\n"
+
+
+@patch("ebmbot.settings.HOST_LOGS_DIR", "/host/logs/")
+def test_job_failure_with_host_log_dirs_setting(mock_client):
+    log_dir = build_log_dir("test_bad_job")
+
+    scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "failed (find logs in /host/logs/"},
+            # failed message url reposted to tech support channel (C0001 in the mock)
+            {"channel": "C0001", "text": "http://test"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
 def test_python_job_success(mock_client):

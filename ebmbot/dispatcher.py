@@ -8,6 +8,7 @@ import time
 import traceback
 from datetime import datetime, timezone
 from multiprocessing import Process
+from pathlib import Path
 
 import requests
 from slack_sdk import WebClient
@@ -162,7 +163,7 @@ class JobDispatcher:
             else:
                 return
         else:
-            msg = f"Command `{self.job['type']}` failed (find logs in {self.log_dir}). Calling tech-support."
+            msg = f"Command `{self.job['type']}` failed (find logs in {self.host_log_dir} on dokku3). Calling tech-support."
             error = True
 
         slack_message = notify_slack(
@@ -208,9 +209,10 @@ class JobDispatcher:
 
     def set_up_log_dir(self):
         """Create directory for recording stdout/stderr."""
-
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-        self.log_dir = settings.LOGS_DIR / self.job["type"] / timestamp
+        job_log_path = Path(self.job["type"]) / timestamp
+        self.log_dir = settings.LOGS_DIR / job_log_path
+        self.host_log_dir = settings.HOST_LOGS_DIR / job_log_path
         self.stdout_path = self.log_dir / "stdout"
         self.stderr_path = self.log_dir / "stderr"
         self.log_dir.mkdir(parents=True, exist_ok=True)

@@ -151,6 +151,9 @@ service account:
 The path for logs; set this to a directory in the dokku mounted storage so the logs
 persist outside of the containers.
 - `LOGS_DIR`
+Also set the alias for the logs dir to the location of the mounted volume on the host,
+for error reporting
+- `HOST_LOGS_DIR`
 
 The path for the sqlite db file; set this to a file in the dokku mounted storage
 - `DB_PATH`
@@ -158,7 +161,7 @@ The path for the sqlite db file; set this to a file in the dokku mounted storage
 The path for workspaces that are created by the job (i.e. fabric jobs that fetch
 the fabfile for running the commands). Set this to a directory in the dokku mounted
 storage that the docker user will have write access to.
-- `FAB_WORKSPACE_DIR``
+- `FAB_WORKSPACE_DIR`
 
 Set each env varible with:
 ```sh
@@ -168,6 +171,7 @@ $ dokku config:set bennettbot ENVVAR_NAME=value
 e.g.
 ```sh
 $ dokku config:set bennettbot LOGS_DIR=/storage/logs
+$ dokku config:set bennettbot HOST_LOGS_DIR=/var/lib/dokku/data/storage/bennettbot/logs
 $ dokku config:set bennettbot DB_PATH=/storage/bennettbot.db
 $ dokku config:set bennettbot FAB_WORKSPACE_DIR=/storage/workspace
 ```

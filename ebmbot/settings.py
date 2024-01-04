@@ -18,6 +18,9 @@ WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace"
 # to, and not a location that only exists in the container
 FAB_WORKSPACE_DIR = env.path("FAB_WORKSPACE_DIR", default=WORKSPACE_DIR)
 LOGS_DIR = env.path("LOGS_DIR")
+# An alias for logs dir; this is just used for reporting the host location of logs
+# in slack, where the log dir is a mounted volume
+HOST_LOGS_DIR = env.path("HOST_LOGS_DIR", LOGS_DIR)
 SLACK_LOGS_CHANNEL = env.str("SLACK_LOGS_CHANNEL")
 SLACK_TECH_SUPPORT_CHANNEL = env.str("SLACK_TECH_SUPPORT_CHANNEL")
 SLACK_BOT_TOKEN = env.str("SLACK_BOT_TOKEN")
