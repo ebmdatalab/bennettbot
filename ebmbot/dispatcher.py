@@ -8,7 +8,6 @@ import time
 import traceback
 from datetime import datetime, timezone
 from multiprocessing import Process
-from urllib.parse import urlencode, urlparse, urlunparse
 
 import requests
 from slack_sdk import WebClient
@@ -16,7 +15,6 @@ from slack_sdk import WebClient
 from . import job_configs, scheduler, settings
 from .bot import get_channels
 from .logger import logger
-from .signatures import generate_hmac
 from .slack import notify_slack
 
 
@@ -70,7 +68,6 @@ class JobDispatcher:
         if self.python_file:
             self.python_file = self.cwd / self.python_file
         self.python_function = self.job_config["python_function"]
-        self.callback_url = self.build_callback_url()
 
     def start_job(self):
         """Start running the job in a new subprocess."""
@@ -98,7 +95,6 @@ class JobDispatcher:
             run_args=self.run_args,
             python_file=self.python_file,
             python_function=self.python_function,
-            callback_url=self.callback_url,
             cwd=self.cwd,
             stdout_path=self.stdout_path,
             stderr_path=self.stdout_path,
@@ -121,7 +117,6 @@ class JobDispatcher:
                         stdout=stdout,
                         stderr=stderr,
                         env={
-                            "EBMBOT_CALLBACK_URL": self.callback_url,
                             "PATH": os.environ["PATH"],
                         },
                         shell=True,
@@ -219,31 +214,6 @@ class JobDispatcher:
         self.stdout_path = self.log_dir / "stdout"
         self.stderr_path = self.log_dir / "stderr"
         self.log_dir.mkdir(parents=True, exist_ok=True)
-
-    def build_callback_url(self):
-        timestamp = str(time.time())
-        hmac = generate_hmac(
-            timestamp.encode("utf8"), settings.EBMBOT_WEBHOOK_SECRET
-        ).decode("utf8")
-        querystring = urlencode(
-            {
-                "channel": self.job["channel"],
-                "thread_ts": self.job["thread_ts"],
-                "token": f"{timestamp}:{hmac}",
-            }
-        )
-        parsed_url = urlparse(settings.WEBHOOK_ORIGIN)
-
-        return urlunparse(
-            (
-                parsed_url.scheme,  # scheme
-                parsed_url.netloc,  # host
-                "callback/",  # path
-                "",  # params
-                querystring,  # query
-                "",  # fragment
-            )
-        )
 
 
 if __name__ == "__main__":

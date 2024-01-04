@@ -4,13 +4,10 @@ import shutil
 
 import pytest
 
-from ebmbot import scheduler, settings, webserver
+from ebmbot import scheduler, settings
 from ebmbot.dispatcher import JobDispatcher, run_once
 
-from .assertions import (
-    assert_patched_slack_client_sends_messages,
-    assert_slack_client_sends_messages,
-)
+from .assertions import assert_slack_client_sends_messages
 from .job_configs import config
 from .time_helpers import T0, TS, T
 
@@ -200,33 +197,6 @@ def test_job_failure_when_command_not_found(mock_client):
 
     with open(os.path.join(log_dir, "stderr")) as f:
         assert f.read() == "/bin/sh: 1: dog: not found\n"
-
-
-def test_job_with_callback(mock_client):
-    log_dir = build_log_dir("test_job_to_test_callback")
-
-    scheduler.schedule_job("test_job_to_test_callback", {}, "channel", TS, 0)
-    job = scheduler.reserve_job()
-
-    do_job(mock_client.client, job)
-    assert_slack_client_sends_messages(
-        mock_client.recorder,
-        messages_kwargs=[
-            {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "succeeded"},
-        ],
-    )
-
-    with open(os.path.join(log_dir, "stdout")) as f:
-        url = f.read().strip()
-
-    client = webserver.app.test_client()
-
-    with assert_patched_slack_client_sends_messages(
-        messages_kwargs=[{"channel": "channel", "text": "Job done", "thread_ts": TS}]
-    ):
-        rsp = client.post(url, data='{"message": "Job done"}')
-        assert rsp.status_code == 200
 
 
 def test_python_job_success(mock_client):

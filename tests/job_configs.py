@@ -23,9 +23,6 @@ raw_config = {
                 "run_args_template": "cat poem",
                 "report_success": False,
             },
-            "job_to_test_callback": {
-                "run_args_template": "echo $EBMBOT_CALLBACK_URL",
-            },
             "bad_job": {
                 "run_args_template": "cat no-poem",
             },
