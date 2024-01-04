@@ -60,7 +60,7 @@ class JobDispatcher:
         self.job_config = config["jobs"][self.job["type"]]
 
         self.namespace = self.job["type"].split("_")[0]
-        self.cwd = settings.WORKSPACE_DIR / self.namespace
+        self.cwd = config["workspace_dir"][self.namespace] / self.namespace
         self.fabfile_url = config["fabfiles"].get(self.namespace)
         escaped_args = {k: shlex.quote(v) for k, v in self.job["args"].items()}
         self.run_args = self.job_config["run_args_template"].format(**escaped_args)

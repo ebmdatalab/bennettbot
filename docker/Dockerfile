@@ -131,10 +131,6 @@ ARG GROUPID=10004
 # Add the user by name, required for ssh
 RUN useradd -u ${USERID} ebmbot
 
-# Jobs that run fab commands add fabfiles into the job's workspace, so need
-# to own this folder
-RUN chown -R ${USERID}:${GROUPID} /app/workspace
-
 USER ${USERID}:${GROUPID}
 
 ##################################################
