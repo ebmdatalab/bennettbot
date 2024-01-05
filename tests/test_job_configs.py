@@ -2,12 +2,14 @@ import re
 
 import pytest
 
+from ebmbot import settings
 from ebmbot.job_configs import build_config
 
 
 def test_build_config():
     raw_config = {
         "ns1": {
+            "workspace_dir": "/foo/",
             "jobs": {
                 "good_job": {"run_args_template": "cat [poem]"},
                 "bad_job": {"run_args_template": "dog [poem]"},
@@ -142,6 +144,11 @@ def test_build_config():
         },
         "fabfiles": {},
         "python_files": {"ns3": "jobs.py"},
+        "workspace_dir": {
+            "ns1": "/foo/",
+            "ns2": settings.WORKSPACE_DIR,
+            "ns3": settings.WORKSPACE_DIR,
+        },
     }
 
 

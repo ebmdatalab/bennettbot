@@ -1,16 +1,14 @@
 import json
 import os
 import shutil
+from unittest.mock import patch
 
 import pytest
 
-from ebmbot import scheduler, settings, webserver
+from ebmbot import scheduler, settings
 from ebmbot.dispatcher import JobDispatcher, run_once
 
-from .assertions import (
-    assert_patched_slack_client_sends_messages,
-    assert_slack_client_sends_messages,
-)
+from .assertions import assert_slack_client_sends_messages
 from .job_configs import config
 from .time_helpers import T0, TS, T
 
@@ -189,7 +187,7 @@ def test_job_failure_when_command_not_found(mock_client):
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "failed"},
+            {"channel": "channel", "text": "failed (find logs in tests/logs/"},
             # failed message url reposted to tech support channel (C0001 in the mock)
             {"channel": "C0001", "text": "http://test"},
         ],
@@ -202,31 +200,25 @@ def test_job_failure_when_command_not_found(mock_client):
         assert f.read() == "/bin/sh: 1: dog: not found\n"
 
 
-def test_job_with_callback(mock_client):
-    log_dir = build_log_dir("test_job_to_test_callback")
+@patch("ebmbot.settings.HOST_LOGS_DIR", "/host/logs/")
+def test_job_failure_with_host_log_dirs_setting(mock_client):
+    log_dir = build_log_dir("test_bad_job")
 
-    scheduler.schedule_job("test_job_to_test_callback", {}, "channel", TS, 0)
+    scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-
     do_job(mock_client.client, job)
     assert_slack_client_sends_messages(
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "succeeded"},
+            {"channel": "channel", "text": "failed (find logs in /host/logs/"},
+            # failed message url reposted to tech support channel (C0001 in the mock)
+            {"channel": "C0001", "text": "http://test"},
         ],
     )
 
-    with open(os.path.join(log_dir, "stdout")) as f:
-        url = f.read().strip()
-
-    client = webserver.app.test_client()
-
-    with assert_patched_slack_client_sends_messages(
-        messages_kwargs=[{"channel": "channel", "text": "Job done", "thread_ts": TS}]
-    ):
-        rsp = client.post(url, data='{"message": "Job done"}')
-        assert rsp.status_code == 200
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
 def test_python_job_success(mock_client):

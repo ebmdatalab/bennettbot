@@ -1,7 +1,3 @@
-from contextlib import contextmanager
-from unittest.mock import patch
-
-
 def assert_job_matches(job, type_, args, channel, start_after, started_at):
     assert_subdict(
         {
@@ -38,15 +34,6 @@ def assert_slack_client_sends_messages(
     # check the format of the final message sent to slack
     if message_format == "text" and messages_kwargs:
         assert "blocks" not in actual_call_kwargs[-1]
-
-
-@contextmanager
-def assert_patched_slack_client_sends_messages(messages_kwargs=None):
-    messages_kwargs = messages_kwargs or []
-    with patch("slack_sdk.WebClient.chat_postMessage") as p:
-        yield
-    actual_call_kwargs = [call.kwargs for call in p.call_args_list]
-    check_slack_client_calls(actual_call_kwargs, messages_kwargs)
 
 
 def check_slack_client_calls(actual_call_kwargs_list, expected_messages_kwargs):

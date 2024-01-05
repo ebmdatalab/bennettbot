@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ebmbot import scheduler, webserver
+from ebmbot import scheduler
 
 from ..assertions import assert_job_matches
 from ..time_helpers import T0, T
@@ -10,11 +10,6 @@ from ..time_helpers import T0, T
 
 # Make sure all tests run when datetime.now() returning T0
 pytestmark = pytest.mark.freeze_time(T0)
-
-
-@pytest.fixture()
-def web_client():
-    return webserver.app.test_client()
 
 
 PAYLOAD_PR_CLOSED = '{"action": "closed", "pull_request": {"merged": true}}'

@@ -1,0 +1,65 @@
+# Load .env files by default
+set dotenv-load := true
+
+# enable modern docker build features
+export DOCKER_BUILDKIT := "1"
+export COMPOSE_DOCKER_CLI_BUILD := "1"
+
+export BIN := "/opt/venv/bin"
+
+export DEV_USERID := `id -u`
+export DEV_GROUPID := `id -g`
+
+build env="dev":
+    #!/usr/bin/env bash
+
+    # set build args for prod builds
+    export BUILD_DATE=$(date -u +'%y-%m-%dT%H:%M:%SZ')
+    export GITREF=$(git rev-parse --short HEAD)
+
+    # build the thing
+    docker-compose build --pull {{ env }}
+
+
+# run python checks
+check: build
+    docker-compose run --rm dev /app/docker/entrypoints/check.sh
+
+
+# run tests in docker container
+test *args="": build
+    docker-compose run --rm test python -m pytest \
+    --cov=. \
+    --cov-report html \
+    --cov-report term-missing:skip-covered {{ args }}
+
+
+# run command in dev container
+run-cmd *args="bash": build
+    docker-compose --env-file ../.env run dev {{ args }}
+
+
+# run all services
+run-all: build
+    docker-compose --env-file ../.env up --detach dev_bot
+    docker-compose --env-file ../.env up --detach dev_dispatcher
+    docker-compose --env-file ../.env up --detach dev_webserver
+
+
+# stop all dev containers
+stop-all:
+    docker-compose stop dev_bot
+    docker-compose stop dev_dispatcher
+    docker-compose stop dev_webserver
+
+
+# stop all dev containers
+rm-all: stop-all
+    docker-compose rm dev_bot
+    docker-compose rm dev_dispatcher
+    docker-compose rm dev_webserver
+
+
+# exec command in existing dev container
+exec *args="bash":
+    docker-compose exec dev {{ args }}
