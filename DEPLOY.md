@@ -1,7 +1,10 @@
 ## Deployment
 
-Deployment uses `dokku` and requires the environment variables defined in `dotenv-sample`.
-It is deployed to our `dokku3` instance.
+Deployment uses `dokku` and requires the environment variables defined
+[below](#configure-app-environment-variables).
+
+It is deployed to our `dokku3` instance [automatically via GitHub actions](#deployment-via-github-actions).
+
 
 It runs as a single dokku app named `bennettbot`, with multiple processes for each
 service (bot, dispatcher and webserver) as defined in the `Procfile`.
@@ -118,7 +121,7 @@ Mount the user's home directory into the app.
 $ dokku storage:mount bennettbot /home/ebmbot/:/home/ebmbot
 ```
 
-Add the ebmbot user's key to any servers that it requires acces to
+Add the ebmbot user's key to any servers that it requires access to
 (i.e. any jobs that run `fab` commands).
 
 ### Configure app environment variables
@@ -182,7 +185,7 @@ https://dokku.com/docs/networking/port-management/
 dokku ports:add bennettbot http:9999:9999
 
 
-## Deployment
+## Deployment via GitHub Actions
 
 Merges to the `main` branch will trigger an auto-deploy via GitHub actions.
 

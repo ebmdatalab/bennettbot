@@ -1,5 +1,4 @@
 # See comments in ebmbot/settings.py
-EBMBOT_PATH=$PATH:/app/
 LOGS_DIR=changeme
 SLACK_LOGS_CHANNEL=changeme
 SLACK_TECH_SUPPORT_CHANNEL=changeme

@@ -69,7 +69,7 @@ RUN --mount=type=cache,target=/root/.cache \
 #
 # Not including the code at this stage has two benefits:
 #
-# 1) this image only rebuilds when the handlful of files needed to build output-explorer-base
+# 1) this image only rebuilds when the handlful of files needed to build bennettbot-base
 #    changes. If we do `COPY . /app` now, this will rebuild when *any* file changes.
 #
 # 2) Ensures we *have* to mount the volume for dev image, as there's no embedded
@@ -137,7 +137,7 @@ USER ${USERID}:${GROUPID}
 #
 # Dev image
 #
-# Now we build a dev image from our output-explorer-base image. This is basically
+# Now we build a dev image from our bennettbot-base image. This is basically
 # installing dev dependencies and changing the entrypoint
 #
 FROM bennettbot-base as bennettbot-dev
