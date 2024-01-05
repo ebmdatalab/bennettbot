@@ -28,6 +28,12 @@ SLACK_APP_TOKEN = env.str("SLACK_APP_TOKEN")
 SLACK_SIGNING_SECRET = env.str("SLACK_SIGNING_SECRET")
 SLACK_APP_USERNAME = env.str("SLACK_APP_USERNAME")
 
+# Path to file created when the bot starts up. In production, this should be
+# a path to a file in the mounted volume
+BOT_CHECK_FILE = env.path(
+    "BOT_CHECK_FILE", default=APPLICATION_ROOT / ".bot_startup_check"
+)
+
 # Should match "Payload URL" from
 # https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
 WEBHOOK_ORIGIN = env.str("WEBHOOK_ORIGIN")

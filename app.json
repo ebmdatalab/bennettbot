@@ -10,6 +10,17 @@
                 "wait": 30,
                 "timeout": 60
             }
+        ],
+        "bot": [
+            {
+                "type":        "startup",
+                "name":        "bot check",
+                "description": "Checking if the bot start up file exists",
+                "command": ["/app/bot_check.sh"],
+                "attempts": 10,
+                "wait": 30,
+                "timeout": 60
+            }
         ]
       }
   }

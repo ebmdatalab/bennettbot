@@ -166,6 +166,9 @@ the fabfile for running the commands). Set this to a directory in the dokku moun
 storage that the docker user will have write access to.
 - `FAB_WORKSPACE_DIR`
 
+Path for file created after bot startup (used in the bot healthcheck in `app.json`).
+- `BOT_CHECK_FILE`
+
 Set each env varible with:
 ```sh
 $ dokku config:set bennettbot ENVVAR_NAME=value
@@ -177,6 +180,7 @@ $ dokku config:set bennettbot LOGS_DIR=/storage/logs
 $ dokku config:set bennettbot HOST_LOGS_DIR=/var/lib/dokku/data/storage/bennettbot/logs
 $ dokku config:set bennettbot DB_PATH=/storage/bennettbot.db
 $ dokku config:set bennettbot FAB_WORKSPACE_DIR=/storage/workspace
+$ dokku config:set bennettbot BOT_CHECK_FILE=/storage/.bot_startup_check
 ```
 
 ### Map port 9999 for incoming github hooks

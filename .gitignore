@@ -2,6 +2,7 @@ environment
 .env
 workspace/techsupport/ooo.json
 gcp-credentials.json
+.bot_startup_check
 
 # System files
 *.py[co]
