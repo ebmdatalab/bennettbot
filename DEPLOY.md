@@ -161,10 +161,9 @@ for error reporting
 The path for the sqlite db file; set this to a file in the dokku mounted storage
 - `DB_PATH`
 
-The path for workspaces that are created by the job (i.e. fabric jobs that fetch
-the fabfile for running the commands). Set this to a directory in the dokku mounted
-storage that the docker user will have write access to.
-- `FAB_WORKSPACE_DIR`
+A path to a directory that jobs can write files to. Set this to a directory in the
+dokku mounted storage that the docker user will have write access to.
+- `WRITEABLE_DIR`
 
 Path for file created after bot startup (used in the bot healthcheck in `app.json`).
 - `BOT_CHECK_FILE`
