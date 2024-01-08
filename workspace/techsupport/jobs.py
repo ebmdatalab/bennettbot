@@ -1,6 +1,5 @@
 import json
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
 from apiclient import discovery
 from google.oauth2 import service_account
@@ -9,7 +8,7 @@ from ebmbot import settings
 
 
 def config_file():
-    return Path(__file__).parent / "ooo.json"
+    return settings.WRITEABLE_DIR / "techsupport_ooo.json"
 
 
 def today():
