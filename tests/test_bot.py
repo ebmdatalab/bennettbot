@@ -474,6 +474,32 @@ def test_new_channel_created(mock_app):
     ] == {"channel": "C0NEW", "users": "U1234"}
 
 
+def test_remove_job(mock_app):
+    recorder = mock_app.recorder
+    handle_message(mock_app, "<@U1234> test do job 10", reaction_count=1)
+    jobs = scheduler.get_jobs_of_type("test_good_job")
+    assert len(jobs) == 1
+    job_id = jobs[0]["id"]
+    handle_message(mock_app, f"<@U1234> remove job id {job_id}", reaction_count=2)
+    assert not scheduler.get_jobs_of_type("test_good_job")
+
+    post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    assert (
+        "text",
+        "Job id [1] removed",
+    ) in post_message.items()
+
+
+def test_remove_non_existent_job(mock_app):
+    recorder = mock_app.recorder
+    handle_message(mock_app, "<@U1234> remove job id 10", reaction_count=1)
+    post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    assert (
+        "text",
+        "Job id [10] not found in running or scheduled jobs",
+    ) in post_message.items()
+
+
 def handle_message(
     mock_app,
     text,
