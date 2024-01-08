@@ -30,11 +30,18 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
     * "fabfile": optional, the URL of a fabfile which is required to run
         commands in the namespace
     * "python_file": optional, the path to a python file within the namespace
+    * "workspace_dir": optional, the path to the directory where files related to
+      the namespace can be found. Defaults to ebmbot/workspace, which is the location
+      of job files that exist only within this repo. Can be set to another location for
+      jobs that fetch files and create a namespace workspace location for them
+      (e.g. fabric jobs).
 """
 
 
 import re
 from operator import itemgetter
+
+from ebmbot import settings
 
 
 # fmt: off
@@ -75,6 +82,7 @@ raw_config = {
         ],
     },
     "fdaaa": {
+        "workspace_dir": settings.FAB_WORKSPACE_DIR,
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
         "jobs": {
             "deploy": {
@@ -91,6 +99,7 @@ raw_config = {
         ],
     },
     "op": {
+        "workspace_dir": settings.FAB_WORKSPACE_DIR,
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
             "deploy": {
@@ -213,7 +222,26 @@ raw_config = {
             "job_type": "delete_preview",
         }],
     },
-    "teamdata": {
+    "outputchecking": {
+        "python_file": "jobs.py",
+        "jobs": {
+            "rota_report": {
+                "python_function": "report_rota",
+                "run_args_template": "",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "rota report",
+                "help": "Report who's next on output checking duty",
+                "type": "schedule_job",
+                "job_type": "rota_report",
+            },
+        ],
+    },
+    "teamrap": {
         "python_file": "project_report.py",
         "jobs": {
             "generate_report": {
@@ -232,10 +260,10 @@ raw_config = {
             },
         ],
     },
-    "teampipeline": {
-        "python_file": "pipeline.py",
+    "teamrex": {
+        "python_file": "report.py",
         "jobs": {
-            "generate_pipeline_report": {
+            "generate_rex_report": {
                 "python_function": "report",
                 "run_args_template": "",
                 "report_stdout": True,
@@ -247,7 +275,7 @@ raw_config = {
                 "command": "report",
                 "help": "generate project board report",
                 "type": "schedule_job",
-                "job_type": "generate_pipeline_report",
+                "job_type": "generate_rex_report",
             },
         ],
     },
@@ -333,7 +361,14 @@ def build_config(raw_config):
     See test_job_configs for an example.
     """
 
-    config = {"jobs": {}, "slack": [], "help": {}, "fabfiles": {}, "python_files": {}}
+    config = {
+        "jobs": {},
+        "slack": [],
+        "help": {},
+        "fabfiles": {},
+        "python_files": {},
+        "workspace_dir": {},
+    }
 
     for namespace in raw_config:
         if "_" in namespace:  # pragma: no cover
@@ -370,6 +405,10 @@ def build_config(raw_config):
 
         if "python_file" in raw_config[namespace]:
             config["python_files"][namespace] = raw_config[namespace]["python_file"]
+
+        config["workspace_dir"][namespace] = raw_config[namespace].get(
+            "workspace_dir", settings.WORKSPACE_DIR
+        )
 
     config["slack"] = sorted(config["slack"], key=itemgetter("command"))
 

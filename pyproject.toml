@@ -21,7 +21,7 @@ omit = [
     "fabfile.py",
     "*/__main__.py",
     "tests/mock_web_api_server.py",
-    "workspace/teamdata/generate_report.py",
+    "workspace/teamrap/generate_report.py",
     "workspace/test/jobs.py"
 ]
 
@@ -36,10 +36,28 @@ exclude_lines = [
 
 [tool.coverage.html]
 
-[tool.isort]
-profile = "black"
-lines_after_imports = 2
-skip_glob = [".direnv", "venv", ".venv"]
+[tool.ruff]
+line-length = 88
+exclude = [
+  ".direnv",
+  ".venv/",
+  "venv/",
+  "fabfile.py",
+]
+extend-select = [
+  "A", # flake8-builtins
+  "I",  # isort
+  "INP",  # flake8-no-pep420
+  "ISC",  # flake8-implicit-str-concat
+  "UP",  # pyupgrade
+  "W",  # pycodestyle warning
+]
+extend-ignore = [
+  "E501"
+]
+
+[tool.ruff.isort]
+lines-after-imports = 2
 
 [tool.pytest.ini_options]
 env = [
@@ -55,5 +73,9 @@ env = [
     "GITHUB_WEBHOOK_SECRET=github_webhook_secret",
     "EBMBOT_WEBHOOK_SECRET=ebmbot_webhook_secret",
     "WEBHOOK_ORIGIN=http://localhost:9999",
-    "EBMBOT_PATH="
+    "GCP_CREDENTIALS_PATH=",
+    "DATA_TEAM_GITHUB_API_TOKEN=dummy-token"
+]
+filterwarnings = [
+    "ignore:distutils Version classes are deprecated:DeprecationWarning:pytest_freezegun",
 ]

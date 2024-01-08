@@ -1,9 +1,13 @@
-# Deployment
+## Deployment
 
-ebmbot is deployed on smallweb1 and is managed by systemd.
+Deployment uses `dokku` and requires the environment variables defined
+[below](#configure-app-environment-variables).
 
-* To deploy: `fab deploy`
-* To view logs: `sudo journalctl -u app.ebmbot.* -b -f`
+It is deployed to our `dokku3` instance [automatically via GitHub actions](#deployment-via-github-actions).
+
+
+It runs as a single dokku app named `bennettbot`, with multiple processes for each
+service (bot, dispatcher and webserver) as defined in the `Procfile`.
 
 ## Creating the Slack app
 (This should only need to be done once).
@@ -71,10 +75,58 @@ events.  We need to add some more:
 If you update any scopes after installing the app, you'll need to reinstall it (slack will
 usually prompt for this).
 
-### Set environment variables
+## Configuring the dokku app
+(This should only need to be done once).
 
-Copy `dotenv-sample` to `.env` and update with relevant environment variables. See also
-comments in `ebmbot/settings.py`.
+### Create app
+
+```sh
+$ dokku apps:create bennettbot
+```
+
+### Create storage for sqlite db, logs and fabric job workspaces
+```sh
+$ mkdir -p /var/lib/dokku/data/storage/bennettbot/logs
+$ mkdir -p /var/lib/dokku/data/storage/bennettbot/workspace
+$ dokku storage:mount bennettbot /var/lib/dokku/data/storage/bennettbot/:/storage
+```
+
+### Set up the user
+
+This is done using the ansible playbook in `https://github.com/ebmdatalab/sysadmin/blob/main/infra`.
+
+See <https://github.com/ebmdatalab/sysadmin/blob/main/infra/README.md> for more details.
+
+To run just the bennettbot tasks:
+
+```sh
+just test dokku3 --tags bennettbot
+```
+And if all looks OK:
+
+```sh
+just apply dokku3 --tags bennettbot
+```
+
+This will create the ebmbot user on dokku3 and chown any mounted volumes.
+
+
+### Create ssh key and mount ebmbot user's home directory
+
+Create an ssh key for the ebmbot user, in the usual $HOME/.ssh/ location.
+
+Mount the user's home directory into the app.
+
+```sh
+$ dokku storage:mount bennettbot /home/ebmbot/:/home/ebmbot
+```
+
+Add the ebmbot user's key to any servers that it requires access to
+(i.e. any jobs that run `fab` commands).
+
+### Configure app environment variables
+
+See also comments in `ebmbot/settings.py`.
 
 The following slack environment variables need to be set:
 - `SLACK_LOGS_CHANNEL`: channel where scheduled job notifications will be posted
@@ -92,9 +144,75 @@ OpenPrescribing, and are configured at https://github.com/ebmdatalab/openprescri
 
 The following environment variable allows the bot to authenticate with Github to retrieve
 project information.
-- `DATA_TEAM_GITHUB_API_TOKEN`: Note that this must be a classic PAT (not fine-grained) and
-  needs the `repo` and `read:project` scope
+- `DATA_TEAM_GITHUB_API_TOKEN`: Note that this must be a classic PAT (not fine-grained)
+  and needs the `repo` and `read:project` scope
 
 This is the path to credentials for the gdrive@ebmdatalab.iam.gserviceaccount.com
 service account:
 - `GCP_CREDENTIALS_PATH`
+
+The path for logs; set this to a directory in the dokku mounted storage so the logs
+persist outside of the containers.
+- `LOGS_DIR`
+Also set the alias for the logs dir to the location of the mounted volume on the host,
+for error reporting
+- `HOST_LOGS_DIR`
+
+The path for the sqlite db file; set this to a file in the dokku mounted storage
+- `DB_PATH`
+
+The path for workspaces that are created by the job (i.e. fabric jobs that fetch
+the fabfile for running the commands). Set this to a directory in the dokku mounted
+storage that the docker user will have write access to.
+- `FAB_WORKSPACE_DIR`
+
+Path for file created after bot startup (used in the bot healthcheck in `app.json`).
+- `BOT_CHECK_FILE`
+
+Set each env varible with:
+```sh
+$ dokku config:set bennettbot ENVVAR_NAME=value
+```
+
+e.g.
+```sh
+$ dokku config:set bennettbot LOGS_DIR=/storage/logs
+$ dokku config:set bennettbot HOST_LOGS_DIR=/var/lib/dokku/data/storage/bennettbot/logs
+$ dokku config:set bennettbot DB_PATH=/storage/bennettbot.db
+$ dokku config:set bennettbot FAB_WORKSPACE_DIR=/storage/workspace
+$ dokku config:set bennettbot BOT_CHECK_FILE=/storage/.bot_startup_check
+```
+
+### Map port 9999 for incoming github hooks
+https://dokku.com/docs/networking/port-management/
+
+dokku ports:add bennettbot http:9999:9999
+
+
+## Deployment via GitHub Actions
+
+Merges to the `main` branch will trigger an auto-deploy via GitHub actions.
+
+Note this deploys by building the prod docker image (see `docker/docker-compose.yaml`) and using the dokku [git:from-image](https://dokku.com/docs/deployment/methods/git/#initializing-an-app-repository-from-a-docker-image) command.
+
+
+### Manually deploying
+
+To deploy manually:
+
+```
+# build prod image locally
+just docker/build prod
+
+# tag image and push
+docker tag bennettbot ghcr.io/ebmdatalab/bennettbot:latest
+docker push ghcr.io/ebmdatalab/bennettbot:latest
+
+# get the SHA for the latest image
+SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/ebmdatalab/bennettbot:latest)
+```
+
+On dokku3, as the `dokku` user:
+```
+$ dokku git:from-image bennettbot <SHA>
+```

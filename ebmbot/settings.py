@@ -7,17 +7,32 @@ env = Env()
 env.read_env()
 
 APPLICATION_ROOT = Path(__file__).resolve().parent.parent
-EBMBOT_PATH = env.str("EBMBOT_PATH")
 
 DB_PATH = env.path("DB_PATH", default=APPLICATION_ROOT / "ebmbot.db")
+# location of job workspaces that live in this repo
 WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace")
+# location of fabric jobs which don't have workspaces in this repo
+# These jobs will fetch fabric files and create a folder in
+# FAB_WORKSPACE_DIR. In production, we want this to be a location in a
+# mounted volume in the dokku app, which the docker user has write access
+# to, and not a location that only exists in the container
+FAB_WORKSPACE_DIR = env.path("FAB_WORKSPACE_DIR", default=WORKSPACE_DIR)
 LOGS_DIR = env.path("LOGS_DIR")
+# An alias for logs dir; this is just used for reporting the host location of logs
+# in slack, where the log dir is a mounted volume
+HOST_LOGS_DIR = env.path("HOST_LOGS_DIR", LOGS_DIR)
 SLACK_LOGS_CHANNEL = env.str("SLACK_LOGS_CHANNEL")
 SLACK_TECH_SUPPORT_CHANNEL = env.str("SLACK_TECH_SUPPORT_CHANNEL")
 SLACK_BOT_TOKEN = env.str("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = env.str("SLACK_APP_TOKEN")
 SLACK_SIGNING_SECRET = env.str("SLACK_SIGNING_SECRET")
 SLACK_APP_USERNAME = env.str("SLACK_APP_USERNAME")
+
+# Path to file created when the bot starts up. In production, this should be
+# a path to a file in the mounted volume
+BOT_CHECK_FILE = env.path(
+    "BOT_CHECK_FILE", default=APPLICATION_ROOT / ".bot_startup_check"
+)
 
 # Should match "Payload URL" from
 # https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427

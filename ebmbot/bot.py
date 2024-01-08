@@ -1,15 +1,34 @@
 import random
 import re
 from datetime import datetime, timezone
+from threading import Event
 
 from slack_bolt import App, BoltResponse
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt.error import BoltUnhandledRequestError
+from slack_bolt.util.utils import get_boot_message
 
 from workspace.techsupport.jobs import get_dates_from_config as get_tech_support_dates
 
 from . import job_configs, scheduler, settings
 from .logger import log_call, logger
+
+
+class SocketModeCheckHandler(SocketModeHandler):
+    def start(self):  # pragma: no cover
+        """
+        Duplicates the behaviour of SocketModeHandler (establishes a new connection and then blocks the current thread to prevent the termination of this process).
+
+        In addition, sets a file after connection that can used as a healthcheck to
+        ensure that the bot is fully running. In production, this file is removed in a dokku release task that runs pre-deploy.
+        """
+        settings.BOT_CHECK_FILE.unlink(missing_ok=True)
+
+        self.connect()
+        logger.info(get_boot_message())
+
+        settings.BOT_CHECK_FILE.touch()
+        Event().wait()
 
 
 def run():  # pragma: no cover
@@ -20,13 +39,14 @@ def run():  # pragma: no cover
         # enable @app.error handler to catch the patterns we don't specifically handle
         raise_error_for_unhandled_request=True,
     )
-    handler = SocketModeHandler(app, settings.SLACK_APP_TOKEN)
+    handler = SocketModeCheckHandler(app, settings.SLACK_APP_TOKEN)
 
     bot_user_id = get_bot_user_id(app.client)
     channels = get_channels(app.client)
     join_all_channels(app.client, channels, bot_user_id)
     register_listeners(app, job_configs.config, channels, bot_user_id)
     handler.start()
+    logger.info("Connected")
 
 
 def get_bot_user_id(client):
@@ -363,7 +383,7 @@ def handle_namespace_help(message, say, help_config):
 
     lines = ["The following commands are available:", ""]
 
-    for (command, help_) in help_config:
+    for command, help_ in help_config:
         lines.append(f"`{command}`: {help_}")
 
     say("\n".join(lines), thread_ts=message.get("thread_ts"))

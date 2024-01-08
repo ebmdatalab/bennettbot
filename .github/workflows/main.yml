@@ -1,8 +1,15 @@
 ---
 name: CI
 
+env:
+  IMAGE_NAME: bennettbot
+  PUBLIC_IMAGE_NAME: ghcr.io/ebmdatalab/bennettbot
+  REGISTRY: ghcr.io
+  SSH_AUTH_SOCK: /tmp/agent.sock
+
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   check:
@@ -13,7 +20,7 @@ jobs:
       - uses: opensafely-core/setup-action@v1
         with:
           install-just: true
-          python-version: "3.8"
+          python-version: "3.9"
           cache-dependency-path: requirements.*.txt
       - name: Check formatting, linting and import sorting
         run: just check
@@ -26,8 +33,68 @@ jobs:
       - uses: opensafely-core/setup-action@v1
         with:
           install-just: true
-          python-version: "3.8"
+          python-version: "3.9"
           cache-dependency-path: requirements.*.txt
       - name: Run tests
         run: |
           just test
+
+
+  docker-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
+      - name: Check formatting, linting and import sorting on docker
+        run: just docker/check
+
+
+  docker-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
+      - name: Run tests in docker
+        run: just docker/test
+
+  deploy:
+    needs: [check, test, docker-check, docker-test]
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    if: github.ref == 'refs/heads/main'
+
+    concurrency: deploy-production
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opensafely-core/setup-action@v1
+        with:
+          install-just: true
+
+      - name: Build docker image
+        run: |
+            just docker/build prod
+
+      - name: Publish docker image
+        run: |
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+            docker tag $IMAGE_NAME $PUBLIC_IMAGE_NAME:latest
+            docker push $PUBLIC_IMAGE_NAME:latest
+
+      - name: Deploy image
+        run: |
+            ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+            ssh-add - <<< "${{ secrets.DOKKU3_DEPLOY_SSH_KEY }}"
+            SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $PUBLIC_IMAGE_NAME:latest)
+            ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" dokku@dokku3.ebmdatalab.net git:from-image bennettbot $SHA
