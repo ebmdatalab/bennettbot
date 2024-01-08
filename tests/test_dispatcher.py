@@ -153,6 +153,26 @@ def test_job_success_with_no_report(mock_client):
         assert f.read() == ""
 
 
+def test_job_success_with_slack_exception(mock_client_with_slack_exception):
+    # Test that the job still succeeds even if notifying slack errors
+    log_dir = build_log_dir("test_good_job")
+
+    scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client_with_slack_exception.client, job)
+    assert_slack_client_sends_messages(
+        mock_client_with_slack_exception.recorder,
+        messages_kwargs=[],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == "the owl and the pussycat\n"
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
+
+
 def test_job_failure(mock_client):
     log_dir = build_log_dir("test_bad_job")
 
