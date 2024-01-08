@@ -153,6 +153,10 @@ def register_listeners(app, config, channels, bot_user_id):
             handle_status(event, say)
             return
 
+        if text.startswith("remove job id"):
+            handle_remove_job(app, event, say, text)
+            return
+
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
                 handle_command(app, event, say, slack_config)
@@ -233,6 +237,24 @@ def handle_status(message, say):
 
     status = _build_status()
     say(status, thread_ts=message.get("thread_ts"))
+
+
+@log_call
+def handle_remove_job(app, message, say, text):
+    """Remove a job from the database so it can be rerun."""
+    app.client.reactions_add(
+        channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
+    )
+    job_id = int(text.split("remove job id ")[1])
+    jobs_ids = [job["id"] for job in scheduler.get_jobs()]
+    if job_id not in jobs_ids:
+        say(
+            f"Job id [{job_id}] not found in running or scheduled jobs",
+            thread_ts=message.get("thread_ts"),
+        )
+    else:
+        scheduler.mark_job_done(job_id)
+        say(f"Job id [{job_id}] removed", thread_ts=message.get("thread_ts"))
 
 
 def _build_status():
@@ -409,6 +431,12 @@ def handle_help(message, say, help_configs, include_apology):
 
     lines.append(
         f"Enter `{prefix}[namespace] help` (eg `{prefix}{random.choice(list(help_configs))} help`) for more help"
+    )
+    lines.append(f"Enter `{prefix}status` to see running and scheduled jobs")
+    lines.append(
+        f"Enter `{prefix}remove job id [id]` to remove a job; this will not "
+        "cancel jobs that are in progress, but will let you retry a job that "
+        "appears to have stalled."
     )
     say("\n".join(lines), thread_ts=message.get("thread_ts"))
 
