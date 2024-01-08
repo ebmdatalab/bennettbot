@@ -26,6 +26,11 @@ def reset_db():
         pass
 
 
+class WebClientWithSlackException(WebClient):
+    def chat_postMessage(self, *args, **kwargs):
+        raise Exception("Error notifying slack")
+
+
 @dataclass
 class MockRecordingClient:
     client: WebClient
@@ -38,19 +43,29 @@ class MockRecordingApp:
     recorder: Mock
 
 
-@pytest.fixture
-def mock_client():
-    test_recorder = Mock()
+def _get_mock_recording_client(client_class, test_recorder):
     setup_mock_web_api_server(test_recorder)
     mock_api_server_base_url = "http://localhost:8888"
-
-    yield MockRecordingClient(
-        client=WebClient(
+    return MockRecordingClient(
+        client=client_class(
             token="xoxb-valid",
             base_url=mock_api_server_base_url,
         ),
         recorder=test_recorder,
     )
+
+
+@pytest.fixture
+def mock_client():
+    test_recorder = Mock()
+    yield _get_mock_recording_client(WebClient, test_recorder)
+    cleanup_mock_web_api_server(test_recorder)
+
+
+@pytest.fixture
+def mock_client_with_slack_exception():
+    test_recorder = Mock()
+    yield _get_mock_recording_client(WebClientWithSlackException, test_recorder)
     cleanup_mock_web_api_server(test_recorder)
 
 
