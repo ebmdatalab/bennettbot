@@ -8,15 +8,21 @@ env.read_env()
 
 APPLICATION_ROOT = Path(__file__).resolve().parent.parent
 
-DB_PATH = env.path("DB_PATH", default=APPLICATION_ROOT / "ebmbot.db")
+# A directory that jobs can write to; in production, this is a volume
+# that is mounted into the dokku app and is owned by the non-root docker user
+WRITEABLE_DIR = env.path("WRITEABLE_DIR", default=APPLICATION_ROOT)
+
+DB_PATH = env.path("DB_PATH", default=WRITEABLE_DIR / "ebmbot.db")
+
 # location of job workspaces that live in this repo
 WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace")
+
 # location of fabric jobs which don't have workspaces in this repo
 # These jobs will fetch fabric files and create a folder in
 # FAB_WORKSPACE_DIR. In production, we want this to be a location in a
 # mounted volume in the dokku app, which the docker user has write access
 # to, and not a location that only exists in the container
-FAB_WORKSPACE_DIR = env.path("FAB_WORKSPACE_DIR", default=WORKSPACE_DIR)
+FAB_WORKSPACE_DIR = env.path("FAB_WORKSPACE_DIR", default=WRITEABLE_DIR / "workspace")
 LOGS_DIR = env.path("LOGS_DIR")
 # An alias for logs dir; this is just used for reporting the host location of logs
 # in slack, where the log dir is a mounted volume
