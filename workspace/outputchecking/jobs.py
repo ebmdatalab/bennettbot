@@ -61,7 +61,7 @@ def get_rota_data_from_sheet():  # pragma: no cover
         .values()
         .get(
             spreadsheetId="1i3D_HtuYUCU_dqvRug94YkfK6pG4ECyxTdOangubUlY",
-            range="Rota",
+            range="Rota 2024",
         )
         .execute()
     )["values"]
