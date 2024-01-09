@@ -30,6 +30,7 @@ check: build
 test *args="": build
     docker-compose run --rm test python -m pytest \
     --cov=. \
+    --cov-config /app/.coveragerc \
     --cov-report html \
     --cov-report term-missing:skip-covered {{ args }}
 
