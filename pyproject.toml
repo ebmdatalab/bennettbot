@@ -59,6 +59,9 @@ extend-ignore = [
 [tool.ruff.isort]
 lines-after-imports = 2
 
+[tool.ruff.per-file-ignores]
+"gunicorn/conf.py" = ["INP001"]
+
 [tool.pytest.ini_options]
 env = [
     "DB_PATH=tests/ebmbot.db",
