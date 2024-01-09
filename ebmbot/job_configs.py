@@ -325,11 +325,9 @@ raw_config = {
         ],
     },
     "funding": {
-        "python_file": "funding_report.py",
         "jobs": {
             "generate_report": {
-                "python_function": "main",
-                "run_args_template": "",
+                "run_args_template": "python funding_report.py",
                 "report_stdout": True,
                 "report_format": "blocks",
             }

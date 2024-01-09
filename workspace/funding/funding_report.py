@@ -1,10 +1,9 @@
 import json
 from datetime import date, datetime
+from os import environ
 
 from apiclient import discovery
 from google.oauth2 import service_account
-
-from ebmbot import settings
 
 
 def main():
@@ -28,17 +27,21 @@ def main():
         elif award.isnumeric():  # pragma: no cover
             award = f"£{int(award):,}"
 
-        added_date = row["Added date"]
+        added_date = row["Added/updated date"]
         if not added_date:  # pragma: no cover
             continue
         added_date = datetime.strptime(added_date, "%d %b %Y").date()
         days_since_added = (date.today() - added_date).days
 
-        deadline_date = row["Deadline date"]
+        deadline_date = row["Deadline / expression of interest date"]
         if not deadline_date:  # pragma: no cover
             continue
-        deadline_date = datetime.strptime(deadline_date, "%d %b %Y").date()
-        days_to_deadline = (deadline_date - date.today()).days
+        try:
+            deadline_date = datetime.strptime(deadline_date, "%d %b %Y").date()
+            days_to_deadline = (deadline_date - date.today()).days
+        except ValueError:
+            deadline_date = f"unknown date: {deadline_date}"
+            days_to_deadline = 0
 
         if days_since_added <= 14:  # pragma: no branch
             line = f"{type_}: <{link}|{opportunity}>, ({funder}, {award})"
@@ -60,13 +63,13 @@ def main():
                 }
             )
 
-    types = ["Project", "Programme", "Fellowship", "Other"]
+    types = ["Project", "Programme", "Fellowship", "PhD", "Infrastructure", "Other"]
 
     calls_recently_added.sort(
-        key=lambda row: (types.index(row["type"]), row["deadline_date"])
+        key=lambda row: (types.index(row["type"]), str(row["deadline_date"]))
     )
     calls_closing_soon.sort(
-        key=lambda row: (types.index(row["type"]), row["deadline_date"])
+        key=lambda row: (types.index(row["type"]), str(row["deadline_date"]))
     )
 
     blocks = [
@@ -133,12 +136,26 @@ def main():
         ]
     )
 
+    if len(blocks) > 50:  # pragma: no cover
+        blocks = blocks[0:48]
+        blocks.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "*Report truncated* - further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/18xM7nu1aD9dZe-eJbqrIRxinO5tjSBZv0EpJRlvz_BI/|funding tracker>.",
+                    },
+                },
+            ]
+        )
     return json.dumps(blocks, indent=2)
 
 
 def get_data_from_sheet():  # pragma: no cover
     credentials = service_account.Credentials.from_service_account_file(
-        settings.GCP_CREDENTIALS_PATH,
+        environ["GCP_CREDENTIALS_PATH"],
         scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
     )
     service = discovery.build("sheets", "v4", credentials=credentials)
