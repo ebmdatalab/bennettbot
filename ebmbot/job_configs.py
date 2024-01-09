@@ -277,26 +277,21 @@ raw_config = {
         ]
     },
     "techsupport": {
-        "python_file": "jobs.py",
         "jobs": {
             "out_of_office_on": {
-                "python_function": "out_of_office_on",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py on {start_date} {end_date}",
                 "report_stdout": True,
             },
             "out_of_office_off": {
-                "python_function": "out_of_office_off",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py off",
                 "report_stdout": True,
             },
             "out_of_office_status": {
-                "python_function": "out_of_office_status",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py status",
                 "report_stdout": True,
             },
             "rota_report": {
-                "python_function": "report_rota",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py rota",
                 "report_stdout": True,
                 "report_format": "blocks",
             },

@@ -1,5 +1,6 @@
 # See comments in ebmbot/settings.py
 LOGS_DIR=changeme
+WRITEABLE_DIR=.
 SLACK_LOGS_CHANNEL=changeme
 SLACK_TECH_SUPPORT_CHANNEL=changeme
 SLACK_BOT_TOKEN=changeme

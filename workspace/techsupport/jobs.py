@@ -1,14 +1,15 @@
 import json
+from argparse import ArgumentParser
 from datetime import date, datetime, timedelta
+from os import environ
+from pathlib import Path
 
 from apiclient import discovery
 from google.oauth2 import service_account
 
-from ebmbot import settings
-
 
 def config_file():
-    return settings.WRITEABLE_DIR / "techsupport_ooo.json"
+    return Path(environ["WRITEABLE_DIR"]) / "techsupport_ooo.json"
 
 
 def today():
@@ -94,35 +95,57 @@ def report_rota():
 
     today = date.today()
     if today.weekday() == 0:  # Monday
-        primary, secondary = rota[str(today)]
+        if str(today) in rota:
+            primary, secondary = rota[str(today)]
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"Primary tech support this week: {primary} (secondary: {secondary})",
+                    },
+                }
+            )
+        else:
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "No rota data found for this week",
+                    },
+                }
+            )
+
+    next_monday = str(today + timedelta(7 - today.weekday()))
+    if next_monday in rota:
+        primary, secondary = rota[str(next_monday)]
         blocks.append(
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"Primary tech support this week: {primary} (secondary: {secondary})",
+                    "text": f"Primary tech support next week: {primary} (secondary: {secondary})",
                 },
             }
         )
-
-    next_monday = today + timedelta(7 - today.weekday())
-    primary, secondary = rota[str(next_monday)]
-    blocks.append(
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"Primary tech support next week: {primary} (secondary: {secondary})",
-            },
-        }
-    )
+    else:
+        blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "No rota data found for next week",
+                },
+            }
+        )
 
     return json.dumps(blocks, indent=2)
 
 
 def get_rota_data_from_sheet():  # pragma: no cover
     credentials = service_account.Credentials.from_service_account_file(
-        settings.GCP_CREDENTIALS_PATH,
+        environ["GCP_CREDENTIALS_PATH"],
         scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
     )
     service = discovery.build("sheets", "v4", credentials=credentials)
@@ -136,3 +159,28 @@ def get_rota_data_from_sheet():  # pragma: no cover
         )
         .execute()
     )["values"]
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+
+    subparsers = parser.add_subparsers(dest="subparser_name")
+    on_parser = subparsers.add_parser("on")
+    on_parser.add_argument("start_date")
+    on_parser.add_argument("end_date")
+    on_parser.set_defaults(function=out_of_office_on)
+
+    off_parser = subparsers.add_parser("off")
+    off_parser.set_defaults(function=out_of_office_off)
+
+    status_parser = subparsers.add_parser("status")
+    status_parser.set_defaults(function=out_of_office_status)
+
+    rota_parser = subparsers.add_parser("rota")
+    rota_parser.set_defaults(function=report_rota)
+
+    args = parser.parse_args()
+    if args.subparser_name == "on":
+        print(args.function(args.start_date, args.end_date))
+    else:
+        print(args.function())
