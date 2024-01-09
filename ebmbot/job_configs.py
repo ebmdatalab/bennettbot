@@ -221,11 +221,9 @@ raw_config = {
         }],
     },
     "outputchecking": {
-        "python_file": "jobs.py",
         "jobs": {
             "rota_report": {
-                "python_function": "report_rota",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
