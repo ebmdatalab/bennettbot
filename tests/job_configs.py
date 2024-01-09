@@ -4,7 +4,6 @@ from ebmbot.job_configs import build_config
 # fmt: off
 raw_config = {
     "test": {
-        "python_file": "jobs.py",
         "jobs": {
             "good_job": {
                 "run_args_template": "cat poem",
@@ -33,32 +32,31 @@ raw_config = {
                 "run_args_template": "curl {url}",
             },
             "good_python_job": {
-                "run_args_template": "",
-                "python_function": "hello_world",
+                "run_args_template": "python jobs.py hello_world",
                 "report_stdout": True
             },
             "bad_python_job": {
-                "run_args_template": "",
-                "python_function": "unknown",
+                "run_args_template": "python unk.py",
                 "report_stdout": True
             },
             "parameterised_python_job": {
-                "run_args_template": "",
-                "python_function": "hello_world",
+                "run_args_template": "python jobs.py hello_world --name {name}",
                 "report_stdout": True
             },
             "good_python_job_with_blocks": {
-                "run_args_template": "",
-                "python_function": "hello_world_blocks",
+                "run_args_template": "python jobs.py hello_world_blocks",
                 "report_stdout": True,
                 "report_format": "blocks"
             },
             "bad_python_job_with_blocks": {
-                "run_args_template": "",
-                "python_function": "hello_world_blocks_error",
+                "run_args_template": "python jobs.py hello_world_blocks_error",
                 "report_stdout": True,
                 "report_format": "blocks"
             },
+            "python_job_no_output": {
+                "run_args_template": "python jobs.py hello_world_no_output",
+                "report_stdout": True,
+            }
         },
         "slack": [
             {
@@ -98,6 +96,13 @@ raw_config = {
                 "help": "run a python function",
                 "type": "schedule_job",
                 "job_type": "good_python_job",
+                "delay_seconds": 0,
+            },
+            {
+                "command": "do python job [name]",
+                "help": "run a python function",
+                "type": "schedule_job",
+                "job_type": "parameterised_python_job",
                 "delay_seconds": 0,
             },
             {
