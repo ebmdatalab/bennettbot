@@ -1,6 +1,6 @@
 import json
 
-from workspace import generate_report
+from workspace.report import generate_report
 
 
 def test_generate_report():
