@@ -18,7 +18,7 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
     * "slack": a list of dicts with keys:
         * "command": Slack command which starts the given job
         * "help: help text to display to the user
-        * "type": one of "schedule_job", "cancel_job", "schedule_suppression",
+        * "action": one of "schedule_job", "cancel_job", "schedule_suppression",
             "cancel_suppression"
         * "job_type": the type of the job to be scheduled/supppressed,
             corresponding to an entry in the "jobs" dict
@@ -26,11 +26,6 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
             and the job being run
     * "fabfile": optional, the URL of a fabfile which is required to run
         commands in the namespace
-    * "workspace_dir": optional, the path to the directory where files related to
-      the namespace can be found. Defaults to ebmbot/workspace, which is the location
-      of job files that exist only within this repo. Can be set to another location for
-      jobs that fetch files and create a namespace workspace location for them
-      (e.g. fabric jobs).
 """
 
 
@@ -61,26 +56,25 @@ raw_config = {
             {
                 "command": "read poem",
                 "help": "read a poem",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "read_poem",
                 "delay_seconds": 1,
             },
             {
                 "command": "hello [name]",
                 "help": "say hello to [name]",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "hello_name",
             },
             {
                 "command": "hello",
                 "help": "say hello",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "hello_world",
             },
         ],
     },
     "fdaaa": {
-        "workspace_dir": settings.FAB_WORKSPACE_DIR,
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
         "jobs": {
             "deploy": {
@@ -91,13 +85,12 @@ raw_config = {
             {
                 "command": "deploy",
                 "help": "copy staging data to live site",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "deploy",
             },
         ],
     },
     "op": {
-        "workspace_dir": settings.FAB_WORKSPACE_DIR,
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
             "deploy": {
@@ -145,78 +138,78 @@ raw_config = {
         "slack": [{
             "command": "deploy",
             "help": "deploy to production after a 60s delay",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "deploy",
             "delay_seconds": 60,
         }, {
             "command": "deploy now",
             "help": "deploy to production immediately",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "deploy",
         }, {
             "command": "deploy cancel",
             "help": "cancel any pending production deploy",
-            "type": "cancel_job",
+            "action": "cancel_job",
             "job_type": "deploy",
         }, {
             "command": "deploy suppress from [start_at] to [end_at]",
             "help": "suppress production deploys between these times today (times in UTC as 'HH:MM')",
-            "type": "schedule_suppression",
+            "action": "schedule_suppression",
             "job_type": "deploy",
         }, {
             "command": "deploy suppress cancel",
             "help": "cancel suppression of production deploys",
-            "type": "cancel_suppression",
+            "action": "cancel_suppression",
             "job_type": "deploy",
         }, {
             "command": "deploy staging [branch_name]",
             "help": "deploy branch [branch_name] to staging immediately",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "deploy_staging",
         }, {
             "command": "cache clear",
             "help": "clear Cloudflare cache",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "cache_clear",
         }, {
             "command": "ncso import",
             "help": "import NCSO concessions",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "ncso_import",
         }, {
             "command": "ncso report",
             "help": "show NCSO concession summary",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "ncso_report",
         }, {
             "command": "ncso reconcile concession [concession_id] against vmpp [vmpp_id]",
             "help": "show NCSO concession summary",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "ncso_reconcile",
         }, {
             "command": "ncso send alerts",
             "help": "send alerts for NCSO concessions",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "ncso_send_alerts",
         }, {
             "command": "measures import [measure_id]",
             "help": "import measure definition",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "import_measure_definition",
         }, {
             "command": "measures recalculate [measure_id]",
             "help": "recalculate measure values",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "recalculate_measure",
         }, {
             "command": "measures preview [github_measure_url]",
             "help": "import hidden preview version of measure direct from Github",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "preview_measure",
         }, {
             "command": "measures delete_preview [measure_id]",
             "help": "delete preview measure from site",
-            "type": "schedule_job",
+            "action": "schedule_job",
             "job_type": "delete_preview",
         }],
     },
@@ -232,7 +225,7 @@ raw_config = {
             {
                 "command": "rota report",
                 "help": "Report who's next on output checking duty",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "rota_report",
             },
         ],
@@ -259,19 +252,19 @@ raw_config = {
             {
                 "command": "board [project_number] [statuses]",
                 "help": "Report GitHub project board. Provide multiple statuses separated by commas.",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "run_report",
             },
             {
                 "command": "teamrap",
                 "help": "Team RAP board report",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "run_rap_report",
             },
             {
                 "command": "teamrex",
                 "help": "Team REX board report",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "run_rex_report",
             },
         ]
@@ -301,25 +294,25 @@ raw_config = {
                 "command": "ooo on from [start_date] to [end_date]",
                 "help": "Set tech support out of office between these dates "
                         "(inclusive, in 'YYYY-MM-DD' format)",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "out_of_office_on",
             },
             {
                 "command": "ooo off",
                 "help": "Turn tech support out of office off",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "out_of_office_off",
             },
             {
                 "command": "ooo status",
                 "help": "Report current tech support out of office status",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "out_of_office_status",
             },
             {
                 "command": "rota report",
                 "help": "Report who's next on tech support duty",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "rota_report",
             },
         ],
@@ -336,7 +329,7 @@ raw_config = {
             {
                 "command": "report",
                 "help": "generate funding report",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "job_type": "generate_report",
             },
         ],
@@ -391,9 +384,10 @@ def build_config(raw_config):
         if "fabfile" in raw_config[namespace]:
             config["fabfiles"][namespace] = raw_config[namespace]["fabfile"]
 
-        config["workspace_dir"][namespace] = raw_config[namespace].get(
-            "workspace_dir", settings.WORKSPACE_DIR
-        )
+        if (settings.WORKSPACE_DIR / namespace).exists():
+            config["workspace_dir"][namespace] = settings.WORKSPACE_DIR
+        else:
+            config["workspace_dir"][namespace] = settings.WRITEABLE_WORKSPACE_DIR
 
     config["slack"] = sorted(config["slack"], key=itemgetter("command"))
 
@@ -455,7 +449,7 @@ def validate_slack_config(slack_config):
     expected_keys = {
         "command",
         "help",
-        "type",
+        "action",
         "job_type",
         "regex",
         "template_params",

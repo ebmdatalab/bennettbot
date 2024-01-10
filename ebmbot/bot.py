@@ -337,7 +337,7 @@ def handle_command(app, message, say, slack_config):
         "cancel_job": handle_cancel_job,
         "schedule_suppression": handle_schedule_suppression,
         "cancel_suppression": handle_cancel_suppression,
-    }[slack_config["type"]]
+    }[slack_config["action"]]
 
     handler(message, say, slack_config)
 

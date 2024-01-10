@@ -9,7 +9,6 @@ from ebmbot.job_configs import build_config
 def test_build_config():
     raw_config = {
         "ns1": {
-            "workspace_dir": "/foo/",
             "jobs": {
                 "good_job": {"run_args_template": "cat [poem]"},
                 "bad_job": {"run_args_template": "dog [poem]"},
@@ -18,7 +17,7 @@ def test_build_config():
                 {
                     "command": "read poem [poem]",
                     "help": "read a poem",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                 }
             ],
@@ -32,7 +31,7 @@ def test_build_config():
                 {
                     "command": "read poem [poem]",
                     "help": "read a poem",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                 }
             ],
@@ -52,14 +51,25 @@ def test_build_config():
                 {
                     "command": "hello world",
                     "help": "say hello world",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_python_job",
                 }
             ],
         },
+        # Minimal config for a job with an existing workspace dir
+        "test": {
+            "jobs": {
+                "good_job": {"run_args_template": "echo Hello"},
+            },
+            "slack": [],
+        },
     }
 
     config = build_config(raw_config)
+    # Assert that in tests, settings.WORKSPACE_DIR and
+    # settings.WRITEABLE_WORKSPACE_DIR are different. Jobs that don't already have
+    # a namespace dir will useWRITEABLE_WORKSPACE_DIR
+    assert settings.WORKSPACE_DIR != settings.WRITEABLE_WORKSPACE_DIR
     assert config == {
         "jobs": {
             "ns1_good_job": {
@@ -98,13 +108,19 @@ def test_build_config():
                 "report_format": "text",
                 "report_success": True,
             },
+            "test_good_job": {
+                "run_args_template": "echo Hello",
+                "report_stdout": False,
+                "report_format": "text",
+                "report_success": True,
+            },
         },
         "slack": [
             {
                 "command": "ns1 read poem [poem]",
                 "job_type": "ns1_good_job",
                 "help": "read a poem",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "regex": re.compile("^ns1 read poem (.+?)$"),
                 "template_params": ["poem"],
                 "delay_seconds": 0,
@@ -113,7 +129,7 @@ def test_build_config():
                 "command": "ns2 read poem [poem]",
                 "job_type": "ns2_good_job",
                 "help": "read a poem",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "regex": re.compile("^ns2 read poem (.+?)$"),
                 "template_params": ["poem"],
                 "delay_seconds": 0,
@@ -122,7 +138,7 @@ def test_build_config():
                 "command": "ns3 hello world",
                 "job_type": "ns3_good_python_job",
                 "help": "say hello world",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "regex": re.compile("^ns3 hello world$"),
                 "template_params": [],
                 "delay_seconds": 0,
@@ -132,12 +148,14 @@ def test_build_config():
             "ns1": [["ns1 read poem [poem]", "read a poem"]],
             "ns2": [["ns2 read poem [poem]", "read a poem"]],
             "ns3": [["ns3 hello world", "say hello world"]],
+            "test": [],
         },
         "fabfiles": {},
         "workspace_dir": {
-            "ns1": "/foo/",
-            "ns2": settings.WORKSPACE_DIR,
-            "ns3": settings.WORKSPACE_DIR,
+            "ns1": settings.WRITEABLE_WORKSPACE_DIR,
+            "ns2": settings.WRITEABLE_WORKSPACE_DIR,
+            "ns3": settings.WRITEABLE_WORKSPACE_DIR,
+            "test": settings.WORKSPACE_DIR,
         },
     }
 
@@ -185,7 +203,7 @@ def test_build_config_with_bad_slack_config():
             "slack": [
                 {
                     "command": "do good job",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                 }
             ]
@@ -209,7 +227,7 @@ def test_build_config_with_bad_slack_config():
                 {
                     "command": "do good job",
                     "help": "do job well",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                     "extra_param": 123,
                 }
@@ -234,7 +252,7 @@ def test_build_config_with_bad_slack_config():
                 {
                     "command": "do good job",
                     "help": "do job well",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "odd_job",
                 }
             ]

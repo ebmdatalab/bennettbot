@@ -43,6 +43,7 @@ lines-after-imports = 2
 env = [
     "DB_PATH=tests/ebmbot.db",
     "WORKSPACE_DIR=tests/workspace",
+    "WRITEABLE_WORKSPACE_DIR=tests/writeable_workspace",
     "WRITEABLE_DIR=tests/",
     "LOGS_DIR=tests/logs",
     "SLACK_LOGS_CHANNEL=logs",
