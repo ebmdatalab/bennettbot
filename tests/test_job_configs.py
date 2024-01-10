@@ -18,7 +18,7 @@ def test_build_config():
                 {
                     "command": "read poem [poem]",
                     "help": "read a poem",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                 }
             ],
@@ -32,7 +32,7 @@ def test_build_config():
                 {
                     "command": "read poem [poem]",
                     "help": "read a poem",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                 }
             ],
@@ -52,7 +52,7 @@ def test_build_config():
                 {
                     "command": "hello world",
                     "help": "say hello world",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_python_job",
                 }
             ],
@@ -104,7 +104,7 @@ def test_build_config():
                 "command": "ns1 read poem [poem]",
                 "job_type": "ns1_good_job",
                 "help": "read a poem",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "regex": re.compile("^ns1 read poem (.+?)$"),
                 "template_params": ["poem"],
                 "delay_seconds": 0,
@@ -113,7 +113,7 @@ def test_build_config():
                 "command": "ns2 read poem [poem]",
                 "job_type": "ns2_good_job",
                 "help": "read a poem",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "regex": re.compile("^ns2 read poem (.+?)$"),
                 "template_params": ["poem"],
                 "delay_seconds": 0,
@@ -122,7 +122,7 @@ def test_build_config():
                 "command": "ns3 hello world",
                 "job_type": "ns3_good_python_job",
                 "help": "say hello world",
-                "type": "schedule_job",
+                "action": "schedule_job",
                 "regex": re.compile("^ns3 hello world$"),
                 "template_params": [],
                 "delay_seconds": 0,
@@ -185,7 +185,7 @@ def test_build_config_with_bad_slack_config():
             "slack": [
                 {
                     "command": "do good job",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                 }
             ]
@@ -209,7 +209,7 @@ def test_build_config_with_bad_slack_config():
                 {
                     "command": "do good job",
                     "help": "do job well",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "good_job",
                     "extra_param": 123,
                 }
@@ -234,7 +234,7 @@ def test_build_config_with_bad_slack_config():
                 {
                     "command": "do good job",
                     "help": "do job well",
-                    "type": "schedule_job",
+                    "action": "schedule_job",
                     "job_type": "odd_job",
                 }
             ]
