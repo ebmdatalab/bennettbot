@@ -102,6 +102,12 @@ def register_listeners(app, config, channels, bot_user_id):
     tech_support_regex = re.compile(
         r".*(^|[^\w\-/])tech-support($|[^\w\-]).*", flags=re.I
     )
+    # Only match messages posted outside of the tech support channel itself
+    # and messages that are not posted by a bot (to avoid reposting reminders etc)
+    tech_support_matchers = [
+        lambda message: message["channel"] != tech_support_channel_id,
+        lambda message: "bot_id" not in message,
+    ]
 
     @app.event(
         "app_mention",
@@ -172,18 +178,29 @@ def register_listeners(app, config, channels, bot_user_id):
         include_apology = text != "help"
         handle_help(event, say, config["help"], config["description"], include_apology)
 
+    @app.event(
+        {"type": "message", "subtype": "message_changed", "text": tech_support_regex},
+        matchers=tech_support_matchers,
+    )
+    def repost_edited_message_to_tech_support(event, say, ack):
+        message_to_handle = {
+            **event["previous_message"],
+            "channel": event["channel"],
+            "channel_type": event["channel_type"],
+        }
+        return _repost_to_tech_support(message_to_handle, say, ack)
+
     @app.message(
         tech_support_regex,
         # Only match messages posted outside of the tech support channel itself
         # and messages that are not posted by a bot (to avoid reposting reminders etc)
-        matchers=[
-            lambda message: message["channel"] != tech_support_channel_id,
-            lambda message: "bot_id" not in message,
-        ],
+        matchers=tech_support_matchers,
     )
     def repost_to_tech_support(message, say, ack):
-        ack()
+        return _repost_to_tech_support(message, say, ack)
 
+    def _repost_to_tech_support(message, say, ack):
+        ack()
         # Don't repost messages in DMs with the bot
         if message["channel_type"] in ["channel", "group"]:
             # Respond with SOS reaction
