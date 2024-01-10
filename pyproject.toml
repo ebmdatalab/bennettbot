@@ -13,29 +13,6 @@ exclude = '''
 )
 '''
 
-[tool.coverage.run]
-branch = true
-omit = [
-    ".venv/*",
-    "venv/*",
-    "fabfile.py",
-    "*/__main__.py",
-    "tests/mock_web_api_server.py",
-    "workspace/teamrap/generate_report.py",
-    "workspace/test/jobs.py"
-]
-
-[tool.coverage.report]
-fail_under = 100
-skip_covered = true
-exclude_lines = [
-  "pragma: no cover",
-  "if __name__ == .__main__.:",
-  "assert False"
-]
-
-[tool.coverage.html]
-
 [tool.ruff]
 line-length = 88
 exclude = [
@@ -66,6 +43,7 @@ lines-after-imports = 2
 env = [
     "DB_PATH=tests/ebmbot.db",
     "WORKSPACE_DIR=tests/workspace",
+    "WRITEABLE_DIR=tests/",
     "LOGS_DIR=tests/logs",
     "SLACK_LOGS_CHANNEL=logs",
     "SLACK_TECH_SUPPORT_CHANNEL=techsupport",

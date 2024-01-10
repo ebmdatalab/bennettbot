@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 import shlex
@@ -61,14 +60,11 @@ class JobDispatcher:
         self.job_config = config["jobs"][self.job["type"]]
 
         self.namespace = self.job["type"].split("_")[0]
-        self.cwd = config["workspace_dir"][self.namespace] / self.namespace
+        self.workspace_dir = config["workspace_dir"][self.namespace]
+        self.cwd = self.workspace_dir / self.namespace
         self.fabfile_url = config["fabfiles"].get(self.namespace)
         escaped_args = {k: shlex.quote(v) for k, v in self.job["args"].items()}
         self.run_args = self.job_config["run_args_template"].format(**escaped_args)
-        self.python_file = config["python_files"].get(self.namespace)
-        if self.python_file:
-            self.python_file = self.cwd / self.python_file
-        self.python_function = self.job_config["python_function"]
 
     def start_job(self):
         """Start running the job in a new subprocess."""
@@ -94,8 +90,6 @@ class JobDispatcher:
         logger.info(
             "run_command",
             run_args=self.run_args,
-            python_file=self.python_file,
-            python_function=self.python_function,
             cwd=self.cwd,
             stdout_path=self.stdout_path,
             stderr_path=self.stdout_path,
@@ -105,24 +99,15 @@ class JobDispatcher:
             self.stderr_path, "w"
         ) as stderr:
             try:
-                if self.python_function:
-                    python_module = self.load_module()
-                    python_func = getattr(python_module, self.python_function)
-                    result = python_func(**self.job["args"]) or ""
-                    stdout.write(result)
-                    rc = 0
-                else:
-                    rv = subprocess.run(
-                        self.run_args,
-                        cwd=self.cwd,
-                        stdout=stdout,
-                        stderr=stderr,
-                        env={
-                            "PATH": os.environ["PATH"],
-                        },
-                        shell=True,
-                    )
-                    rc = rv.returncode
+                rv = subprocess.run(
+                    self.run_args,
+                    cwd=self.cwd,
+                    stdout=stdout,
+                    stderr=stderr,
+                    env={**os.environ, "PYTHONPATH": self.workspace_dir},
+                    shell=True,
+                )
+                rc = rv.returncode
             except Exception:  # pragma: no cover
                 traceback.print_exception(*sys.exc_info(), file=stderr)
                 rc = -1
@@ -130,15 +115,6 @@ class JobDispatcher:
         logger.info("run_command", rc=rc)
         logger.info("run_command }")
         return rc
-
-    def load_module(self):
-        # Taken from the official recipe for importing a module from a file path:
-        # The name we give the module is arbitrary
-        spec = importlib.util.spec_from_file_location("jobs", self.python_file)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[f"{self.namespace}_jobs"] = module
-        spec.loader.exec_module(module)
-        return module
 
     def notify_start(self):
         """Send notification that command is about to start."""
@@ -158,6 +134,8 @@ class JobDispatcher:
                         msg = json.load(f)
                     else:
                         msg = f.read()
+                    if not msg:
+                        msg = f"No output found for command `{self.job['type']}`"
             elif self.job_config["report_success"]:
                 msg = f"Command `{self.job['type']}` succeeded"
             else:

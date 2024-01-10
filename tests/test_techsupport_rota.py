@@ -46,3 +46,28 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
             "type": "section",
         },
     ]
+
+
+@patch("workspace.techsupport.jobs.get_rota_data_from_sheet")
+def test_rota_report_with_no_future_dates(get_rota_data_from_sheet, freezer):
+    freezer.move_to("2024-01-08")
+    with open("tests/workspace/tech-support-rota.csv") as f:
+        get_rota_data_from_sheet.return_value = list(csv.reader(f))
+    blocks = json.loads(report_rota())
+    assert blocks == [
+        {"text": {"text": "Tech support rota", "type": "plain_text"}, "type": "header"},
+        {
+            "text": {
+                "text": "No rota data found for this week",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
+            "text": {
+                "text": "No rota data found for next week",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+    ]

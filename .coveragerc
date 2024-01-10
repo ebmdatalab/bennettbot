@@ -1,0 +1,19 @@
+[run]
+branch = true
+omit =
+    .venv/*
+    venv/*
+    fabfile.py
+    */__main__.py
+    tests/mock_web_api_server.py
+    workspace/test/jobs.py
+    tests/workspace/test/jobs.py
+
+
+[report]
+fail_under = 100
+skip_covered = true
+exclude_lines =
+  pragma: no cover
+  if __name__ == .__main__.:
+  assert False

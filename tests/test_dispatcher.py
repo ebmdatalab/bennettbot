@@ -252,12 +252,12 @@ def test_python_job_success(mock_client):
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "Hello World!"},
+            {"channel": "channel", "text": "Hello World!\n"},
         ],
     )
 
     with open(os.path.join(log_dir, "stdout")) as f:
-        assert f.read() == "Hello World!"
+        assert f.read() == "Hello World!\n"
 
     with open(os.path.join(log_dir, "stderr")) as f:
         assert f.read() == ""
@@ -276,12 +276,12 @@ def test_python_job_success_with_parameterised_args(mock_client):
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "Hello Fred!"},
+            {"channel": "channel", "text": "Hello Fred!\n"},
         ],
     )
 
     with open(os.path.join(log_dir, "stdout")) as f:
-        assert f.read() == "Hello Fred!"
+        assert f.read() == "Hello Fred!\n"
 
     with open(os.path.join(log_dir, "stderr")) as f:
         assert f.read() == ""
@@ -365,8 +365,29 @@ def test_python_job_failure(mock_client):
 
     with open(os.path.join(log_dir, "stderr")) as f:
         stderr = f.read()
-        assert "Traceback (most recent call last):" in stderr
-        assert "module 'jobs' has no attribute 'unknown'" in stderr
+        assert "No such file or directory" in stderr
+
+
+def test_python_job_with_no_output(mock_client):
+    log_dir = build_log_dir("test_python_job_no_output")
+
+    scheduler.schedule_job("test_python_job_no_output", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "channel", "text": "No output found for command"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == ""
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == ""
 
 
 def test_job_success_config_with_no_python_file(mock_client):

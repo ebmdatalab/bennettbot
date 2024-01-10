@@ -38,17 +38,14 @@ def test_build_config():
             ],
         },
         "ns3": {
-            "python_file": "jobs.py",
             "jobs": {
                 "good_python_job": {
-                    "run_args_template": "",
+                    "run_args_template": "python jobs.py",
                     "report_stdout": True,
-                    "python_function": "hello_world",
                 },
                 "bad_python_job": {
-                    "run_args_template": "",
+                    "run_args_template": "python jobs.py",
                     "report_stdout": True,
-                    "python_function": "unknown",
                 },
             },
             "slack": [
@@ -70,42 +67,36 @@ def test_build_config():
                 "report_stdout": False,
                 "report_format": "text",
                 "report_success": True,
-                "python_function": None,
             },
             "ns1_bad_job": {
                 "run_args_template": "dog [poem]",
                 "report_stdout": False,
                 "report_format": "text",
                 "report_success": True,
-                "python_function": None,
             },
             "ns2_good_job": {
                 "run_args_template": "cat [poem]",
                 "report_stdout": True,
                 "report_format": "text",
                 "report_success": True,
-                "python_function": None,
             },
             "ns2_bad_job": {
                 "run_args_template": "dog [poem]",
                 "report_stdout": False,
                 "report_format": "text",
                 "report_success": False,
-                "python_function": None,
             },
             "ns3_good_python_job": {
-                "run_args_template": "",
+                "run_args_template": "python jobs.py",
                 "report_stdout": True,
                 "report_format": "text",
                 "report_success": True,
-                "python_function": "hello_world",
             },
             "ns3_bad_python_job": {
-                "run_args_template": "",
+                "run_args_template": "python jobs.py",
                 "report_stdout": True,
                 "report_format": "text",
                 "report_success": True,
-                "python_function": "unknown",
             },
         },
         "slack": [
@@ -143,7 +134,6 @@ def test_build_config():
             "ns3": [["ns3 hello world", "say hello world"]],
         },
         "fabfiles": {},
-        "python_files": {"ns3": "jobs.py"},
         "workspace_dir": {
             "ns1": "/foo/",
             "ns2": settings.WORKSPACE_DIR,

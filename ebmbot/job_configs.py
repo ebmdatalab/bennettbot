@@ -6,12 +6,9 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
 
     * "jobs": a dict mapping a job_type to a further dict with keys:
         * "run_args_template": template of bash command to be run
-        * "python_function": optional, a python function to execute within the
-           specified `python_file`.  Every python function is called with any keyword args
-           defined in the slack command.
         * "report_stdout": optional, whether the stdout of the command is
-            reported to Slack. If a python_function is intended to report to slack,
-            it must return either a string or an array representing valid block format
+            reported to Slack. If a command is intended to report to slack,
+            it must print either a string or json representing valid block format
             to be provided to the Slack API.
             Docs: https://api.slack.com/methods/chat.postMessage#arg_blocks
             Test your blocks here: https://app.slack.com/block-kit-builder
@@ -29,7 +26,6 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
             and the job being run
     * "fabfile": optional, the URL of a fabfile which is required to run
         commands in the namespace
-    * "python_file": optional, the path to a python file within the namespace
     * "workspace_dir": optional, the path to the directory where files related to
       the namespace can be found. Defaults to ebmbot/workspace, which is the location
       of job files that exist only within this repo. Can be set to another location for
@@ -47,15 +43,17 @@ from ebmbot import settings
 # fmt: off
 raw_config = {
     "test": {
-        "python_file": "jobs.py",
         "jobs": {
             "read_poem": {
                 "run_args_template": "cat poem",
                 "report_stdout": True,
             },
             "hello_world": {
-                "run_args_template": "",
-                "python_function": "hello_world",
+                "run_args_template": "python jobs.py",
+                "report_stdout": True,
+            },
+            "hello_name": {
+                "run_args_template": "python jobs.py --name={name}",
                 "report_stdout": True,
             }
         },
@@ -71,7 +69,7 @@ raw_config = {
                 "command": "hello [name]",
                 "help": "say hello to [name]",
                 "type": "schedule_job",
-                "job_type": "hello_world",
+                "job_type": "hello_name",
             },
             {
                 "command": "hello",
@@ -223,11 +221,9 @@ raw_config = {
         }],
     },
     "outputchecking": {
-        "python_file": "jobs.py",
         "jobs": {
             "rota_report": {
-                "python_function": "report_rota",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
@@ -241,65 +237,61 @@ raw_config = {
             },
         ],
     },
-    "teamrap": {
-        "python_file": "project_report.py",
+    "report": {
         "jobs": {
-            "generate_report": {
-                "python_function": "report",
-                "run_args_template": "",
+            "run_report": {
+                "run_args_template": "python generate_report.py --project-num {project_number} --statuses {statuses}",
                 "report_stdout": True,
                 "report_format": "blocks",
-            }
+            },
+            "run_rap_report": {
+                "run_args_template": "python generate_report.py --project-num 15 --statuses 'Under Review' 'Blocked' 'In Progress'",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "run_rex_report": {
+                "run_args_template": "python generate_report.py --project-num 14 --statuses 'Under Review' 'In Progress'",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
         },
         "slack": [
             {
-                "command": "report",
-                "help": "generate project board report",
+                "command": "board [project_number] [statuses]",
+                "help": "Report GitHub project board. Provide multiple statuses separated by commas.",
                 "type": "schedule_job",
-                "job_type": "generate_report",
+                "job_type": "run_report",
             },
-        ],
-    },
-    "teamrex": {
-        "python_file": "report.py",
-        "jobs": {
-            "generate_rex_report": {
-                "python_function": "report",
-                "run_args_template": "",
-                "report_stdout": True,
-                "report_format": "blocks",
-            }
-        },
-        "slack": [
             {
-                "command": "report",
-                "help": "generate project board report",
+                "command": "teamrap",
+                "help": "Team RAP board report",
                 "type": "schedule_job",
-                "job_type": "generate_rex_report",
+                "job_type": "run_rap_report",
             },
-        ],
+            {
+                "command": "teamrex",
+                "help": "Team REX board report",
+                "type": "schedule_job",
+                "job_type": "run_rex_report",
+            },
+        ]
     },
     "techsupport": {
-        "python_file": "jobs.py",
         "jobs": {
             "out_of_office_on": {
-                "python_function": "out_of_office_on",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py on {start_date} {end_date}",
                 "report_stdout": True,
             },
             "out_of_office_off": {
-                "python_function": "out_of_office_off",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py off",
                 "report_stdout": True,
             },
             "out_of_office_status": {
-                "python_function": "out_of_office_status",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py status",
                 "report_stdout": True,
             },
             "rota_report": {
-                "python_function": "report_rota",
-                "run_args_template": "",
+                "run_args_template": "python jobs.py rota",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
@@ -333,11 +325,9 @@ raw_config = {
         ],
     },
     "funding": {
-        "python_file": "funding_report.py",
         "jobs": {
             "generate_report": {
-                "python_function": "main",
-                "run_args_template": "",
+                "run_args_template": "python funding_report.py",
                 "report_stdout": True,
                 "report_format": "blocks",
             }
@@ -366,7 +356,6 @@ def build_config(raw_config):
         "slack": [],
         "help": {},
         "fabfiles": {},
-        "python_files": {},
         "workspace_dir": {},
     }
 
@@ -380,7 +369,6 @@ def build_config(raw_config):
             job_config["report_stdout"] = job_config.get("report_stdout", False)
             job_config["report_format"] = job_config.get("report_format", "text")
             job_config["report_success"] = job_config.get("report_success", True)
-            job_config["python_function"] = job_config.get("python_function")
             namespaced_job_type = f"{namespace}_{job_type}"
             validate_job_config(namespaced_job_type, job_config)
             config["jobs"][namespaced_job_type] = job_config
@@ -402,9 +390,6 @@ def build_config(raw_config):
 
         if "fabfile" in raw_config[namespace]:
             config["fabfiles"][namespace] = raw_config[namespace]["fabfile"]
-
-        if "python_file" in raw_config[namespace]:
-            config["python_files"][namespace] = raw_config[namespace]["python_file"]
 
         config["workspace_dir"][namespace] = raw_config[namespace].get(
             "workspace_dir", settings.WORKSPACE_DIR
@@ -449,7 +434,6 @@ def validate_job_config(job_type, job_config):
         "report_stdout",
         "report_format",
         "report_success",
-        "python_function",
     }
 
     if missing_keys := (expected_keys - job_config.keys()):
