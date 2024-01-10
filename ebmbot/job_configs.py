@@ -26,11 +26,6 @@ It is a dict with one key per namespace, each of which maps to a dict with keys:
             and the job being run
     * "fabfile": optional, the URL of a fabfile which is required to run
         commands in the namespace
-    * "workspace_dir": optional, the path to the directory where files related to
-      the namespace can be found. Defaults to ebmbot/workspace, which is the location
-      of job files that exist only within this repo. Can be set to another location for
-      jobs that fetch files and create a namespace workspace location for them
-      (e.g. fabric jobs).
 """
 
 
@@ -80,7 +75,6 @@ raw_config = {
         ],
     },
     "fdaaa": {
-        "workspace_dir": settings.FAB_WORKSPACE_DIR,
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
         "jobs": {
             "deploy": {
@@ -97,7 +91,6 @@ raw_config = {
         ],
     },
     "op": {
-        "workspace_dir": settings.FAB_WORKSPACE_DIR,
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
             "deploy": {
@@ -391,9 +384,10 @@ def build_config(raw_config):
         if "fabfile" in raw_config[namespace]:
             config["fabfiles"][namespace] = raw_config[namespace]["fabfile"]
 
-        config["workspace_dir"][namespace] = raw_config[namespace].get(
-            "workspace_dir", settings.WORKSPACE_DIR
-        )
+        if (settings.WORKSPACE_DIR / namespace).exists():
+            config["workspace_dir"][namespace] = settings.WORKSPACE_DIR
+        else:
+            config["workspace_dir"][namespace] = settings.WRITEABLE_WORKSPACE_DIR
 
     config["slack"] = sorted(config["slack"], key=itemgetter("command"))
 
