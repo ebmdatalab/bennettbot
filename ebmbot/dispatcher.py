@@ -141,7 +141,14 @@ class JobDispatcher:
             else:
                 return
         else:
-            msg = f"Command `{self.job['type']}` failed (find logs in {self.host_log_dir} on dokku3). Calling tech-support."
+            msg = (
+                f"Command `{self.job['type']}` failed.\n"
+                f"Find logs in {self.host_log_dir} on dokku3."
+                f"Or check logs here with\n"
+                f"* `@{settings.SLACK_APP_USERNAME} errorlogs tail {self.host_log_dir}`\n"
+                f"* `@{settings.SLACK_APP_USERNAME} errorlogs head {self.host_log_dir}`\n"
+                "Calling tech-support."
+            )
             error = True
 
         slack_message = notify_slack(

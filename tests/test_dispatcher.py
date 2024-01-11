@@ -207,7 +207,7 @@ def test_job_failure_when_command_not_found(mock_client):
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "failed (find logs in tests/logs/"},
+            {"channel": "channel", "text": f"failed.\nFind logs in {log_dir}"},
             # failed message url reposted to tech support channel (C0001 in the mock)
             {"channel": "C0001", "text": "http://test"},
         ],
@@ -227,11 +227,12 @@ def test_job_failure_with_host_log_dirs_setting(mock_client):
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
     do_job(mock_client.client, job)
+
     assert_slack_client_sends_messages(
         mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
-            {"channel": "channel", "text": "failed (find logs in /host/logs/"},
+            {"channel": "channel", "text": "failed.\nFind logs in /host/logs/"},
             # failed message url reposted to tech support channel (C0001 in the mock)
             {"channel": "C0001", "text": "http://test"},
         ],
