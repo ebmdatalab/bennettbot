@@ -22,6 +22,9 @@ raw_config = {
             "hello_name": {
                 "run_args_template": "python jobs.py --name={name}",
                 "report_stdout": True,
+            },
+            "bad_job": {
+                "run_args_template": "unknown command",
             }
         },
         "slack": [
@@ -43,6 +46,12 @@ raw_config = {
                 "help": "say hello",
                 "action": "schedule_job",
                 "job_type": "hello_world",
+            },
+            {
+                "command": "bad job",
+                "help": "a job that always errors",
+                "action": "schedule_job",
+                "job_type": "bad_job",
             },
         ],
     },
@@ -306,6 +315,32 @@ raw_config = {
             },
         ],
     },
+    "errorlogs": {
+        "jobs": {
+            "tail": {
+                "run_args_template": "/bin/bash show.sh -t {logdir}",
+                "report_stdout": True,
+            },
+            "head": {
+                "run_args_template": "/bin/bash show.sh -h {logdir}",
+                "report_stdout": True,
+            },
+        },
+        "slack": [
+            {
+                "command": "tail [logdir]",
+                "help": "Show tail of an error file located in [logdir] (a path to a log directory as reported by a failed job)",
+                "action": "schedule_job",
+                "job_type": "tail",
+            },
+            {
+                "command": "head [logdir]",
+                "help": "Show head of an error file located in a [logdir] (a path to a log directory as reported by a failed job)",
+                "action": "schedule_job",
+                "job_type": "head",
+            },
+        ],
+    }
 }
 # fmt: on
 
