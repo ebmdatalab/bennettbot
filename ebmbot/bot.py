@@ -170,7 +170,7 @@ def register_listeners(app, config, channels, bot_user_id):
                     return
 
         include_apology = text != "help"
-        handle_help(event, say, config["help"], include_apology)
+        handle_help(event, say, config["help"], config["description"], include_apology)
 
     @app.message(
         tech_support_regex,
@@ -414,7 +414,6 @@ def handle_cancel_suppression(message, say, slack_config):
 @log_call
 def handle_namespace_help(message, say, help_config):
     """Report commands available in namespace."""
-
     lines = ["The following commands are available:", ""]
 
     for command, help_ in help_config:
@@ -424,17 +423,20 @@ def handle_namespace_help(message, say, help_config):
 
 
 @log_call
-def handle_help(message, say, help_configs, include_apology):
+def handle_help(message, say, help_configs, description_configs, include_apology):
     """Report all available namespaces."""
 
     if include_apology:
         lines = ["I'm sorry, I didn't understand you", ""]
     else:
         lines = []
-    lines.extend(["Commands in the following namespaces are available:", ""])
+    lines.extend(["Commands in the following categories are available:", ""])
 
     for namespace in sorted(help_configs):
-        lines.append(f"* `{namespace}`")
+        namespace_line = f"* `{namespace}`"
+        if description_configs[namespace]:
+            namespace_line += f": {description_configs[namespace]}"
+        lines.append(namespace_line)
 
     if message["type"] == "app_mention":
         prefix = f"@{settings.SLACK_APP_USERNAME} "
@@ -442,7 +444,7 @@ def handle_help(message, say, help_configs, include_apology):
         prefix = ""
 
     lines.append(
-        f"Enter `{prefix}[namespace] help` (eg `{prefix}{random.choice(list(help_configs))} help`) for more help"
+        f"Enter `{prefix}[category] help` (e.g. `{prefix}{random.choice(list(help_configs))} help`) for more help"
     )
     lines.append(f"Enter `{prefix}status` to see running and scheduled jobs")
     lines.append(

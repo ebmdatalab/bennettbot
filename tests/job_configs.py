@@ -115,6 +115,7 @@ raw_config = {
         ],
     },
     "test1": {
+        "description": "Test description",
         "jobs": {
             "good_job": {
                 "run_args_template": "cat poem",

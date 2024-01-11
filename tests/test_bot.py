@@ -137,15 +137,22 @@ def test_namespace_help(mock_app):
 
 def test_help(mock_app):
     handle_message(mock_app, "<@U1234> help", reaction_count=0)
-    assert_slack_client_sends_messages(
-        mock_app.recorder, messages_kwargs=[{"channel": "channel", "text": "* `test`"}]
-    )
+    for msg_fragment in [
+        "Commands in the following categories are available",
+        "* `test`",
+        "* `test1`: Test description",
+    ]:
+        assert_slack_client_sends_messages(
+            mock_app.recorder,
+            messages_kwargs=[
+                {"channel": "channel", "text": msg_fragment},
+            ],
+        )
 
 
 def test_not_understood(mock_app):
     handle_message(mock_app, "<@U1234> beep boop", reaction_count=0)
-
-    for expected_fragment in ["I'm sorry", "Enter `@test_username [namespace] help`"]:
+    for expected_fragment in ["I'm sorry", "Enter `@test_username [category] help`"]:
         assert_slack_client_sends_messages(
             mock_app.recorder,
             messages_kwargs=[{"channel": "channel", "text": expected_fragment}],
@@ -161,7 +168,7 @@ def test_not_understood_direct_message(mock_app):
         event_type="message",
         event_kwargs={"channel_type": "im"},
     )
-    for expected_fragment in ["I'm sorry", "Enter `[namespace] help`"]:
+    for expected_fragment in ["I'm sorry", "Enter `[category] help`"]:
         assert_slack_client_sends_messages(
             mock_app.recorder,
             messages_kwargs=[{"channel": "IM0001", "text": expected_fragment}],

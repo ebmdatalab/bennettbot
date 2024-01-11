@@ -10,6 +10,7 @@ from ebmbot import settings
 # fmt: off
 raw_config = {
     "test": {
+        "description": "Some commands to test things work",
         "jobs": {
             "read_poem": {
                 "run_args_template": "cat poem",
@@ -47,6 +48,7 @@ raw_config = {
         ],
     },
     "fdaaa": {
+        "description": "Trials Tracker (https://fdaaa.trialstracker.net)",
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
         "jobs": {
             "deploy": {
@@ -63,6 +65,7 @@ raw_config = {
         ],
     },
     "op": {
+        "description": "OpenPrescribing deployment and tools",
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
             "deploy": {
@@ -186,6 +189,7 @@ raw_config = {
         }],
     },
     "outputchecking": {
+        "description": "Output Checking tools",
         "jobs": {
             "rota_report": {
                 "run_args_template": "python jobs.py",
@@ -203,6 +207,7 @@ raw_config = {
         ],
     },
     "report": {
+        "description": "Run GitHub Project board reports",
         "jobs": {
             "run_report": {
                 "run_args_template": "python generate_report.py --project-num {project_number} --statuses {statuses}",
@@ -242,6 +247,7 @@ raw_config = {
         ]
     },
     "techsupport": {
+        "description": "Tech Support out of office and rota",
         "jobs": {
             "out_of_office_on": {
                 "run_args_template": "python jobs.py on {start_date} {end_date}",
@@ -290,6 +296,7 @@ raw_config = {
         ],
     },
     "funding": {
+        "description": "Run funding reports",
         "jobs": {
             "generate_report": {
                 "run_args_template": "python funding_report.py",
@@ -319,6 +326,7 @@ def build_config(raw_config):
     config = {
         "jobs": {},
         "slack": [],
+        "description": {},
         "help": {},
         "fabfiles": {},
         "workspace_dir": {},
@@ -327,6 +335,8 @@ def build_config(raw_config):
     for namespace in raw_config:
         if "_" in namespace:  # pragma: no cover
             raise RuntimeError("Namespaces must not contain underscores")
+
+        config["description"][namespace] = raw_config[namespace].get("description", "")
 
         helps = []
 
