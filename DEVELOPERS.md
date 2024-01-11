@@ -75,6 +75,14 @@ containers.
 just docker/run-all
 ```
 
+### Restart all services
+
+Restart all running services.
+
+```
+just docker/restart
+```
+
 ### Stop/remove containers
 
 Stop running service container:
@@ -88,6 +96,8 @@ Stop running services and remove containers:
 ```
 just docker/rm-all
 ```
+
+
 
 ## Run locally
 

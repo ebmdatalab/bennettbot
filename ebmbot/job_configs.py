@@ -1,34 +1,6 @@
 """
-raw_config defines which jobs may be run, and how they can be invoked via
-Slack.
-
-It is a dict with one key per namespace, each of which maps to a dict with keys:
-
-    * "jobs": a dict mapping a job_type to a further dict with keys:
-        * "run_args_template": template of bash command to be run
-        * "report_stdout": optional, whether the stdout of the command is
-            reported to Slack. If a command is intended to report to slack,
-            it must print either a string or json representing valid block format
-            to be provided to the Slack API.
-            Docs: https://api.slack.com/methods/chat.postMessage#arg_blocks
-            Test your blocks here: https://app.slack.com/block-kit-builder
-        * report_format": optional, whether the report format is plain text or blocks
-        * "report_success": optional, whether the success of the command is
-            reported to Slack
-    * "slack": a list of dicts with keys:
-        * "command": Slack command which starts the given job
-        * "help: help text to display to the user
-        * "action": one of "schedule_job", "cancel_job", "schedule_suppression",
-            "cancel_suppression"
-        * "job_type": the type of the job to be scheduled/supppressed,
-            corresponding to an entry in the "jobs" dict
-        * "delay_seconds": optional, the delay between the command being issued
-            and the job being run
-    * "fabfile": optional, the URL of a fabfile which is required to run
-        commands in the namespace
+Defines which jobs may be run, and how they can be invoked via Slack.
 """
-
-
 import re
 from operator import itemgetter
 

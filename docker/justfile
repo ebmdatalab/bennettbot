@@ -46,6 +46,11 @@ run-all: build
     docker-compose --env-file ../.env up --detach dev_dispatcher
     docker-compose --env-file ../.env up --detach dev_webserver
 
+# restart all services
+restart:
+    docker-compose restart dev_bot
+    docker-compose restart dev_dispatcher
+    docker-compose restart dev_webserver
 
 # stop all dev containers
 stop-all:
