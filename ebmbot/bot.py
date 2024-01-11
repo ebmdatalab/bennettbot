@@ -7,6 +7,7 @@ from slack_bolt import App, BoltResponse
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt.error import BoltUnhandledRequestError
 from slack_bolt.util.utils import get_boot_message
+from slack_sdk.errors import SlackApiError
 
 from workspace.techsupport.jobs import get_dates_from_config as get_tech_support_dates
 
@@ -204,6 +205,10 @@ def register_listeners(app, config, channels, bot_user_id):
         # Don't repost messages in DMs with the bot
         if message["channel_type"] in ["channel", "group"]:
             # Respond with SOS reaction
+            # If we've already responded, the attempt to react here will raise
+            # an exception; if this happens, then the user is editing something
+            # other than the tech-support keyword in the message, and we don't need to
+            # repost it again. We let the default error handler will deal with it.
             app.client.reactions_add(
                 channel=message["channel"], timestamp=message["ts"], name="sos"
             )
@@ -239,15 +244,28 @@ def register_listeners(app, config, channels, bot_user_id):
 
     @app.error
     def handle_errors(error, body):
+        message_text = body["event"].get("message", {}).get("text", "")
         if isinstance(error, BoltUnhandledRequestError):
             # Unhandled messages are common (anything that doesn't get matched
             # by one of the listeners).  We don't want to log those.
             return BoltResponse(status=200, body="Unhandled message")
+        elif (
+            isinstance(error, SlackApiError)
+            and error.response.data["error"] == "already_reacted"
+            and "tech-support" in message_text
+        ):
+            # If we're already reacted to a tech-support message and the
+            # user edits the message, we get a slack error, but that's OK
+            logger.info(
+                "Already reacted to tech-support message",
+                message=message_text,
+            )
+            return BoltResponse(
+                status=200, body="Already reacted to tech-support message"
+            )
         else:
             # other error patterns
             channel = body["event"]["channel"]
-            message_text = body["event"].get("message", {}).get("text", "")
-
             ts = body["event"]["ts"]
             logger.error("Unexpected error", error=error, body=body)
             app.client.reactions_add(channel=channel, timestamp=ts, name="x")
