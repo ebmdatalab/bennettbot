@@ -4,7 +4,7 @@ from .logger import logger
 
 
 def notify_slack(
-    slack_client, channel, message_text, thread_ts=None, message_format=None, fail=False
+    slack_client, channel, message_text, thread_ts=None, message_format=None
 ):
     """Send message to Slack."""
     msg_kwargs = {"text": str(message_text)}

@@ -461,6 +461,26 @@ def test_no_listener_found(mock_app):
     assert resp.body == "Unhandled message"
 
 
+def test_unexpected_error(mock_app):
+    # Unexpected errors post a X reaction and respond with the error
+    with patch("ebmbot.bot.handle_namespace_help", side_effect=Exception):
+        handle_message(
+            mock_app,
+            "<@U1234> test help",
+            reaction_count=1,
+            expected_status=500,
+        )
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": "Unexpected error: Exception()\nwhile responding to message `<@U1234> test help`",
+            }
+        ],
+    )
+
+
 def test_new_channel_created(mock_app):
     # When a channel_created event is received, the bot user joins that channel
     handle_event(
@@ -537,6 +557,8 @@ def handle_event(mock_app, event_type, event_kwargs, expected_status=200):
 
 def get_mock_request(event_type, event_kwargs):
     event_kwargs = event_kwargs or {}
+    event_kwargs.update({"message": {"text": event_kwargs.get("text", "")}})
+
     body = {
         "token": "verification_token",
         "team_id": "T111",

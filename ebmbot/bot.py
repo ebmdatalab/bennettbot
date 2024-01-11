@@ -12,6 +12,7 @@ from workspace.techsupport.jobs import get_dates_from_config as get_tech_support
 
 from . import job_configs, scheduler, settings
 from .logger import log_call, logger
+from .slack import notify_slack
 
 
 class SocketModeCheckHandler(SocketModeHandler):
@@ -220,14 +221,25 @@ def register_listeners(app, config, channels, bot_user_id):
         app.client.conversations_join(channel=channel["id"], users=bot_user_id)
 
     @app.error
-    def handle_errors(error):
+    def handle_errors(error, body):
         if isinstance(error, BoltUnhandledRequestError):
             # Unhandled messages are common (anything that doesn't get matched
             # by one of the listeners).  We don't want to log those.
             return BoltResponse(status=200, body="Unhandled message")
-        else:  # pragma: no cover
+        else:
             # other error patterns
-            logger.error("Unexpected error", error=error)
+            channel = body["event"]["channel"]
+            message_text = body["event"].get("message", {}).get("text", "")
+
+            ts = body["event"]["ts"]
+            logger.error("Unexpected error", error=error, body=body)
+            app.client.reactions_add(channel=channel, timestamp=ts, name="x")
+            notify_slack(
+                app.client,
+                channel,
+                f"Unexpected error: {repr(error)}\nwhile responding to message `{message_text}`",
+                thread_ts=ts,
+            )
             return BoltResponse(status=500, body="Something went wrong")
 
 
