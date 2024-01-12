@@ -4,7 +4,7 @@
 # pip-compile --generate-hashes --output-file=requirements.prod.txt requirements.prod.in
 
 environs
-fabric3
+fab-classic
 flask
 gunicorn
 requests
