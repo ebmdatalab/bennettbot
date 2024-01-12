@@ -211,7 +211,7 @@ docker push ghcr.io/ebmdatalab/bennettbot:latest
 SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/ebmdatalab/bennettbot:latest)
 ```
 
-On dokku3, as the `dokku` user:
+On dokku3:
 ```
 $ dokku git:from-image bennettbot <SHA>
 ```
