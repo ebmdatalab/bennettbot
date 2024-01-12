@@ -46,6 +46,7 @@ env = [
     "WRITEABLE_WORKSPACE_DIR=tests/writeable_workspace",
     "WRITEABLE_DIR=tests/",
     "LOGS_DIR=tests/logs",
+    "HOST_LOGS_DIR=tests/logs",
     "SLACK_LOGS_CHANNEL=logs",
     "SLACK_TECH_SUPPORT_CHANNEL=techsupport",
     "SLACK_SIGNING_SECRET=secret",
