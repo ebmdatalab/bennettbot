@@ -2,13 +2,16 @@
 
 set -euo pipefail
 
-while getopts "ht" option; do
+while getopts "hta" option; do
     case $option in
         h)
           command="head"
           ;;
         t)
           command="tail"
+          ;;
+        a)
+          command="all"
           ;;
         \?) # Invalid option
             echo "Error: Invalid option"
@@ -25,10 +28,13 @@ if test -f "$logfile"; then
   echo "Reading $command of error log: $logdir/stderr"
   echo "------------------------------"
   if [[ "$command" == "head" ]]; then
-    head "$logfile"
+    output=$(head "$logfile")
+  elif [[ "$command" == "tail" ]]; then
+    output=$(tail "$logfile")
   else
-    tail "$logfile"
+    output=$(cat "$logfile")
   fi
+  echo "\`\`\`$output\`\`\`"
 else
   echo "ERROR: $logdir/stderr not found"
 fi

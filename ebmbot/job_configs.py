@@ -325,6 +325,10 @@ raw_config = {
                 "run_args_template": "/bin/bash show.sh -h {logdir}",
                 "report_stdout": True,
             },
+            "show": {
+                "run_args_template": "/bin/bash show.sh -a {logdir}",
+                "report_stdout": True,
+            },
         },
         "slack": [
             {
@@ -338,6 +342,15 @@ raw_config = {
                 "help": "Show head of an error file located in a [logdir] (a path to a log directory as reported by a failed job)",
                 "action": "schedule_job",
                 "job_type": "head",
+            },
+            {
+                "command": "show [logdir]",
+                "help": (
+                    "Show all of an error file located in a [logdir] (a path to a log directory as reported by a failed job)."
+                    "Note this may return a lot of output split over multiple slack messages."
+                ),
+                "action": "schedule_job",
+                "job_type": "show",
             },
         ],
     }
