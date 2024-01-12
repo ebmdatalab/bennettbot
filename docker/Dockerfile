@@ -45,7 +45,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     /root/docker-apt-install.sh /tmp/build-dependencies.txt
 
 # Install everything in venv for isolation from system python libraries
-RUN python3.9 -m venv /opt/venv
+RUN python3.12 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv/ PATH="/opt/venv/bin:$PATH"
 
 # The cache mount means a) /root/.cache is not in the image, and b) it's preserved
@@ -155,4 +155,5 @@ ENTRYPOINT ["/app/docker/entrypoints/dev.sh"]
 # Run as non root user. Required when building image.
 ARG USERID
 ARG GROUPID
+RUN useradd -u ${USERID} ebmbot
 USER ${USERID}:${GROUPID}
