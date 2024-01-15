@@ -404,13 +404,13 @@ six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via fab-classic
-slack-bolt==1.18.0 \
-    --hash=sha256:43b121acf78440303ce5129e53be36bdfe5d926a193daef7daf2860688e65dd3 \
-    --hash=sha256:63089a401ae3900c37698890249acd008a4651d06e86194edc7b72a00819bbac
+slack-bolt==1.18.1 \
+    --hash=sha256:2509e5bb43898a593667bf37965057a9b9a41008b29628e3b57a6136b650b90e \
+    --hash=sha256:694f84a81ba1c4c428ba7daa01d599d3e9fba7a54ad10c11008aa22573b23ff0
     # via -r requirements.prod.in
-slack-sdk==3.23.0 \
-    --hash=sha256:2a8513505cced20ceee22b5b49c11d9545caa6234b56bf0ad47133ea5b357d10 \
-    --hash=sha256:9d6ebc4ff74e7983e1b27dbdb0f2bb6fc3c2a2451694686eaa2be23bbb085a73
+slack-sdk==3.26.2 \
+    --hash=sha256:a10e8ee69ca17d274989d0c2bbecb875f19898da3052d8d57de0898a00b1ab52 \
+    --hash=sha256:bcdac5e688fa50e9357ecd00b803b6a8bad766aa614d35d8dc0636f40adc48bf
     # via slack-bolt
 structlog==23.2.0 \
     --hash=sha256:16a167e87b9fa7fae9a972d5d12805ef90e04857a93eba479d4be3801a6a1482 \
