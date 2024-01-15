@@ -9,6 +9,7 @@ from ebmbot.job_configs import build_config
 def test_build_config():
     raw_config = {
         "ns1": {
+            "description": "ns1 jobs",
             "jobs": {
                 "good_job": {"run_args_template": "cat [poem]"},
                 "bad_job": {"run_args_template": "dog [poem]"},
@@ -144,6 +145,12 @@ def test_build_config():
                 "delay_seconds": 0,
             },
         ],
+        "description": {
+            "ns1": "ns1 jobs",
+            "ns2": "",
+            "ns3": "",
+            "test": "",
+        },
         "help": {
             "ns1": [["ns1 read poem [poem]", "read a poem"]],
             "ns2": [["ns2 read poem [poem]", "read a poem"]],
