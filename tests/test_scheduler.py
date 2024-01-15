@@ -2,7 +2,12 @@ import pytest
 
 from ebmbot import scheduler
 
-from .assertions import assert_job_matches, assert_suppression_matches
+from .assertions import (
+    assert_job_matches,
+    assert_no_running_job,
+    assert_running_job,
+    assert_suppression_matches,
+)
 from .time_helpers import T0, TS, T
 
 
@@ -11,7 +16,9 @@ pytestmark = pytest.mark.freeze_time(T0)
 
 
 def test_schedule_job_with_no_jobs_already_scheduled():
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    assert_no_running_job(
+        scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    )
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 1
@@ -19,9 +26,13 @@ def test_schedule_job_with_no_jobs_already_scheduled():
 
 
 def test_schedule_job_with_no_jobs_of_same_type_already_scheduled():
-    scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, 0)
+    assert_no_running_job(
+        scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, 0)
+    )
 
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    assert_no_running_job(
+        scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    )
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 1
@@ -29,9 +40,12 @@ def test_schedule_job_with_no_jobs_of_same_type_already_scheduled():
 
 
 def test_schedule_job_with_job_of_same_type_scheduled():
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
-
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", TS, 10)
+    assert_no_running_job(
+        scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    )
+    assert_no_running_job(
+        scheduler.schedule_job("good_job", {"k": "w"}, "channel1", TS, 10)
+    )
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 1
@@ -39,11 +53,15 @@ def test_schedule_job_with_job_of_same_type_scheduled():
 
 
 def test_schedule_job_with_job_of_same_type_running(freezer):
-    scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    assert_no_running_job(
+        scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    )
     freezer.move_to(T(5))
     scheduler.reserve_job()
 
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", TS, 5)
+    assert_running_job(
+        scheduler.schedule_job("good_job", {"k": "w"}, "channel1", TS, 5)
+    )
 
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 2
@@ -51,14 +69,33 @@ def test_schedule_job_with_job_of_same_type_running(freezer):
     assert_job_matches(jj[1], "good_job", {"k": "w"}, "channel1", T(10), None)
 
 
+def test_schedule_job_with_job_of_different_type_running(freezer):
+    assert_no_running_job(
+        scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
+    )
+
+    freezer.move_to(T(5))
+    scheduler.reserve_job()
+
+    jj = scheduler.get_jobs_of_type("good_job")
+    assert len(jj) == 1
+
+    assert_no_running_job(
+        scheduler.schedule_job("odd_job", {"k": "v"}, "channel", TS, 0)
+    )
+
+
 def test_schedule_job_with_job_of_same_type_running_and_another_scheduled(freezer):
     scheduler.schedule_job("good_job", {"k": "v"}, "channel", TS, 0)
     freezer.move_to(T(5))
     scheduler.reserve_job()
-    scheduler.schedule_job("good_job", {"k": "w"}, "channel1", TS, 5)
+    assert_running_job(
+        scheduler.schedule_job("good_job", {"k": "w"}, "channel1", TS, 5)
+    )
 
-    scheduler.schedule_job("good_job", ["args2"], "channel2", TS, 15)
-
+    assert_running_job(
+        scheduler.schedule_job("good_job", ["args2"], "channel2", TS, 15)
+    )
     jj = scheduler.get_jobs_of_type("good_job")
     assert len(jj) == 2
     assert_job_matches(jj[0], "good_job", {"k": "v"}, "channel", T(0), T(5))
