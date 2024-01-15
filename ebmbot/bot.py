@@ -405,13 +405,19 @@ def handle_schedule_job(message, say, slack_config):
     match = slack_config["regex"].match(message["text"])
     job_args = dict(zip(slack_config["template_params"], match.groups()))
     deformatted_args = {k: _remove_url_formatting(v) for k, v in job_args.items()}
-    scheduler.schedule_job(
+    existing_job_is_running = scheduler.schedule_job(
         slack_config["job_type"],
         deformatted_args,
         channel=message["channel"],
         thread_ts=message["ts"],
         delay_seconds=slack_config["delay_seconds"],
     )
+    if existing_job_is_running:
+        say(
+            f"A `{slack_config['job_type']}` job has already started; request queued. "
+            f"Type `@{settings.SLACK_APP_USERNAME} status` to see running jobs, and "
+            f"`@{settings.SLACK_APP_USERNAME} remove job id [id]` to remove a blocking job."
+        )
 
 
 @log_call

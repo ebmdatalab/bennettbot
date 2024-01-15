@@ -17,6 +17,14 @@ def assert_suppression_matches(suppression, job_type, start_at, end_at):
     )
 
 
+def assert_running_job(job_scheduled):
+    assert job_scheduled
+
+
+def assert_no_running_job(job_scheuled):
+    assert not job_scheuled
+
+
 def assert_subdict(d1, d2):
     for k in d1:
         assert d1[k] == d2[k]

@@ -14,6 +14,8 @@ def schedule_job(type_, args, channel, thread_ts, delay_seconds):
     record of the first job is updated.
 
     If a job is already running, another job of that type may be scheduled.
+
+    Returns a boolean indicating whether an existing job was already running.
     """
 
     conn = get_connection()
@@ -29,12 +31,13 @@ def schedule_job(type_, args, channel, thread_ts, delay_seconds):
     args = json.dumps(args)
 
     existing_jobs = list(conn.execute(sql, [type_]))
-
+    existing_job_running = False
     if len(existing_jobs) == 0:
         _create_job(type_, args, channel, thread_ts, start_after)
     elif len(existing_jobs) == 1:
         job = existing_jobs[0]
         if job["has_started"]:
+            existing_job_running = True
             _create_job(type_, args, channel, thread_ts, start_after)
         else:
             id_ = job["id"]
@@ -42,10 +45,13 @@ def schedule_job(type_, args, channel, thread_ts, delay_seconds):
     elif len(existing_jobs) == 2:
         assert not existing_jobs[0]["has_started"]
         assert existing_jobs[1]["has_started"]
+        existing_job_running = True
         id_ = existing_jobs[0]["id"]
         _update_job(id_, args, channel, thread_ts, start_after)
     else:
         assert False
+
+    return existing_job_running
 
 
 def _create_job(type_, args, channel, thread_ts, start_after):
