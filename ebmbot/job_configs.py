@@ -323,6 +323,7 @@ raw_config = {
         ],
     },
     "errorlogs": {
+        "description": "Show error logs from failed bot commands",
         "jobs": {
             "tail": {
                 "run_args_template": "/bin/bash show.sh -t {logdir}",
