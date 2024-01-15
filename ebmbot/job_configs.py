@@ -81,9 +81,6 @@ raw_config = {
                 "run_args_template": "fab deploy:production",
                 "report_success": False,
             },
-            "deploy_staging": {
-                "run_args_template": "fab deploy:staging,branch={branch_name}"
-            },
             "cache_clear": {
                 "run_args_template": "fab clear_cloudflare"
             },
@@ -150,12 +147,6 @@ raw_config = {
                 "help": "cancel suppression of production deploys",
                 "action": "cancel_suppression",
                 "job_type": "deploy",
-            },
-            {
-                "command": "deploy staging [branch_name]",
-                "help": "deploy branch [branch_name] to staging immediately",
-                "action": "schedule_job",
-                "job_type": "deploy_staging",
             },
             {
                 "command": "cache clear",
