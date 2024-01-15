@@ -1,10 +1,11 @@
 import json
 import time
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from slack_bolt.request import BoltRequest
+from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
 
 from ebmbot import bot, scheduler
@@ -330,6 +331,40 @@ def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_exp
         assert ("channel", "C0001") in post_message.items()
 
 
+def test_tech_support_edited_message(mock_app):
+    # the triggered tech support handler will first fetch the url for the message
+    # and then post it to the techsupport channel
+    # Before the dispatched message, neither of these paths have been called
+    recorder = mock_app.recorder
+    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    handle_message(
+        mock_app,
+        "get tec-support",
+        channel="C0002",
+        reaction_count=0,
+        event_type="message",
+    )
+
+    # tech-support keyword typo, no tech support calls
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    # Editing the same message to include tech-support does repost
+    handle_message(
+        mock_app,
+        "get tech-support",
+        channel="C0002",
+        reaction_count=1,
+        event_type="message_changed",
+    )
+
+    for path in tech_support_call_paths:
+        assert recorder.mock_received_requests[path] == 1
+
+
 @patch("ebmbot.bot.get_tech_support_dates")
 def test_tech_support_out_of_office_listener(tech_support_dates, mock_app):
     start = (datetime.today() - timedelta(1)).date()
@@ -454,7 +489,7 @@ def test_no_listener_found(mock_app):
     # A message must either start with "<@U1234>" (i.e. a user @'d the bot) OR must contain
     # the tech-support pattern
     text = "This message should not match any listener"
-    # We use an error handler to deal with unhandled messages, so the resonse status
+    # We use an error handler to deal with unhandled messages, so the response status
     # is 200
     resp = handle_message(
         mock_app,
@@ -483,6 +518,55 @@ def test_unexpected_error(mock_app):
             {
                 "channel": "channel",
                 "text": "Unexpected error: Exception()\nwhile responding to message `<@U1234> test help`",
+            }
+        ],
+    )
+
+
+def test_already_reacted_to_tech_support_error(mock_app):
+    # mock an error from a method that's called during the tech-support
+    # handling to return an "already reacted" SlackApiError
+    with patch(
+        "ebmbot.bot.tech_support_out_of_office",
+        side_effect=SlackApiError(
+            message="Error", response=Mock(data={"error": "already_reacted"})
+        ),
+    ):
+        handle_message(
+            mock_app,
+            "tech-support help",
+            channel="channel",
+            reaction_count=1,
+            event_type="message",
+            expected_status=200,
+        )
+
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[],
+    )
+
+
+def test_already_reacted_to_non_tech_support_error(mock_app):
+    # Only already-reacted to tech support messages are ignored;
+    # another sort of message that raises this error gets
+    # reported back to slack
+    with patch(
+        "ebmbot.bot.handle_namespace_help",
+        side_effect=SlackApiError(
+            message="Error", response=Mock(data={"error": "already_reacted"})
+        ),
+    ):
+        handle_message(
+            mock_app, "<@U1234> test help", reaction_count=1, expected_status=500
+        )
+
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": "Unexpected error: SlackApiError",
             }
         ],
     )
@@ -565,6 +649,18 @@ def handle_event(mock_app, event_type, event_kwargs, expected_status=200):
 def get_mock_request(event_type, event_kwargs):
     event_kwargs = event_kwargs or {}
     event_kwargs.update({"message": {"text": event_kwargs.get("text", "")}})
+
+    if event_type == "message_changed":
+        event_kwargs.update(
+            {
+                "type": "message",
+                "subtype": "message_changed",
+                "previous_message": {
+                    "ts": "1596183880.004200",
+                    "text": event_kwargs["text"],
+                },
+            }
+        )
 
     body = {
         "token": "verification_token",
