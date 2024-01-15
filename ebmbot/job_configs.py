@@ -81,6 +81,10 @@ raw_config = {
                 "run_args_template": "fab deploy:production",
                 "report_success": False,
             },
+            "restart": {
+                "run_args_template": "fab restart:production",
+                "report_success": False,
+            },
             "cache_clear": {
                 "run_args_template": "fab clear_cloudflare"
             },
@@ -147,6 +151,12 @@ raw_config = {
                 "help": "cancel suppression of production deploys",
                 "action": "cancel_suppression",
                 "job_type": "deploy",
+            },
+            {
+                "command": "restart",
+                "help": "restart production",
+                "action": "schedule_job",
+                "job_type": "restart",
             },
             {
                 "command": "cache clear",
