@@ -135,9 +135,9 @@ def register_listeners(app, config, channels, bot_user_id):
         """
         # acknowledge this message to avoid slack retrying in 3s
         ack()
-        _listener(event, say)
+        _listener(event, say, is_im=True)
 
-    def _listener(event, say):
+    def _listener(event, say, is_im=False):
         # Remove the reminder prefix
         text = event["text"].replace("Reminder: ", "")
         # Remove the bot mention; this sometimes includes the bot's name as well as
@@ -160,7 +160,7 @@ def register_listeners(app, config, channels, bot_user_id):
 
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
-                handle_command(app, event, say, slack_config)
+                handle_command(app, event, say, slack_config, is_im=is_im)
                 return
 
         for namespace, help_config in config["help"].items():
@@ -338,7 +338,7 @@ def _pluralise(n, noun):
         return f"There are {n} {noun}s"
 
 
-def handle_command(app, message, say, slack_config):
+def handle_command(app, message, say, slack_config, is_im):
     """Give a thumbs-up to the message, and dispatch to another handler."""
     app.client.reactions_add(
         channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
@@ -351,7 +351,7 @@ def handle_command(app, message, say, slack_config):
         "cancel_suppression": handle_cancel_suppression,
     }[slack_config["action"]]
 
-    handler(message, say, slack_config)
+    handler(message, say, slack_config, is_im)
 
 
 def _remove_url_formatting(arg):
@@ -365,17 +365,19 @@ def _remove_url_formatting(arg):
 
 
 @log_call
-def handle_schedule_job(message, say, slack_config):
+def handle_schedule_job(message, say, slack_config, is_im=False):
     """Schedule a job."""
     match = slack_config["regex"].match(message["text"])
     job_args = dict(zip(slack_config["template_params"], match.groups()))
     deformatted_args = {k: _remove_url_formatting(v) for k, v in job_args.items()}
+    logger.info("scheduling", msg=message)
     existing_job_is_running = scheduler.schedule_job(
         slack_config["job_type"],
         deformatted_args,
         channel=message["channel"],
         thread_ts=message["ts"],
         delay_seconds=slack_config["delay_seconds"],
+        is_im=is_im,
     )
     if existing_job_is_running:
         say(
@@ -386,14 +388,14 @@ def handle_schedule_job(message, say, slack_config):
 
 
 @log_call
-def handle_cancel_job(message, say, slack_config):
+def handle_cancel_job(message, say, slack_config, _is_im):
     """Cancel a job."""
 
     scheduler.cancel_job(slack_config["job_type"])
 
 
 @log_call
-def handle_schedule_suppression(message, say, slack_config):
+def handle_schedule_suppression(message, say, slack_config, _is_im):
     """Schedule a suppression."""
 
     match = slack_config["regex"].match(message["text"])
@@ -411,7 +413,7 @@ def handle_schedule_suppression(message, say, slack_config):
 
 
 @log_call
-def handle_cancel_suppression(message, say, slack_config):
+def handle_cancel_suppression(message, say, slack_config, _is_im):
     """Cancel a suppression."""
 
     scheduler.cancel_suppressions(slack_config["job_type"])
