@@ -196,6 +196,28 @@ def test_job_failure(mock_client):
         assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
+def test_job_failure_in_dm(mock_client):
+    log_dir = build_log_dir("test_bad_job")
+
+    scheduler.schedule_job("test_bad_job", {}, "IM0001", TS, 0, is_im=True)
+    job = scheduler.reserve_job()
+    do_job(mock_client.client, job)
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        # NOTE: NOT reposted to tech support from a DM with the bot
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {"channel": "IM0001", "text": "failed"},
+        ],
+    )
+
+    with open(os.path.join(log_dir, "stdout")) as f:
+        assert f.read() == ""
+
+    with open(os.path.join(log_dir, "stderr")) as f:
+        assert f.read() == "cat: no-poem: No such file or directory\n"
+
+
 def test_job_failure_when_command_not_found(mock_client):
     log_dir = build_log_dir("test_really_bad_job")
 
