@@ -143,7 +143,7 @@ def register_listeners(app, config, channels, bot_user_id):
         text = event["text"].replace("Reminder: ", "")
         # Remove the bot mention; this sometimes includes the bot's name as well as
         # id. In reminders, the bot mention is in the form <@AB1234|bot_name>; in user
-        # messages that @ the both, it is fjust in the form <@AB1234>. We need to match both.
+        # messages that @ the bot, it is just in the form <@AB1234>. We need to match both.
         text = re.sub(rf"<@{bot_user_id}(|.+)?>", "", text)
 
         # handle extra whitespace and punctuation
