@@ -1,10 +1,11 @@
 import json
 import time
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from slack_bolt.request import BoltRequest
+from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
 
 from ebmbot import bot, scheduler
@@ -565,7 +566,56 @@ def test_unexpected_error(mock_app):
         messages_kwargs=[
             {
                 "channel": "channel",
-                "text": "Unexpected error: Exception()\nwhile responding to message `<@U1234> test help`",
+                "text": "Unexpected error: Exception()\nwhile responding to message `test help`",
+            }
+        ],
+    )
+
+
+def test_already_reacted_to_tech_support_error(mock_app):
+    # mock an error from a method that's called during the tech-support
+    # handling to return an "already reacted" SlackApiError
+    with patch(
+        "ebmbot.bot.tech_support_out_of_office",
+        side_effect=SlackApiError(
+            message="Error", response=Mock(data={"error": "already_reacted"})
+        ),
+    ):
+        handle_message(
+            mock_app,
+            "tech-support help",
+            channel="channel",
+            reaction_count=1,
+            event_type="message",
+            expected_status=200,
+        )
+
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[],
+    )
+
+
+def test_already_reacted_to_non_tech_support_error(mock_app):
+    # Only already-reacted to tech support messages are ignored;
+    # another sort of message that raises this error gets
+    # reported back to slack
+    with patch(
+        "ebmbot.bot.handle_namespace_help",
+        side_effect=SlackApiError(
+            message="Error", response=Mock(data={"error": "already_reacted"})
+        ),
+    ):
+        handle_message(
+            mock_app, "<@U1234> test help", reaction_count=1, expected_status=500
+        )
+
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": "Unexpected error: SlackApiError",
             }
         ],
     )
