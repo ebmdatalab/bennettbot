@@ -261,9 +261,8 @@ def test_pluralise():
     assert bot._pluralise(2, "bot") == "There are 2 bots"
 
 
-@pytest.mark.parametrize(
-    "text,channel,event_kwargs,repost_expected",
-    [
+def _tech_support_test_params():
+    return [
         # We only match the hyphenated keywords "tech-support"
         ("This message should not match the tech support listener", "C0002", {}, False),
         # We match only distinct words
@@ -303,12 +302,51 @@ def test_pluralise():
         ("This message should match the `tech-support` listener", "C0002", {}, True),
         ("tech-support - this message should match", "C0002", {}, True),
         ("This message should match - tech-support", "C0002", {}, True),
-    ],
+    ]
+
+
+@pytest.mark.parametrize(
+    "text,channel,event_kwargs,repost_expected",
+    _tech_support_test_params(),
 )
 def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_expected):
+    # test that we get the expected response with an initial tech-support message
+    assert_expected_tech_support_response(
+        mock_app, text, channel, event_kwargs, repost_expected
+    )
+
+
+@pytest.mark.parametrize(
+    "text,channel,event_kwargs,repost_expected",
+    _tech_support_test_params(),
+)
+def test_tech_support_listener_for_changed_messages(
+    mock_app, text, channel, event_kwargs, repost_expected
+):
+    # test that we also get the expected response for a changed message
+    event_kwargs.update({"subtype": "message_changed"})
+    assert_expected_tech_support_response(
+        mock_app, text, channel, event_kwargs, repost_expected
+    )
+
+
+def test_tech_support_listener_ignores_non_message_changed_subtypes(mock_app):
+    assert_expected_tech_support_response(
+        mock_app,
+        text="A tech-support message that would usually match",
+        channel="C0002",
+        event_kwargs={"subtype": "reminder_add"},
+        repost_expected=False,
+    )
+
+
+def assert_expected_tech_support_response(
+    mock_app, text, channel, event_kwargs, repost_expected
+):
     # the triggered tech support handler will first fetch the url for the message
     # and then post it to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
+
     recorder = mock_app.recorder
     tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
     for path in tech_support_call_paths:
@@ -320,7 +358,7 @@ def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_exp
         channel=channel,
         reaction_count=1 if repost_expected else 0,
         event_type="message",
-        event_kwargs=event_kwargs or {},
+        event_kwargs=event_kwargs,
     )
 
     # After the dispatched message, each path has been called once
@@ -337,6 +375,42 @@ def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_exp
         post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
         assert ("text", "http://test") in post_message.items()
         assert ("channel", "C0001") in post_message.items()
+
+
+def test_tech_support_edited_message(mock_app):
+    # the triggered tech support handler will first fetch the url for the message
+    # and then post it to the techsupport channel
+    # Before the dispatched message, neither of these paths have been called
+    recorder = mock_app.recorder
+    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    handle_message(
+        mock_app,
+        "get tec-support",
+        channel="C0002",
+        reaction_count=0,
+        event_type="message",
+        event_kwargs={"subtype": "message_changed"},
+    )
+
+    # tech-support keyword typo, no tech support calls
+    for path in tech_support_call_paths:
+        assert path not in recorder.mock_received_requests
+
+    # Editing the same message to include tech-support does repost
+    handle_message(
+        mock_app,
+        "get tech-support",
+        channel="C0002",
+        reaction_count=1,
+        event_type="message",
+        event_kwargs={"subtype": "message_changed"},
+    )
+
+    for path in tech_support_call_paths:
+        assert recorder.mock_received_requests[path] == 1
 
 
 @patch("ebmbot.bot.get_tech_support_dates")
@@ -463,7 +537,7 @@ def test_no_listener_found(mock_app):
     # A message must either start with "<@U1234>" (i.e. a user @'d the bot) OR must contain
     # the tech-support pattern
     text = "This message should not match any listener"
-    # We use an error handler to deal with unhandled messages, so the resonse status
+    # We use an error handler to deal with unhandled messages, so the response status
     # is 200
     resp = handle_message(
         mock_app,
@@ -547,7 +621,17 @@ def handle_message(
     expected_status=200,
 ):
     event_kwargs = event_kwargs or {}
-    event_kwargs.update({"channel": channel, "text": text})
+    event_kwargs.update({"channel": channel})
+    # If it's a message_changed message event, has a "message"
+    # key with a dict containing the current message text and ts
+    # (and other elements that we don't use)
+    # Non-changed messages and other events,such as "app_mention",
+    # won't contain "message"
+    if event_kwargs.get("subtype") == "message_changed":
+        event_kwargs.update({"message": {"text": text, "ts": "1596183880.004200"}})
+    else:
+        event_kwargs.update({"text": text})
+
     resp = handle_event(
         mock_app,
         event_type=event_type,
@@ -572,9 +656,6 @@ def handle_event(mock_app, event_type, event_kwargs, expected_status=200):
 
 
 def get_mock_request(event_type, event_kwargs):
-    event_kwargs = event_kwargs or {}
-    event_kwargs.update({"message": {"text": event_kwargs.get("text", "")}})
-
     body = {
         "token": "verification_token",
         "team_id": "T111",
