@@ -339,43 +339,43 @@ raw_config = {
             },
         ],
     },
-    "errorlogs": {
-        "description": "Show error logs from failed bot commands",
+    "showlogs": {
+        "description": "Show content of logs from bot commands",
         "jobs": {
             "tail": {
-                "run_args_template": "/bin/bash show.sh -t {logdir}",
+                "run_args_template": "/bin/bash show.sh -t -f {logtype} {logdir}",
                 "report_stdout": True,
             },
             "head": {
-                "run_args_template": "/bin/bash show.sh -h {logdir}",
+                "run_args_template": "/bin/bash show.sh -h -f {logtype} {logdir}",
                 "report_stdout": True,
             },
-            "show": {
-                "run_args_template": "/bin/bash show.sh -a {logdir}",
+            "all": {
+                "run_args_template": "/bin/bash show.sh -a -f {logtype} {logdir}",
                 "report_stdout": True,
             },
         },
         "slack": [
             {
-                "command": "tail [logdir]",
-                "help": "Show tail of an error file located in [logdir] (a path to a log directory as reported by a failed job)",
+                "command": "tail [logtype] [logdir]",
+                "help": 'Show tail of a [logtype] file ("error" or "output") located in [logdir] (a path to a log directory as reported by a failed job).',
                 "action": "schedule_job",
                 "job_type": "tail",
             },
             {
-                "command": "head [logdir]",
-                "help": "Show head of an error file located in a [logdir] (a path to a log directory as reported by a failed job)",
+                "command": "head [logtype] [logdir]",
+                "help": 'Show head of a [logtype] file ("error" or "output") located in [logdir] (a path to a log directory as reported by a failed job).',
                 "action": "schedule_job",
                 "job_type": "head",
             },
             {
-                "command": "show [logdir]",
+                "command": "all [logtype] [logdir]",
                 "help": (
-                    "Show all of an error file located in a [logdir] (a path to a log directory as reported by a failed job)."
+                    'Show tail of a [logtype] file ("error" or "output") located in [logdir] (a path to a log directory as reported by a failed job).',
                     "Note this may return a lot of output split over multiple slack messages."
                 ),
                 "action": "schedule_job",
-                "job_type": "show",
+                "job_type": "all",
             },
         ],
     }
