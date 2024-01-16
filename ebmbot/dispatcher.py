@@ -143,7 +143,7 @@ class JobDispatcher:
         else:
             msg = (
                 f"Command `{self.job['type']}` failed.\n"
-                f"Find logs in {self.host_log_dir} on dokku3."
+                f"Find logs in {self.host_log_dir} on dokku3.\n"
                 f"Or check logs here with errorlogs head/tail/show, e.g.\n"
                 f"* `@{settings.SLACK_APP_USERNAME} errorlogs tail {self.host_log_dir}`\n"
                 "Calling tech-support."
