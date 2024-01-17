@@ -6,7 +6,7 @@ from .logger import log_call
 
 
 @log_call
-def schedule_job(type_, args, channel, thread_ts, delay_seconds):
+def schedule_job(type_, args, channel, thread_ts, delay_seconds, is_im=False):
     """Schedule job to be run.
 
     Only one job of any type may be scheduled.  If a job is already scheduled
@@ -33,12 +33,12 @@ def schedule_job(type_, args, channel, thread_ts, delay_seconds):
     existing_jobs = list(conn.execute(sql, [type_]))
     existing_job_running = False
     if len(existing_jobs) == 0:
-        _create_job(type_, args, channel, thread_ts, start_after)
+        _create_job(type_, args, channel, thread_ts, start_after, is_im)
     elif len(existing_jobs) == 1:
         job = existing_jobs[0]
         if job["has_started"]:
             existing_job_running = True
-            _create_job(type_, args, channel, thread_ts, start_after)
+            _create_job(type_, args, channel, thread_ts, start_after, is_im)
         else:
             id_ = job["id"]
             _update_job(id_, args, channel, thread_ts, start_after)
@@ -54,11 +54,11 @@ def schedule_job(type_, args, channel, thread_ts, delay_seconds):
     return existing_job_running
 
 
-def _create_job(type_, args, channel, thread_ts, start_after):
+def _create_job(type_, args, channel, thread_ts, start_after, is_im):
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO job (type, args, channel, thread_ts, start_after) VALUES (?, ?, ?, ?, ?)",
-            [type_, args, channel, thread_ts, start_after],
+            "INSERT INTO job (type, args, channel, thread_ts, start_after, is_im) VALUES (?, ?, ?, ?, ?, ?)",
+            [type_, args, channel, thread_ts, start_after, is_im],
         )
 
 

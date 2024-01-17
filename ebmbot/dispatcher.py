@@ -145,9 +145,10 @@ class JobDispatcher:
                 f"Command `{self.job['type']}` failed.\n"
                 f"Find logs in {self.host_log_dir} on dokku3.\n"
                 f"Or check logs here with errorlogs head/tail/show, e.g.\n"
-                f"* `@{settings.SLACK_APP_USERNAME} errorlogs tail {self.host_log_dir}`\n"
-                "Calling tech-support."
+                f"* `@{settings.SLACK_APP_USERNAME} errorlogs tail {self.host_log_dir}`"
             )
+            if not self.job["is_im"]:
+                msg += "\nCalling tech-support."
             error = True
 
         slack_message = notify_slack(
@@ -156,8 +157,10 @@ class JobDispatcher:
             msg,
             message_format=self.job_config["report_format"] if rc == 0 else "text",
         )
-        if error:
+        if error and not self.job["is_im"]:
             # If the command failed, repost it to tech-support
+            # Don't repost to tech-support if we're in a DM with the bot, because no-one
+            # else will be able to read the reposted message
             # Note that the bot won't register messages from itself, so we can't just
             # rely on the tech-support listener
             message_url = self.slack_client.chat_getPermalink(

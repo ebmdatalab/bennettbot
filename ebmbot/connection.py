@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS job (
     channel TEXT,
     thread_ts TEXT,
     start_after DATETIME,
-    started_at DATETIME
+    started_at DATETIME,
+    is_im BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS suppression (
