@@ -144,12 +144,26 @@ def test_namespace_help(mock_app):
     )
 
 
+def test_restricted_namespace_help(mock_app):
+    handle_message(mock_app, "<@U1234> testrestricted help", reaction_count=0)
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": ":lock: These commands are only available to Bennett Institute users",
+            }
+        ],
+    )
+
+
 def test_help(mock_app):
     handle_message(mock_app, "<@U1234> help", reaction_count=0)
     for msg_fragment in [
         "Commands in the following categories are available",
         "* `test`",
         "* `test1`: Test description",
+        "* :lock: `testrestricted`",
     ]:
         assert_slack_client_sends_messages(
             mock_app.recorder,

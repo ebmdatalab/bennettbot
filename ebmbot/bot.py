@@ -182,11 +182,13 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         for namespace, help_config in config["help"].items():
             for pattern in [f"^{namespace} help$", f"^help {namespace}$"]:
                 if re.match(pattern, text):
-                    handle_namespace_help(event, say, help_config)
+                    handle_namespace_help(
+                        event, say, help_config, config["restricted"][namespace]
+                    )
                     return
 
         include_apology = text != "help"
-        handle_help(event, say, config["help"], config["description"], include_apology)
+        handle_help(event, say, config, include_apology)
 
     @app.message(
         tech_support_regex,
@@ -465,9 +467,18 @@ def handle_cancel_suppression(message, say, slack_config, _is_im):
 
 
 @log_call
-def handle_namespace_help(message, say, help_config):
+def handle_namespace_help(message, say, help_config, restricted):
     """Report commands available in namespace."""
-    lines = ["The following commands are available:", ""]
+    lines = []
+    if restricted:
+        lines.extend(
+            [
+                ":lock: These commands are only available to Bennett Institute users :lock:",
+                "",
+            ]
+        )
+
+    lines.extend(["The following commands are available:", ""])
 
     for command, help_ in help_config:
         lines.append(f"`{command}`: {help_}")
@@ -476,7 +487,7 @@ def handle_namespace_help(message, say, help_config):
 
 
 @log_call
-def handle_help(message, say, help_configs, description_configs, include_apology):
+def handle_help(message, say, config, include_apology):
     """Report all available namespaces."""
 
     if include_apology:
@@ -485,10 +496,13 @@ def handle_help(message, say, help_configs, description_configs, include_apology
         lines = []
     lines.extend(["Commands in the following categories are available:", ""])
 
-    for namespace in sorted(help_configs):
-        namespace_line = f"* `{namespace}`"
-        if description_configs[namespace]:
-            namespace_line += f": {description_configs[namespace]}"
+    for namespace in sorted(config["help"]):
+        if config["restricted"][namespace]:
+            namespace_line = f"* :lock: `{namespace}`"
+        else:
+            namespace_line = f"* `{namespace}`"
+        if config["description"][namespace]:
+            namespace_line += f": {config['description'][namespace]}"
         lines.append(namespace_line)
 
     if message["type"] == "app_mention":
@@ -497,7 +511,7 @@ def handle_help(message, say, help_configs, description_configs, include_apology
         prefix = ""
 
     lines.append(
-        f"Enter `{prefix}[category] help` (e.g. `{prefix}{random.choice(list(help_configs))} help`) for more help"
+        f"Enter `{prefix}[category] help` (e.g. `{prefix}{random.choice(list(config['help']))} help`) for more help"
     )
     lines.append(f"Enter `{prefix}status` to see running and scheduled jobs")
     lines.append(
