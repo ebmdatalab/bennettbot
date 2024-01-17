@@ -144,8 +144,9 @@ class JobDispatcher:
             msg = (
                 f"Command `{self.job['type']}` failed.\n"
                 f"Find logs in {self.host_log_dir} on dokku3.\n"
-                f"Or check logs here with errorlogs head/tail/show, e.g.\n"
-                f"* `@{settings.SLACK_APP_USERNAME} errorlogs tail {self.host_log_dir}`"
+                f"Or check logs here with `showlogs head/tail/all`, e.g.\n"
+                f"* `@{settings.SLACK_APP_USERNAME} showlogs tail error {self.host_log_dir}`\n"
+                f"* `@{settings.SLACK_APP_USERNAME} showlogs all output {self.host_log_dir}`\n"
             )
             if not self.job["is_im"]:
                 msg += "\nCalling tech-support."
