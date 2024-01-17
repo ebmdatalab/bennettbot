@@ -26,11 +26,12 @@ of `stdout` is read in and posted as the slack message in either [plain text or 
 Jobs are defined in `job_configs.py`. A dict called `raw_config`
 defines which jobs may be run, and how they can be invoked via Slack.
 
-Each key in `raw_config` refers to a job namespace, and maps to a dict that defined
-the namespace jobs in the following format:
+Each key in `raw_config` refers to a category of jobs (the job namespace), and maps to a dict that defines jobs in that category in the following format:
 
 ```
 {
+    "description": "", # Optional description of this category of jobs
+    "restricted": boolean, default=False  # restrict this category to internal users only
     "fabfile": "",  # for fabric commands, location on github of fabfile
     "jobs": {
         # this defines the individual jobs
