@@ -128,7 +128,8 @@ class MockHandler(SimpleHTTPRequestHandler):
             {
                 "ok": True,
                 "members": [
-                    {"name": "test_username", "id": "U1234"},
+                    {"name": "test_username", "id": "U1234", "is_restricted": False},
+                    {"name": "test_guest", "id": "U5678", "is_restricted": True},
                 ],
             }
         ).encode("utf-8"),

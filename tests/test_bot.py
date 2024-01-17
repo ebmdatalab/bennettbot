@@ -28,9 +28,9 @@ pytestmark = pytest.mark.freeze_time(T0)
 def register_handler(mock_app):
     app = mock_app.app
     channels = bot.get_channels(app.client)
-    bot_user_id = bot.get_bot_user_id(app.client)
+    bot_user_id, internal_user_ids = bot.get_users_info(app.client)
     bot.join_all_channels(app.client, channels, bot_user_id)
-    bot.register_listeners(app, config, channels, bot_user_id)
+    bot.register_listeners(app, config, channels, bot_user_id, internal_user_ids)
     yield
 
 

@@ -42,17 +42,29 @@ def run():  # pragma: no cover
     )
     handler = SocketModeCheckHandler(app, settings.SLACK_APP_TOKEN)
 
-    bot_user_id = get_bot_user_id(app.client)
+    bot_user_id, internal_user_ids = get_users_info(app.client)
     channels = get_channels(app.client)
     join_all_channels(app.client, channels, bot_user_id)
-    register_listeners(app, job_configs.config, channels, bot_user_id)
+    register_listeners(
+        app, job_configs.config, channels, bot_user_id, internal_user_ids
+    )
     handler.start()
     logger.info("Connected")
 
 
-def get_bot_user_id(client):
-    users = {user["name"]: user["id"] for user in client.users_list()["members"]}
-    return users[settings.SLACK_APP_USERNAME]
+def get_users_info(client):
+    users = {user["name"]: user for user in client.users_list()["members"]}
+    internal_user_ids = {
+        user["id"]
+        for user in users.values()
+        if not user["is_bot"] and not user["is_restricted"]
+    }
+    return users[settings.SLACK_APP_USERNAME]["id"], internal_user_ids
+
+
+def user_is_guest(client, user_id):
+    user = client.users_info(user=user_id)["user"]
+    return user.get("is_restricted", True)
 
 
 def get_channels(client):
@@ -82,7 +94,7 @@ def tech_support_out_of_office():
         return end
 
 
-def register_listeners(app, config, channels, bot_user_id):
+def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     """
     Register listeners for this app
 
@@ -339,7 +351,10 @@ def _pluralise(n, noun):
 
 
 def handle_command(app, message, say, slack_config, is_im):
-    """Give a thumbs-up to the message, and dispatch to another handler."""
+    """
+    Check if user has permission to run this command
+    Give a thumbs-up to the message, and dispatch to another handler.
+    """
     app.client.reactions_add(
         channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
     )
