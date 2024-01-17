@@ -536,6 +536,39 @@ def test_remove_non_existent_job(mock_app):
     ) in post_message.items()
 
 
+@pytest.mark.parametrize(
+    "user,command,reaction_count,scheduled_job_count",
+    [
+        # guest user, unrestricted job
+        ("UGUEST", "test do job 1", 1, 1),
+        # internal user, restricted job
+        ("UINT", "testrestricted do job", 1, 1),
+        # guest user, restricted job
+        ("UGUEST", "testrestricted do job", 0, 0),
+        # new internal user, restricted job
+        ("NEWINT", "testrestricted do job", 1, 1),
+        # new guest user, restricted job
+        ("NEWGUEST", "testrestricted do job", 0, 0),
+    ],
+)
+def test_restricted_jobs_only_scheduled_for_internal_users(
+    mock_app, user, command, reaction_count, scheduled_job_count
+):
+    assert not scheduler.get_jobs()
+    handle_message(
+        mock_app,
+        f"<@U1234> {command}",
+        event_kwargs={"user": user},
+        reaction_count=reaction_count,
+    )
+    assert len(scheduler.get_jobs()) == scheduled_job_count
+    if scheduled_job_count == 0:
+        assert_slack_client_sends_messages(
+            mock_app.recorder,
+            messages_kwargs=[{"channel": "channel", "text": ":no_entry:"}],
+        )
+
+
 def handle_message(
     mock_app,
     text,

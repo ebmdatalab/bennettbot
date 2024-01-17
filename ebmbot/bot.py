@@ -172,6 +172,10 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
 
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
+                if not user_has_permission(
+                    app, event, say, text, config["restricted"], internal_user_ids
+                ):
+                    return
                 handle_command(app, event, say, slack_config, is_im=is_im)
                 return
 
@@ -348,6 +352,32 @@ def _pluralise(n, noun):
         return f"There is 1 {noun}"
     else:
         return f"There are {n} {noun}s"
+
+
+def user_has_permission(app, event, say, text, restricted_config, internal_user_ids):
+    user_id = event["user"]
+    # Internal users can do everything
+    if user_id in internal_user_ids:
+        return True
+    # Unrestricted namespace jobs can be run by anyone
+    namespace = text.split()[0]
+    if not restricted_config[namespace]:
+        return True
+    # This is a job in a restricted namespace
+    # There's a possibility this is a new user that we haven't registered in
+    # internal_user_ids, so before rejecting them, fetch their info and
+    # check that they really are a guest user.
+    # It's unlikely that guest users will try to call bot commands often, so it's
+    # not too much of a burden to run this check if/whenthey do
+    if not user_is_guest(app.client, user_id):
+        return True
+
+    # User doesn't have permission, tell them so nicely before returning
+    say(
+        f":no_entry: Sorry, only Bennett Institute users are allowed to run `{namespace}` commands."
+    )
+    logger.info("Restricted command called by guest user", command=text, user=user_id)
+    return False
 
 
 def handle_command(app, message, say, slack_config, is_im):
