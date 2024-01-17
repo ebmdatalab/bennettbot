@@ -57,6 +57,7 @@ raw_config = {
         ],
     },
     "fdaaa": {
+        "restricted": True,
         "description": "Trials Tracker (https://fdaaa.trialstracker.net)",
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/clinicaltrials-act-tracker/master/fabfile.py",
         "jobs": {
@@ -74,6 +75,7 @@ raw_config = {
         ],
     },
     "op": {
+        "restricted": True,
         "description": "OpenPrescribing deployment and tools",
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
         "jobs": {
@@ -273,6 +275,7 @@ raw_config = {
         ]
     },
     "techsupport": {
+        "restricted": True,
         "description": "Tech Support out of office and rota",
         "jobs": {
             "out_of_office_on": {
@@ -322,6 +325,7 @@ raw_config = {
         ],
     },
     "funding": {
+        "restricted": True,
         "description": "Run funding reports",
         "jobs": {
             "generate_report": {
@@ -396,6 +400,7 @@ def build_config(raw_config):
         "help": {},
         "fabfiles": {},
         "workspace_dir": {},
+        "restricted": {},
     }
 
     for namespace in raw_config:
@@ -403,6 +408,7 @@ def build_config(raw_config):
             raise RuntimeError("Namespaces must not contain underscores")
 
         config["description"][namespace] = raw_config[namespace].get("description", "")
+        config["restricted"][namespace] = raw_config[namespace].get("restricted", False)
 
         helps = []
 
