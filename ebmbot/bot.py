@@ -7,6 +7,7 @@ from slack_bolt import App, BoltResponse
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt.error import BoltUnhandledRequestError
 from slack_bolt.util.utils import get_boot_message
+from slack_sdk.errors import SlackApiError
 
 from workspace.techsupport.jobs import get_dates_from_config as get_tech_support_dates
 
@@ -154,7 +155,7 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         text = event["text"].replace("Reminder: ", "")
         # Remove the bot mention; this sometimes includes the bot's name as well as
         # id. In reminders, the bot mention is in the form <@AB1234|bot_name>; in user
-        # messages that @ the both, it is fjust in the form <@AB1234>. We need to match both.
+        # messages that @ the bot, it is just in the form <@AB1234>. We need to match both.
         text = re.sub(rf"<@{bot_user_id}(|.+)?>", "", text)
 
         # handle extra whitespace and punctuation
@@ -190,23 +191,46 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         include_apology = text != "help"
         handle_help(event, say, config, include_apology)
 
-    @app.message(
-        tech_support_regex,
+    def tech_support_matcher(event):
         # Only match messages posted outside of the tech support channel itself
-        # and messages that are not posted by a bot (to avoid reposting reminders etc)
-        matchers=[
-            lambda message: message["channel"] != tech_support_channel_id,
-            lambda message: "bot_id" not in message,
-        ],
-    )
-    def repost_to_tech_support(message, say, ack):
-        ack()
+        if event["channel"] == tech_support_channel_id:
+            return False
+        # only match messages that are not posted by a bot, to avoid reposting reminders etc
+        # (the event dict will include the key "bot_id")
+        if "bot_id" in event:
+            return False
+        # Of the available message subtypes, only match "message_changed"; we don't
+        # want to match e.g. "reminder_add" messages that include the word "tech-support"
+        subtype = event.get("subtype")
+        if subtype and subtype != "message_changed":
+            return False
 
+        # match the tech-support keyword
+        text = event.get("message", event)["text"]
+        return tech_support_regex.match(text) is not None
+
+    @app.event(
+        {"type": "message"},
+        matchers=[tech_support_matcher],
+    )
+    def repost_to_tech_support(event, say, ack):
+        # Our matcher filters only allows messages with no subtype (i.e. just
+        # straightforward posts) or message_changed subtype
+        # For edited messages (message_changed), the text is found in the event's
+        # "message"; for other messages, the event itself contains the text
+        message = event.get("message", event)
+        channel = event["channel"]
         # Don't repost messages in DMs with the bot
-        if message["channel_type"] in ["channel", "group"]:
+        # We don't use the matcher for this, because we want to tell users to
+        # call tech-support from a non-dm channel
+        if event["channel_type"] in ["channel", "group"]:
             # Respond with SOS reaction
+            # If we've already responded, the attempt to react here will raise
+            # an exception; if this happens, then the user is editing something
+            # other than the tech-support keyword in the message, and we don't need to
+            # repost it again. We let the default error handler will deal with it.
             app.client.reactions_add(
-                channel=message["channel"], timestamp=message["ts"], name="sos"
+                channel=channel, timestamp=message["ts"], name="sos"
             )
             logger.info("Received tech-support message", message=message["text"])
             # If out of office, respond with an ooo message, but still repost to tech-support channel
@@ -216,18 +240,18 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
                 logger.info("Tech support OOO", until=out_of_office_until)
                 say(
                     f"tech-support is currently out of office and will respond after {out_of_office_until}",
-                    channel=message["channel"],
+                    channel=channel,
                     thread_ts=message["ts"],
                 )
 
             message_url = app.client.chat_getPermalink(
-                channel=message["channel"], message_ts=message["ts"]
+                channel=channel, message_ts=message["ts"]
             )["permalink"]
             say(message_url, channel=tech_support_channel_id)
         else:
             say(
                 "Sorry, I can't call tech-support from this conversation.",
-                channel=message["channel"],
+                channel=channel,
             )
 
     @app.event("channel_created")
@@ -240,15 +264,32 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
 
     @app.error
     def handle_errors(error, body):
+        if "message" in body["event"]:
+            message_text = body["event"]["message"]["text"]
+        else:
+            message_text = body["event"].get("text", "")
+
         if isinstance(error, BoltUnhandledRequestError):
             # Unhandled messages are common (anything that doesn't get matched
             # by one of the listeners).  We don't want to log those.
             return BoltResponse(status=200, body="Unhandled message")
+        elif (
+            isinstance(error, SlackApiError)
+            and error.response.data["error"] == "already_reacted"
+            and "tech-support" in message_text
+        ):
+            # If we're already reacted to a tech-support message and the
+            # user edits the message, we get a slack error, but that's OK
+            logger.info(
+                "Already reacted to tech-support message",
+                message=message_text,
+            )
+            return BoltResponse(
+                status=200, body="Already reacted to tech-support message"
+            )
         else:
             # other error patterns
             channel = body["event"]["channel"]
-            message_text = body["event"].get("message", {}).get("text", "")
-
             ts = body["event"]["ts"]
             logger.error("Unexpected error", error=error, body=body)
             app.client.reactions_add(channel=channel, timestamp=ts, name="x")
