@@ -58,7 +58,7 @@ def get_users_info(client):
     internal_user_ids = {
         user["id"]
         for user in users.values()
-        if not user["is_bot"] and not user["is_restricted"]
+        if not user["is_bot"] and not user.get("is_restricted", True)
     }
     return users[settings.SLACK_APP_USERNAME]["id"], internal_user_ids
 
