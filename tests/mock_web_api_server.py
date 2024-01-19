@@ -122,14 +122,32 @@ class MockHandler(SimpleHTTPRequestHandler):
     "user_id": "W99999"
 }
 """
+    users = {
+        "U1234": {
+            "name": "test_username",
+            "id": "U1234",
+            "is_restricted": False,
+            "is_bot": True,
+        },
+        "UINT": {
+            "name": "test_user",
+            "id": "UINT",
+            "is_restricted": False,
+            "is_bot": False,
+        },
+        "UGUEST": {
+            "name": "test_guest",
+            "id": "UGUEST",
+            "is_restricted": True,
+            "is_bot": False,
+        },
+    }
     path_responses = {
         "/webhook": "OK",
         "/users.list": json.dumps(
             {
                 "ok": True,
-                "members": [
-                    {"name": "test_username", "id": "U1234"},
-                ],
+                "members": list(users.values()),
             }
         ).encode("utf-8"),
         "/conversations.list": json.dumps(
@@ -177,6 +195,27 @@ class MockHandler(SimpleHTTPRequestHandler):
             ):
                 # Mock channel members responses to simulate existing membership of one channel
                 body = json.dumps({"ok": True, "members": ["U1234"]}).encode("utf-8")
+            elif path == "/users.info":
+                # This path may be called for mock new users, who are included in the initial
+                # call to /users.
+                new_users = {
+                    "NEWINT": {
+                        "name": "test_new_internal",
+                        "id": "NEWINT",
+                        "is_restricted": False,
+                        "is_bot": False,
+                    },
+                    "NEWGUEST": {
+                        "name": "test_new_guest",
+                        "id": "NEWGUEST",
+                        "is_restricted": True,
+                        "is_bot": False,
+                    },
+                }
+                user = self.users.get(
+                    request_body["user"], new_users.get(request_body["user"])
+                )
+                body = json.dumps({"ok": True, "user": user}).encode("utf-8")
             else:
                 body = self.path_responses.get(path)
 

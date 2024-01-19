@@ -10,6 +10,7 @@ def test_build_config():
     raw_config = {
         "ns1": {
             "description": "ns1 jobs",
+            "restricted": True,
             "jobs": {
                 "good_job": {"run_args_template": "cat [poem]"},
                 "bad_job": {"run_args_template": "dog [poem]"},
@@ -163,6 +164,12 @@ def test_build_config():
             "ns2": settings.WRITEABLE_WORKSPACE_DIR,
             "ns3": settings.WRITEABLE_WORKSPACE_DIR,
             "test": settings.WORKSPACE_DIR,
+        },
+        "restricted": {
+            "ns1": True,
+            "ns2": False,
+            "ns3": False,
+            "test": False,
         },
     }
 

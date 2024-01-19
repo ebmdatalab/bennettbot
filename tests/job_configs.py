@@ -122,6 +122,22 @@ raw_config = {
             },
         },
         "slack": [],
+    },
+    "testrestricted": {
+        "restricted": True,
+        "jobs": {
+            "good_job": {
+                "run_args_template": "cat poem",
+            },
+        },
+        "slack": [
+            {
+                "command": "do job",
+                "help": "do the restricted job",
+                "action": "schedule_job",
+                "job_type": "good_job",
+            }
+        ],
     }
 }
 # fmt: on

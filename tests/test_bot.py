@@ -28,9 +28,9 @@ pytestmark = pytest.mark.freeze_time(T0)
 def register_handler(mock_app):
     app = mock_app.app
     channels = bot.get_channels(app.client)
-    bot_user_id = bot.get_bot_user_id(app.client)
+    bot_user_id, internal_user_ids = bot.get_users_info(app.client)
     bot.join_all_channels(app.client, channels, bot_user_id)
-    bot.register_listeners(app, config, channels, bot_user_id)
+    bot.register_listeners(app, config, channels, bot_user_id, internal_user_ids)
     yield
 
 
@@ -144,12 +144,26 @@ def test_namespace_help(mock_app):
     )
 
 
+def test_restricted_namespace_help(mock_app):
+    handle_message(mock_app, "<@U1234> testrestricted help", reaction_count=0)
+    assert_slack_client_sends_messages(
+        mock_app.recorder,
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": ":lock: These commands are only available to Bennett Institute users",
+            }
+        ],
+    )
+
+
 def test_help(mock_app):
     handle_message(mock_app, "<@U1234> help", reaction_count=0)
     for msg_fragment in [
         "Commands in the following categories are available",
         "* `test`",
         "* `test1`: Test description",
+        "* :lock: `testrestricted`",
     ]:
         assert_slack_client_sends_messages(
             mock_app.recorder,
@@ -534,6 +548,39 @@ def test_remove_non_existent_job(mock_app):
         "text",
         "Job id [10] not found in running or scheduled jobs",
     ) in post_message.items()
+
+
+@pytest.mark.parametrize(
+    "user,command,reaction_count,scheduled_job_count",
+    [
+        # guest user, unrestricted job
+        ("UGUEST", "test do job 1", 1, 1),
+        # internal user, restricted job
+        ("UINT", "testrestricted do job", 1, 1),
+        # guest user, restricted job
+        ("UGUEST", "testrestricted do job", 0, 0),
+        # new internal user, restricted job
+        ("NEWINT", "testrestricted do job", 1, 1),
+        # new guest user, restricted job
+        ("NEWGUEST", "testrestricted do job", 0, 0),
+    ],
+)
+def test_restricted_jobs_only_scheduled_for_internal_users(
+    mock_app, user, command, reaction_count, scheduled_job_count
+):
+    assert not scheduler.get_jobs()
+    handle_message(
+        mock_app,
+        f"<@U1234> {command}",
+        event_kwargs={"user": user},
+        reaction_count=reaction_count,
+    )
+    assert len(scheduler.get_jobs()) == scheduled_job_count
+    if scheduled_job_count == 0:
+        assert_slack_client_sends_messages(
+            mock_app.recorder,
+            messages_kwargs=[{"channel": "channel", "text": ":no_entry:"}],
+        )
 
 
 def handle_message(

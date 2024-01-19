@@ -42,17 +42,29 @@ def run():  # pragma: no cover
     )
     handler = SocketModeCheckHandler(app, settings.SLACK_APP_TOKEN)
 
-    bot_user_id = get_bot_user_id(app.client)
+    bot_user_id, internal_user_ids = get_users_info(app.client)
     channels = get_channels(app.client)
     join_all_channels(app.client, channels, bot_user_id)
-    register_listeners(app, job_configs.config, channels, bot_user_id)
+    register_listeners(
+        app, job_configs.config, channels, bot_user_id, internal_user_ids
+    )
     handler.start()
     logger.info("Connected")
 
 
-def get_bot_user_id(client):
-    users = {user["name"]: user["id"] for user in client.users_list()["members"]}
-    return users[settings.SLACK_APP_USERNAME]
+def get_users_info(client):
+    users = {user["name"]: user for user in client.users_list()["members"]}
+    internal_user_ids = {
+        user["id"]
+        for user in users.values()
+        if not user["is_bot"] and not user["is_restricted"]
+    }
+    return users[settings.SLACK_APP_USERNAME]["id"], internal_user_ids
+
+
+def user_is_guest(client, user_id):
+    user = client.users_info(user=user_id)["user"]
+    return user.get("is_restricted", True)
 
 
 def get_channels(client):
@@ -82,7 +94,7 @@ def tech_support_out_of_office():
         return end
 
 
-def register_listeners(app, config, channels, bot_user_id):
+def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     """
     Register listeners for this app
 
@@ -160,17 +172,23 @@ def register_listeners(app, config, channels, bot_user_id):
 
         for slack_config in config["slack"]:
             if slack_config["regex"].match(text):
+                if not user_has_permission(
+                    app, event, say, text, config["restricted"], internal_user_ids
+                ):
+                    return
                 handle_command(app, event, say, slack_config, is_im=is_im)
                 return
 
         for namespace, help_config in config["help"].items():
             for pattern in [f"^{namespace} help$", f"^help {namespace}$"]:
                 if re.match(pattern, text):
-                    handle_namespace_help(event, say, help_config)
+                    handle_namespace_help(
+                        event, say, help_config, config["restricted"][namespace]
+                    )
                     return
 
         include_apology = text != "help"
-        handle_help(event, say, config["help"], config["description"], include_apology)
+        handle_help(event, say, config, include_apology)
 
     @app.message(
         tech_support_regex,
@@ -338,8 +356,37 @@ def _pluralise(n, noun):
         return f"There are {n} {noun}s"
 
 
+def user_has_permission(app, event, say, text, restricted_config, internal_user_ids):
+    user_id = event["user"]
+    # Internal users can do everything
+    if user_id in internal_user_ids:
+        return True
+    # Unrestricted namespace jobs can be run by anyone
+    namespace = text.split()[0]
+    if not restricted_config[namespace]:
+        return True
+    # This is a job in a restricted namespace
+    # There's a possibility this is a new user that we haven't registered in
+    # internal_user_ids, so before rejecting them, fetch their info and
+    # check that they really are a guest user.
+    # It's unlikely that guest users will try to call bot commands often, so it's
+    # not too much of a burden to run this check if/whenthey do
+    if not user_is_guest(app.client, user_id):
+        return True
+
+    # User doesn't have permission, tell them so nicely before returning
+    say(
+        f":no_entry: Sorry, only Bennett Institute users are allowed to run `{namespace}` commands."
+    )
+    logger.info("Restricted command called by guest user", command=text, user=user_id)
+    return False
+
+
 def handle_command(app, message, say, slack_config, is_im):
-    """Give a thumbs-up to the message, and dispatch to another handler."""
+    """
+    Check if user has permission to run this command
+    Give a thumbs-up to the message, and dispatch to another handler.
+    """
     app.client.reactions_add(
         channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
     )
@@ -420,9 +467,18 @@ def handle_cancel_suppression(message, say, slack_config, _is_im):
 
 
 @log_call
-def handle_namespace_help(message, say, help_config):
+def handle_namespace_help(message, say, help_config, restricted):
     """Report commands available in namespace."""
-    lines = ["The following commands are available:", ""]
+    lines = []
+    if restricted:
+        lines.extend(
+            [
+                ":lock: These commands are only available to Bennett Institute users :lock:",
+                "",
+            ]
+        )
+
+    lines.extend(["The following commands are available:", ""])
 
     for command, help_ in help_config:
         lines.append(f"`{command}`: {help_}")
@@ -431,7 +487,7 @@ def handle_namespace_help(message, say, help_config):
 
 
 @log_call
-def handle_help(message, say, help_configs, description_configs, include_apology):
+def handle_help(message, say, config, include_apology):
     """Report all available namespaces."""
 
     if include_apology:
@@ -440,10 +496,13 @@ def handle_help(message, say, help_configs, description_configs, include_apology
         lines = []
     lines.extend(["Commands in the following categories are available:", ""])
 
-    for namespace in sorted(help_configs):
-        namespace_line = f"* `{namespace}`"
-        if description_configs[namespace]:
-            namespace_line += f": {description_configs[namespace]}"
+    for namespace in sorted(config["help"]):
+        if config["restricted"][namespace]:
+            namespace_line = f"* :lock: `{namespace}`"
+        else:
+            namespace_line = f"* `{namespace}`"
+        if config["description"][namespace]:
+            namespace_line += f": {config['description'][namespace]}"
         lines.append(namespace_line)
 
     if message["type"] == "app_mention":
@@ -452,7 +511,7 @@ def handle_help(message, say, help_configs, description_configs, include_apology
         prefix = ""
 
     lines.append(
-        f"Enter `{prefix}[category] help` (e.g. `{prefix}{random.choice(list(help_configs))} help`) for more help"
+        f"Enter `{prefix}[category] help` (e.g. `{prefix}{random.choice(list(config['help']))} help`) for more help"
     )
     lines.append(f"Enter `{prefix}status` to see running and scheduled jobs")
     lines.append(
