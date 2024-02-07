@@ -11,6 +11,7 @@ def test_build_config():
         "ns1": {
             "description": "ns1 jobs",
             "restricted": True,
+            "default_channel": "#some-channel",
             "jobs": {
                 "good_job": {"run_args_template": "cat [poem]"},
                 "bad_job": {"run_args_template": "dog [poem]"},
@@ -170,6 +171,12 @@ def test_build_config():
             "ns2": False,
             "ns3": False,
             "test": False,
+        },
+        "default_channel": {
+            "ns1": "#some-channel",
+            "ns2": "#tech",
+            "ns3": "#tech",
+            "test": "#tech",
         },
     }
 

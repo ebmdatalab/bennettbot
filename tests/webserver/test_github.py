@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from ebmbot import scheduler
+from ebmbot.job_configs import build_config
 
 from ..assertions import assert_job_matches
 from ..time_helpers import T0, T
@@ -18,7 +19,15 @@ PAYLOAD_PR_OPENED = '{"action": "opened", "pull_request": {}}'
 PAYLOAD_ISSUE_OPENED = '{"action": "opened", "issue": {}}'
 
 
-dummy_config = {"jobs": {"test_deploy": {}}}
+dummy_config = build_config(
+    {
+        "test": {
+            "default_channel": "#some-team",
+            "jobs": {"deploy": {"run_args_template": "fab deploy:production"}},
+            "slack": [],
+        }
+    }
+)
 
 
 def test_no_auth_header(web_client):
@@ -56,7 +65,7 @@ def test_on_closed_merged_pr(web_client):
     assert rsp.status_code == 200
     jj = scheduler.get_jobs_of_type("test_deploy")
     assert len(jj) == 1
-    assert_job_matches(jj[0], "test_deploy", {}, "#general", T(60), None)
+    assert_job_matches(jj[0], "test_deploy", {}, "#some-team", T(60), None)
 
 
 def test_on_closed_unmerged_pr(web_client):

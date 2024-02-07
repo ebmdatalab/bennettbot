@@ -1,6 +1,7 @@
 """
 Defines which jobs may be run, and how they can be invoked via Slack.
 """
+
 import re
 from operator import itemgetter
 
@@ -78,6 +79,7 @@ raw_config = {
         "restricted": True,
         "description": "OpenPrescribing deployment and tools",
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
+        "default_channel": "#team-rap",
         "jobs": {
             "deploy": {
                 "run_args_template": "fab deploy:production",
@@ -401,6 +403,7 @@ def build_config(raw_config):
         "fabfiles": {},
         "workspace_dir": {},
         "restricted": {},
+        "default_channel": {},
     }
 
     for namespace in raw_config:
@@ -409,6 +412,9 @@ def build_config(raw_config):
 
         config["description"][namespace] = raw_config[namespace].get("description", "")
         config["restricted"][namespace] = raw_config[namespace].get("restricted", False)
+        config["default_channel"][namespace] = raw_config[namespace].get(
+            "default_channel", "#tech"
+        )
 
         helps = []
 
