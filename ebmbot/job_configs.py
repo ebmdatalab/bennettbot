@@ -79,6 +79,7 @@ raw_config = {
         "restricted": True,
         "description": "OpenPrescribing deployment and tools",
         "fabfile": "https://raw.githubusercontent.com/ebmdatalab/openprescribing/main/fabfile.py",
+        "default_channel": "#team-rap",
         "jobs": {
             "deploy": {
                 "run_args_template": "fab deploy:production",
