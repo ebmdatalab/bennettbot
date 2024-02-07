@@ -402,6 +402,7 @@ def build_config(raw_config):
         "fabfiles": {},
         "workspace_dir": {},
         "restricted": {},
+        "default_channel": {},
     }
 
     for namespace in raw_config:
@@ -410,6 +411,9 @@ def build_config(raw_config):
 
         config["description"][namespace] = raw_config[namespace].get("description", "")
         config["restricted"][namespace] = raw_config[namespace].get("restricted", False)
+        config["default_channel"][namespace] = raw_config[namespace].get(
+            "default_channel", "#tech"
+        )
 
         helps = []
 

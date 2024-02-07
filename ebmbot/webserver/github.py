@@ -71,4 +71,5 @@ def schedule_deploy(project):
         abort(Response(f"Unknown project: {project}", 400))
 
     logger.info("Scheduling deploy", project=project)
-    scheduler.schedule_job(job, {}, "#general", "", delay_seconds=60)
+    channel = config["default_channel"][project]
+    scheduler.schedule_job(job, {}, channel, "", delay_seconds=60)
