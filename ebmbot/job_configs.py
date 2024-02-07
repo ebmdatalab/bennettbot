@@ -1,6 +1,7 @@
 """
 Defines which jobs may be run, and how they can be invoked via Slack.
 """
+
 import re
 from operator import itemgetter
 
