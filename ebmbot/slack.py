@@ -11,8 +11,16 @@ def notify_slack(
     if message_format == "blocks":
         msg_kwargs["blocks"] = message_text
 
+    # Truncate message text to the first charcters
+    log_message_text = message_text[:500]
+    if len(log_message_text) < len(message_text):
+        log_message_text += " (truncated)"
+
     logger.info(
-        "Sending message", channel=channel, message=message_text, thread_ts=thread_ts
+        "Sending message",
+        channel=channel,
+        message=log_message_text,
+        thread_ts=thread_ts,
     )
     # If messages are longer than 4000 characters, Slack will split them over
     # multiple messages. This breaks code formatting, so if a message with code
