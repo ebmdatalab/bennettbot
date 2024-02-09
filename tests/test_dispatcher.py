@@ -435,6 +435,40 @@ def test_job_success_config_with_no_python_file(mock_client):
         assert f.read() == ""
 
 
+def test_job_with_code_format(mock_client):
+    scheduler.schedule_job("test_good_job_with_code", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+            {
+                "channel": "channel",
+                "text": "```the owl and the pussycat\n```",
+            },
+        ],
+        message_format="code",
+    )
+
+
+def test_job_with_long_code_output_is_uploaded_as_file(mock_client):
+    scheduler.schedule_job("test_python_job_long_code_output", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(mock_client.client, job)
+
+    assert_slack_client_sends_messages(
+        mock_client.recorder,
+        messages_kwargs=[
+            {"channel": "logs", "text": "about to start"},
+        ],
+        message_format="file",
+    )
+
+
 def do_job(client, job):
     job_dispatcher = JobDispatcher(client, job, config)
     job_dispatcher.do_job()
