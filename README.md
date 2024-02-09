@@ -21,7 +21,8 @@ The database schema is in `connection.py`, and functions for putting jobs onto t
 A job runs a bash command in a particular job directory or namespace. Each job
 creates a log folder where output and error from the command is written to files named
 `stdout` and `stderr` respectively. If a job is to be reported to slack, the content
-of `stdout` is read in and posted as the slack message in either [plain text or block format](#output-format);
+of `stdout` is read in and posted as the slack message in
+[one of the available formats](#output-format);
 
 Jobs are defined in `job_configs.py`. A dict called `raw_config`
 defines which jobs may be run, and how they can be invoked via Slack.
@@ -39,7 +40,7 @@ Each key in `raw_config` refers to a category of jobs (the job namespace), and m
             "run_args_template": "",  # template of bash command to be run
             "report_stdout": boolean, default=False,  # whether to report contents of stdout to slack
             "report_success": boolean, default=True,  # whether to report success to slack
-            "report_format": "text/blocks",  # format of slack report, plain text or blocks (default="text")
+            "report_format": "text/blocks/code/file",  # format of slack report, plain text, blocks, code or file upload (default="text")
         }
     }
     "slack": [
@@ -197,6 +198,13 @@ can be used for checking your block output is valid.
 
 Note that slack messages can contain a maximum of 50 blocks.
 
+The output can also be `file`; this will be posted as a file snippet instead
+of a message.
+
+Finally, output can also be formatted as code; this will just wrap a plain text
+message in triple backticks for code formatting in Slack. If the message is
+too long for a single Slack message (4000 characters), it will be uploaded
+as a file snippet instead.
 
 ## Deployment docs
 

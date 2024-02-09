@@ -351,14 +351,17 @@ raw_config = {
             "tail": {
                 "run_args_template": "/bin/bash show.sh -t -f {logtype} {logdir}",
                 "report_stdout": True,
+                "report_format": "code",
             },
             "head": {
                 "run_args_template": "/bin/bash show.sh -h -f {logtype} {logdir}",
                 "report_stdout": True,
+                "report_format": "code",
             },
             "all": {
                 "run_args_template": "/bin/bash show.sh -a -f {logtype} {logdir}",
                 "report_stdout": True,
+                "report_format": "code",
             },
         },
         "slack": [
@@ -498,8 +501,11 @@ def validate_job_config(job_type, job_config):
         msg = f"Job {job_type} has extra keys {extra_keys}"
         raise RuntimeError(msg)
 
-    if job_config["report_format"] not in ["text", "blocks"]:
-        msg = f"Job {job_type} has an invalid report_format; must be either 'text' or 'blocks'"
+    if job_config["report_format"] not in ["text", "blocks", "code", "file"]:
+        msg = (
+            f"Job {job_type} has an invalid report_format; must be "
+            "one of 'text', 'blocks', 'code' or 'file'"
+        )
         raise RuntimeError(msg)
 
 

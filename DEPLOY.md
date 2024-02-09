@@ -61,6 +61,7 @@ events.  We need to add some more:
    - `im:read`
    - `reactions:write`
    - `chat:write`
+   - `files:write`
 
 ### Allow users to DM the app
 1. Features > App Home
