@@ -156,6 +156,7 @@ class JobDispatcher:
             self.slack_client,
             self.job["channel"],
             msg,
+            thread_ts=self.job["thread_ts"],
             message_format=self.job_config["report_format"] if rc == 0 else "text",
         )
         if error and not self.job["is_im"]:
