@@ -18,6 +18,14 @@ def hello_world_blocks_error():
     raise Exception("An error was found!")
 
 
+def long_code_output():
+    """
+    A function that just outputs >4000 characters for
+    testing long code blocks to be uploaded as files
+    """
+    return "\n".join(["Hello" * 10 for i in range(100)])
+
+
 def parse_args():
     parser = ArgumentParser()
     subparsers = parser.add_subparsers(dest="subparser_name")
@@ -30,6 +38,8 @@ def parse_args():
     h3.set_defaults(function=hello_world_blocks_error)
     h4 = subparsers.add_parser("hello_world_no_output")
     h4.set_defaults(function=hello_world)
+    h5 = subparsers.add_parser("long_code_output")
+    h5.set_defaults(function=long_code_output)
     return parser.parse_args()
 
 

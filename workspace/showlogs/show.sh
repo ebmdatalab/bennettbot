@@ -47,7 +47,7 @@ if test -f "$logfile"; then
   if [[ "$output" == "" ]]; then
     echo "File has no content"
   else
-    echo "\`\`\`$output\`\`\`"
+    echo "$output"
   fi
 else
   echo "ERROR: $logdir/$filename not found"

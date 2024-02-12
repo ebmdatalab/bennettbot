@@ -31,9 +31,14 @@ class WebClientWithSlackException(WebClient):
         raise Exception("Error notifying slack")
 
 
+class MockWebClient(WebClient):
+    def files_upload_v2(self, *args, **kwargs):
+        return Mock(data={"ok": True})
+
+
 @dataclass
 class MockRecordingClient:
-    client: WebClient
+    client: MockWebClient
     recorder: Mock
 
 
@@ -58,7 +63,7 @@ def _get_mock_recording_client(client_class, test_recorder):
 @pytest.fixture
 def mock_client():
     test_recorder = Mock()
-    yield _get_mock_recording_client(WebClient, test_recorder)
+    yield _get_mock_recording_client(MockWebClient, test_recorder)
     cleanup_mock_web_api_server(test_recorder)
 
 

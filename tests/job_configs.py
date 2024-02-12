@@ -56,7 +56,22 @@ raw_config = {
             "python_job_no_output": {
                 "run_args_template": "python jobs.py hello_world_no_output",
                 "report_stdout": True,
-            }
+            },
+            "python_job_long_code_output": {
+                "run_args_template": "python jobs.py long_code_output",
+                "report_format": "code",
+                "report_stdout": True,
+            },
+            "good_job_with_code": {
+                "run_args_template": "cat poem",
+                "report_stdout": True,
+                "report_format": "code"
+            },
+            "good_job_with_file": {
+                "run_args_template": "cat poem",
+                "report_stdout": True,
+                "report_format": "file"
+            },
         },
         "slack": [
             {
