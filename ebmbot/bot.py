@@ -235,7 +235,6 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
             logger.info("Received tech-support message", message=message["text"])
             # If out of office, respond with an ooo message, but still repost to tech-support channel
             out_of_office_until = tech_support_out_of_office()
-
             if out_of_office_until:
                 logger.info("Tech support OOO", until=out_of_office_until)
                 say(
@@ -463,7 +462,7 @@ def handle_schedule_job(message, say, slack_config, is_im=False):
         slack_config["job_type"],
         deformatted_args,
         channel=message["channel"],
-        thread_ts=message["ts"],
+        thread_ts=message.get("thread_ts"),
         delay_seconds=slack_config["delay_seconds"],
         is_im=is_im,
     )
