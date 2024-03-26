@@ -387,7 +387,25 @@ raw_config = {
                 "job_type": "all",
             },
         ],
-    }
+    },
+    "dependabot": {
+        "description": "The Team REX Dependabot rota",
+        "jobs": {
+            "rota_report": {
+                "run_args_template": "python jobs.py",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "rota report",
+                "help": "Report who's next on Dependabot PR checking duty",
+                "action": "schedule_job",
+                "job_type": "rota_report",
+            },
+        ],
+    },
 }
 # fmt: on
 
