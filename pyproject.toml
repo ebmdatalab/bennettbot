@@ -48,6 +48,7 @@ env = [
     "LOGS_DIR=tests/logs",
     "HOST_LOGS_DIR=tests/logs",
     "SLACK_LOGS_CHANNEL=logs",
+    "SLACK_BENNETT_ADMINS_CHANNEL=bennettadmins",
     "SLACK_TECH_SUPPORT_CHANNEL=techsupport",
     "SLACK_SIGNING_SECRET=secret",
     "SLACK_BOT_TOKEN=xoxb-token",

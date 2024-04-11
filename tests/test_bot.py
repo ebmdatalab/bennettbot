@@ -37,10 +37,10 @@ def register_handler(mock_app):
 
 def test_joined_channels(mock_app):
     recorder = mock_app.recorder
-    # conversations.members called for each channel (3) (to check if bot is already a
-    # member) and conversations.join 2 times to join the channels it's not already in
-    assert recorder.mock_received_requests["/conversations.members"] == 3
-    assert recorder.mock_received_requests["/conversations.join"] == 2
+    # conversations.members called for each channel (4) (to check if bot is already a
+    # member) and conversations.join 3 times to join the channels it's not already in
+    assert recorder.mock_received_requests["/conversations.members"] == 4
+    assert recorder.mock_received_requests["/conversations.join"] == 3
 
 
 def test_schedule_job(mock_app):
@@ -317,6 +317,7 @@ def _tech_support_test_params():
         ("This message should match the `tech-support` listener", "C0002", {}, "C0001"),
         ("tech-support - this message should match", "C0002", {}, "C0001"),
         ("This message should match - tech-support", "C0002", {}, "C0001"),
+        ("This message should match the bennett-admins listener", "C0002", {}, "C0000"),
     ]
 
 

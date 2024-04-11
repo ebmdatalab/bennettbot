@@ -131,6 +131,7 @@ See also comments in `ebmbot/settings.py`.
 
 The following slack environment variables need to be set:
 - `SLACK_LOGS_CHANNEL`: channel where scheduled job notifications will be posted
+- `SLACK_BENNETT_ADMINS_CHANNEL`: channel where bennett-admins requests will be reposted
 - `SLACK_TECH_SUPPORT_CHANNEL`: channel where tech-support requests will be reposted
 - `SLACK_APP_TOKEN`: app-level token generated above (starts `xapp-`); found on the app's Basic Information page
 - `SLACK_BOT_TOKEN`: bot token generated above (starts `xoxb-`); found on the app's Oauth and Permissions page

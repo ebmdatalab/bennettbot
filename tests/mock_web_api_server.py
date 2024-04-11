@@ -155,6 +155,7 @@ class MockHandler(SimpleHTTPRequestHandler):
             {
                 "ok": True,
                 "channels": [
+                    {"name": "bennettadmins", "id": "C0000", "is_archived": False},
                     {"name": "techsupport", "id": "C0001", "is_archived": False},
                     {"name": "channel", "id": "C0002", "is_archived": False},
                     {"name": "channel1", "id": "C0003", "is_archived": False},
