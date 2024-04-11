@@ -279,55 +279,55 @@ def test_pluralise():
 def _tech_support_test_params():
     return [
         # We only match the hyphenated keywords "tech-support"
-        ("This message should not match the tech support listener", "C0002", {}, False),
+        ("This message should not match the tech support listener", "C0002", {}, None),
         # We match only distinct words
         (
             "This message should not match the test-tech-support listener",
             "C0002",
             {},
-            False,
+            None,
         ),
         (
             "This message should not match the tech-support-test listener",
             "C0002",
             {},
-            False,
+            None,
         ),
         # We ignore mentions embeded in URLs
         (
             "This message should not match the /test/tech-support listener",
             "C0002",
             {},
-            False,
+            None,
         ),
         # a message posted in the techsupport channel (C0001) does not repost
-        ("This message should not match the tech-support listener", "C0001", {}, False),
+        ("This message should not match the tech-support listener", "C0001", {}, None),
         # a message posted by a bot with the right keywords and channel does not repost
         (
             "This message should not match the tech-support listener",
             "C0002",
             {"bot_id": "B1"},
-            False,
+            None,
         ),
-        ("This message should match the tech-support listener", "C0003", {}, True),
-        ("This message should match the Tech-support listener", "C0002", {}, True),
-        ("This message should match the tech-SUPPORT listener", "C0002", {}, True),
-        ("This message should match the @tech-support listener", "C0002", {}, True),
-        ("This message should match the #tech-support listener", "C0002", {}, True),
-        ("This message should match the `tech-support` listener", "C0002", {}, True),
-        ("tech-support - this message should match", "C0002", {}, True),
-        ("This message should match - tech-support", "C0002", {}, True),
+        ("This message should match the tech-support listener", "C0003", {}, "C0001"),
+        ("This message should match the Tech-support listener", "C0002", {}, "C0001"),
+        ("This message should match the tech-SUPPORT listener", "C0002", {}, "C0001"),
+        ("This message should match the @tech-support listener", "C0002", {}, "C0001"),
+        ("This message should match the #tech-support listener", "C0002", {}, "C0001"),
+        ("This message should match the `tech-support` listener", "C0002", {}, "C0001"),
+        ("tech-support - this message should match", "C0002", {}, "C0001"),
+        ("This message should match - tech-support", "C0002", {}, "C0001"),
     ]
 
 
 @pytest.mark.parametrize(
-    "text,channel,event_kwargs,repost_expected",
+    "text,channel,event_kwargs,repost_channel",
     _tech_support_test_params(),
 )
-def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_expected):
+def test_tech_support_listener(mock_app, text, channel, event_kwargs, repost_channel):
     # test that we get the expected response with an initial tech-support message
-    assert_expected_tech_support_response(
-        mock_app, text, channel, event_kwargs, repost_expected
+    assert_expected_support_response(
+        mock_app, text, channel, event_kwargs, repost_channel
     )
 
 
@@ -340,23 +340,23 @@ def test_tech_support_listener_for_changed_messages(
 ):
     # test that we also get the expected response for a changed message
     event_kwargs.update({"subtype": "message_changed"})
-    assert_expected_tech_support_response(
+    assert_expected_support_response(
         mock_app, text, channel, event_kwargs, repost_expected
     )
 
 
 def test_tech_support_listener_ignores_non_message_changed_subtypes(mock_app):
-    assert_expected_tech_support_response(
+    assert_expected_support_response(
         mock_app,
         text="A tech-support message that would usually match",
         channel="C0002",
         event_kwargs={"subtype": "reminder_add"},
-        repost_expected=False,
+        repost_channel=None,
     )
 
 
-def assert_expected_tech_support_response(
-    mock_app, text, channel, event_kwargs, repost_expected
+def assert_expected_support_response(
+    mock_app, text, channel, event_kwargs, repost_channel
 ):
     # the triggered tech support handler will first fetch the url for the message
     # and then post it to the techsupport channel
@@ -371,25 +371,25 @@ def assert_expected_tech_support_response(
         mock_app,
         text,
         channel=channel,
-        reaction_count=1 if repost_expected else 0,
+        reaction_count=1 if repost_channel else 0,
         event_type="message",
         event_kwargs=event_kwargs,
     )
 
     # After the dispatched message, each path has been called once
     for path in tech_support_call_paths:
-        if repost_expected:
+        if repost_channel:
             assert recorder.mock_received_requests[path] == 1
         else:
             assert path not in recorder.mock_received_requests
 
-    if repost_expected:
+    if repost_channel:
         # check the contents of the request kwargs for the postMessage
-        # posts to the techsupport channel (C0001), with the url retrieved from the
+        # posts to the repost channel, with the url retrieved from the
         # mocked getPermalink call (always "http://test")
         post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
         assert ("text", "http://test") in post_message.items()
-        assert ("channel", "C0001") in post_message.items()
+        assert ("channel", repost_channel) in post_message.items()
 
 
 def test_tech_support_edited_message(mock_app):
