@@ -109,6 +109,13 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     passed in for tests.
     """
 
+    bennett_admins_channel_id = channels[settings.SLACK_BENNETT_ADMINS_CHANNEL]
+    # Match "bennett-admins" as a word (treating hyphens as word characters), except if
+    # it's preceded by a slash to avoid matching it in URLs
+    bennett_admins_regex = re.compile(
+        r".*(^|[^\w\-/])bennett-admins($|[^\w\-]).*", flags=re.I
+    )
+
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
     # Match "tech-support" as a word (treating hyphens as word characters), except if
     # it's preceded by a slash to avoid matching it in URLs
@@ -191,29 +198,48 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         include_apology = text != "help"
         handle_help(event, say, config, include_apology)
 
-    def tech_support_matcher(event):
-        # Only match messages posted outside of the tech support channel itself
-        if event["channel"] == tech_support_channel_id:
-            return False
-        # only match messages that are not posted by a bot, to avoid reposting reminders etc
-        # (the event dict will include the key "bot_id")
-        if "bot_id" in event:
-            return False
-        # Of the available message subtypes, only match "message_changed"; we don't
-        # want to match e.g. "reminder_add" messages that include the word "tech-support"
-        subtype = event.get("subtype")
-        if subtype and subtype != "message_changed":
-            return False
+    def build_matcher(regex, channel_id):
+        """Builds matcher to match messages matching given regex but not posted in given channel."""
 
-        # match the tech-support keyword
-        text = event.get("message", event)["text"]
-        return tech_support_regex.match(text) is not None
+        def matcher(event):
+            # Only match messages posted outside of the channel itself
+            if event["channel"] == channel_id:
+                return False
+            # only match messages that are not posted by a bot, to avoid reposting reminders etc
+            # (the event dict will include the key "bot_id")
+            if "bot_id" in event:
+                return False
+            # Of the available message subtypes, only match "message_changed"; we don't
+            # want to match e.g. "reminder_add" messages that include the word "tech-support"
+            subtype = event.get("subtype")
+            if subtype and subtype != "message_changed":
+                return False
+
+            # match the keyword
+            text = event.get("message", event)["text"]
+            return regex.match(text) is not None
+
+        return matcher
 
     @app.event(
         {"type": "message"},
-        matchers=[tech_support_matcher],
+        matchers=[build_matcher(bennett_admins_regex, bennett_admins_channel_id)],
+    )
+    def repost_to_bennett_admins(event, say, ack):
+        repost_support_request_to_channel(
+            event, say, ack, "bennett-admins", bennett_admins_channel_id
+        )
+
+    @app.event(
+        {"type": "message"},
+        matchers=[build_matcher(tech_support_regex, tech_support_channel_id)],
     )
     def repost_to_tech_support(event, say, ack):
+        repost_support_request_to_channel(
+            event, say, ack, "tech-support", tech_support_channel_id
+        )
+
+    def repost_support_request_to_channel(event, say, ack, keyword, channel_id):
         # Our matcher filters only allows messages with no subtype (i.e. just
         # straightforward posts) or message_changed subtype
         # For edited messages (message_changed), the text is found in the event's
@@ -222,34 +248,35 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         channel = event["channel"]
         # Don't repost messages in DMs with the bot
         # We don't use the matcher for this, because we want to tell users to
-        # call tech-support from a non-dm channel
+        # call for support from a non-dm channel
         if event["channel_type"] in ["channel", "group"]:
             # Respond with SOS reaction
             # If we've already responded, the attempt to react here will raise
             # an exception; if this happens, then the user is editing something
-            # other than the tech-support keyword in the message, and we don't need to
-            # repost it again. We let the default error handler will deal with it.
+            # other than the keyword in the message, and we don't need to repost
+            # it again. We let the default error handler will deal with it.
             app.client.reactions_add(
                 channel=channel, timestamp=message["ts"], name="sos"
             )
-            logger.info("Received tech-support message", message=message["text"])
-            # If out of office, respond with an ooo message, but still repost to tech-support channel
-            out_of_office_until = tech_support_out_of_office()
-            if out_of_office_until:
-                logger.info("Tech support OOO", until=out_of_office_until)
-                say(
-                    f"tech-support is currently out of office and will respond after {out_of_office_until}",
-                    channel=channel,
-                    thread_ts=message["ts"],
-                )
+            logger.info(f"Received {keyword} message", message=message["text"])
+            if keyword == "tech-support":
+                # If out of office, respond with an ooo message, but still repost to channel
+                out_of_office_until = tech_support_out_of_office()
+                if out_of_office_until:
+                    logger.info("Tech support OOO", until=out_of_office_until)
+                    say(
+                        f"tech-support is currently out of office and will respond after {out_of_office_until}",
+                        channel=channel,
+                        thread_ts=message["ts"],
+                    )
 
             message_url = app.client.chat_getPermalink(
                 channel=channel, message_ts=message["ts"]
             )["permalink"]
-            say(message_url, channel=tech_support_channel_id)
+            say(message_url, channel=channel_id)
         else:
             say(
-                "Sorry, I can't call tech-support from this conversation.",
+                f"Sorry, I can't call {keyword} from this conversation.",
                 channel=channel,
             )
 
