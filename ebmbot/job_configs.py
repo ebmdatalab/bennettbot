@@ -104,7 +104,7 @@ raw_config = {
                 "report_stdout": True,
             },
             "ncso_send_alerts": {
-                "run_args_template": "fab --hide=running,stdout,status call_management_command:send_ncso_concessions_alerts,production",
+                "run_args_template": "fab --hide=running,stdout,status call_management_command:send_ncso_concessions_alerts,production,--quiet",
                 "report_stdout": True,
             },
             "import_measure_definition": {
