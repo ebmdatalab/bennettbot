@@ -421,9 +421,9 @@ slack-sdk==3.26.2 \
     --hash=sha256:a10e8ee69ca17d274989d0c2bbecb875f19898da3052d8d57de0898a00b1ab52 \
     --hash=sha256:bcdac5e688fa50e9357ecd00b803b6a8bad766aa614d35d8dc0636f40adc48bf
     # via slack-bolt
-structlog==24.1.0 \
-    --hash=sha256:3f6efe7d25fab6e86f277713c218044669906537bb717c1807a09d46bca0714d \
-    --hash=sha256:41a09886e4d55df25bdcb9b5c9674bccfab723ff43e0a86a1b7b236be8e57b16
+structlog==24.2.0 \
+    --hash=sha256:0e3fe74924a6d8857d3f612739efb94c72a7417d7c7c008d12276bca3b5bf13b \
+    --hash=sha256:983bd49f70725c5e1e3867096c0c09665918936b3db27341b41d294283d7a48a
     # via -r requirements.prod.in
 uritemplate==4.1.1 \
     --hash=sha256:4346edfc5c3b79f694bccd6d6099a322bbeb628dbf2cd86eea55a456ce5124f0 \
