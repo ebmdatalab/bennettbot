@@ -110,10 +110,11 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     """
 
     bennett_admins_channel_id = channels[settings.SLACK_BENNETT_ADMINS_CHANNEL]
-    # Match "bennett-admins" as a word (treating hyphens as word characters), except if
-    # it's preceded by a slash to avoid matching it in URLs
+    # Match "bennett-admins" or "bennet-admins" as a word (treating hyphens as
+    # word characters), except if it's preceded by a slash to avoid matching it
+    # in URLs
     bennett_admins_regex = re.compile(
-        r".*(^|[^\w\-/])bennett-admins($|[^\w\-]).*", flags=re.I
+        r".*(^|[^\w\-/])bennett?-admins($|[^\w\-]).*", flags=re.I
     )
 
     tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
