@@ -81,7 +81,7 @@ def out_of_office_status():
 
 def report_rota():
     rows = get_rota_data_from_sheet()
-    rota = {row[0]: (row[1], row[2]) for row in rows[1:]}
+    rota = {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
 
     blocks = [
         {
