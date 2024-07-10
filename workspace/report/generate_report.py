@@ -167,25 +167,24 @@ def get_project_cards(project_id):
 
 
 def get_slack_username(github_username):
-    return {
-        "CarolineMorton": "<@UMMDD4V2P>",
-        "Jongmassey": "<@U023ZG5H24R>",
-        "StevenMaude": "<@U01TJP3CG76>",
-        "evansd": "<@UAXE5V4RG>",
-        "iaindillingham": "<@U01S6BLGK28>",
-        "inglesp": "<@U4N1YPAP7>",
-        "milanwiedemann": "<@U02GPV8NNU9>",
-        "rebkwok": "<@U01SP5JLBFD>",
-        "robinyjpark": "<@U021UP18T52>",
-        "LisaHopcroft": "<@U029ER915GX>",
-        "lucyb": "<@U035FT48KEK>",
-        "CLStables": "<@U036A6LTR7D>",
-        "tomodwyer": "<@U01UQ0T2M7V>",
-        "bloodearnest": "<@U01AMBZUT47>",
-        "ghickman": "ghickman",  # George doesn't want to receive Slack notifications
-        "madwort": "<@U019R5FJ7G8>",
-        "benbc": "<@U01SPCP06Q1>",
-    }.get(github_username) or f"<@{github_username}>"
+    # Find a user's username by right clicking on their name in the Slack app and clicking "Copy link"
+    user_id = {
+        "CLStables": "U036A6LTR7D",
+        "Jongmassey": "U023ZG5H24R",
+        "Providence-o": "U07AGDM6ZJN",
+        "StevenMaude": "U01TJP3CG76",
+        "benbc": "U01SPCP06Q1",
+        "bloodearnest": "U01AMBZUT47",
+        "evansd": "UAXE5V4RG",
+        "iaindillingham": "U01S6BLGK28",
+        "inglesp": "U4N1YPAP7",
+        "lucyb": "U035FT48KEK",
+        "madwort": "U019R5FJ7G8",
+        "milanwiedemann": "U02GPV8NNU9",
+        "rebkwok": "U01SP5JLBFD",
+        "tomodwyer": "U01UQ0T2M7V",
+    }.get(github_username) or github_username
+    return f"<@{user_id}>"
 
 
 def get_status_and_summary(card):  # pragma: no cover
