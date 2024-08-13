@@ -18,17 +18,17 @@ build env="dev":
     export GITREF=$(git rev-parse --short HEAD)
 
     # build the thing
-    docker-compose build --pull {{ env }}
+    docker compose build --pull {{ env }}
 
 
 # run python checks
 check: build
-    docker-compose run --rm dev /app/docker/entrypoints/check.sh
+    docker compose run --rm dev /app/docker/entrypoints/check.sh
 
 
 # run tests in docker container
 test *args="": build
-    docker-compose run --rm test python -m pytest \
+    docker compose run --rm test python -m pytest \
     --cov=. \
     --cov-config /app/.coveragerc \
     --cov-report html \
@@ -37,35 +37,35 @@ test *args="": build
 
 # run command in dev container
 run-cmd *args="bash": build
-    docker-compose --env-file ../.env run dev {{ args }}
+    docker compose --env-file ../.env run dev {{ args }}
 
 
 # run all services
 run-all: build
-    docker-compose --env-file ../.env up --detach dev_bot
-    docker-compose --env-file ../.env up --detach dev_dispatcher
-    docker-compose --env-file ../.env up --detach dev_webserver
+    docker compose --env-file ../.env up --detach dev_bot
+    docker compose --env-file ../.env up --detach dev_dispatcher
+    docker compose --env-file ../.env up --detach dev_webserver
 
 # restart all services
 restart:
-    docker-compose restart dev_bot
-    docker-compose restart dev_dispatcher
-    docker-compose restart dev_webserver
+    docker compose restart dev_bot
+    docker compose restart dev_dispatcher
+    docker compose restart dev_webserver
 
 # stop all dev containers
 stop-all:
-    docker-compose stop dev_bot
-    docker-compose stop dev_dispatcher
-    docker-compose stop dev_webserver
+    docker compose stop dev_bot
+    docker compose stop dev_dispatcher
+    docker compose stop dev_webserver
 
 
 # stop all dev containers
 rm-all: stop-all
-    docker-compose rm dev_bot
-    docker-compose rm dev_dispatcher
-    docker-compose rm dev_webserver
+    docker compose rm dev_bot
+    docker compose rm dev_dispatcher
+    docker compose rm dev_webserver
 
 
 # exec command in existing dev container
 exec *args="bash":
-    docker-compose exec dev {{ args }}
+    docker compose exec dev {{ args }}

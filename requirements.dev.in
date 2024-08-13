@@ -11,6 +11,6 @@ pre-commit
 pytest
 pytest-cov
 pytest-env
-pytest-freezegun
+pytest-freezer
 # this is a black dependency but we include it here so that it's pinned in requirements.dev.txt
 typing-extensions
