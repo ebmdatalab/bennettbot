@@ -1,43 +1,28 @@
-[tool.black]
-exclude = '''
-(
-  /(
-      \.git         # exclude a few common directories
-    | \.direnv
-    | \.github
-    | \.pytest_cache
-    | \.venv
-    | htmlcov
-    | venv
-  )/
-)
-'''
-
-[tool.ruff]
-line-length = 88
-exclude = [
-  ".direnv",
-  ".venv/",
-  "venv/",
-  "fabfile.py",
-]
-extend-select = [
-  "A", # flake8-builtins
-  "I",  # isort
-  "INP",  # flake8-no-pep420
-  "ISC",  # flake8-implicit-str-concat
-  "UP",  # pyupgrade
-  "W",  # pycodestyle warning
-]
-extend-ignore = [
-  "E501"
+[tool.coverage.run]
+branch = true
+dynamic_context = "test_function"
+omit = [
+    ".venv/*",
+    "venv/*",
+    "fabfile.py",
+    "*/__main__.py",
+    "tests/mock_web_api_server.py",
+    "workspace/test/jobs.py",
+    "tests/workspace/test/jobs.py"
 ]
 
-[tool.ruff.isort]
-lines-after-imports = 2
+[tool.coverage.report]
+fail_under = 100
+skip_covered = true
+show_missing = true
+exclude_lines = [
+  "if __name__ == .__main__.:",
+  "assert False",
+  "pragma: no cover"
+]
 
-[tool.ruff.per-file-ignores]
-"gunicorn/conf.py" = ["INP001"]
+[tool.coverage.html]
+show_contexts = true
 
 [tool.pytest.ini_options]
 env = [
@@ -63,3 +48,39 @@ env = [
 filterwarnings = [
     "ignore:distutils Version classes are deprecated:DeprecationWarning:pytest_freezegun",
 ]
+
+[tool.ruff]
+line-length = 88
+exclude = [
+  ".direnv",
+  ".git",
+  ".github",
+  ".ipynb_checkpoints",
+  ".pytest_cache",
+  ".venv",
+  "__pycache__",
+  "docker",
+  "htmlcov",
+  "venv",
+  "fabfile.py",
+]
+
+[tool.ruff.lint]
+extend-select = [
+  "A",  # flake8-builtins
+  "I",  # isort
+  "INP",  # flake8-no-pep420
+  "ISC",  # flake8-implicit-str-concat
+  "UP",  # pyupgrade
+  "W",  # pycodestyle warning
+]
+extend-ignore = [
+  "E501",
+  "E731",
+]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+
+[tool.ruff.lint.per-file-ignores]
+"gunicorn/conf.py" = ["INP001"]
