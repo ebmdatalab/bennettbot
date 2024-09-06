@@ -110,19 +110,21 @@ upgrade env package="": virtualenv
 # *ARGS is variadic, 0 or more. This allows us to do `just test -k match`, for example.
 # Run the tests
 test *ARGS: devenv
-    $BIN/python -m pytest --cov=. --cov-config=.coveragerc --cov-report html --cov-report term-missing:skip-covered {{ ARGS }}
+    $BIN/coverage run --module pytest {{ ARGS }}
+    $BIN/coverage report || $BIN/coverage html
 
 
 # check format and linting
 check *args: devenv
-    $BIN/black --check .
-    $BIN/ruff .
+    $BIN/ruff format --diff --quiet .
+    $BIN/ruff check --output-format=full .
 
 
 # fix format and linting
 fix: devenv
-    $BIN/black .
-    $BIN/ruff --fix .
+    $BIN/ruff format .
+    $BIN/ruff check --fix .
+
 
 # Run the dev project
 run SERVICE: devenv
