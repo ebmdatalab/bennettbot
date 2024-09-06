@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-echo Running black
-black --check .
 echo Running ruff
-ruff check .
+ruff check --output-format=full .
+ruff format --diff --quiet .

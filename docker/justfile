@@ -28,11 +28,7 @@ check: build
 
 # run tests in docker container
 test *args="": build
-    docker compose run --rm test python -m pytest \
-    --cov=. \
-    --cov-config /app/.coveragerc \
-    --cov-report html \
-    --cov-report term-missing:skip-covered {{ args }}
+    docker compose run --rm test /app/docker/entrypoints/test.sh {{ args }}
 
 
 # run command in dev container
