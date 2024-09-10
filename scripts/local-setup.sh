@@ -20,7 +20,7 @@ ensure_value SLACK_APP_USERNAME bennett_test_bot "$ENV_FILE"
 ensure_value GCP_CREDENTIALS_PATH "$GCP_CREDENTIALS_PATH" "$ENV_FILE"
 
 # shellcheck disable=SC1091
-. .env
+. $ENV_FILE
 
 # setup secrets
 # this only needs to be done very rarely, and bw client is a faff, so add a check to only do it if needed
