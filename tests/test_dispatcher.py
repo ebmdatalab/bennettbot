@@ -46,10 +46,10 @@ def test_run_once(mock_client):
 
 
 def test_job_success_with_unsafe_shell_args(mock_client):
-    log_dir = build_log_dir("test_paramaterised_job_2")
+    log_dir = build_log_dir("test_parameterised_job_2")
 
     scheduler.schedule_job(
-        "test_paramaterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS, 0
+        "test_parameterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS, 0
     )
     job = scheduler.reserve_job()
     do_job(mock_client.client, job)
@@ -91,9 +91,9 @@ def test_job_success(mock_client):
 
 
 def test_job_success_with_parameterised_args(mock_client):
-    log_dir = build_log_dir("test_paramaterised_job")
+    log_dir = build_log_dir("test_parameterised_job")
 
-    scheduler.schedule_job("test_paramaterised_job", {"path": "poem"}, "channel", TS, 0)
+    scheduler.schedule_job("test_parameterised_job", {"path": "poem"}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     do_job(mock_client.client, job)

@@ -8,10 +8,10 @@ raw_config = {
             "good_job": {
                 "run_args_template": "cat poem",
             },
-            "paramaterised_job": {
+            "parameterised_job": {
                 "run_args_template": "cat {path}",
             },
-            "paramaterised_job_2": {
+            "parameterised_job_2": {
                 "run_args_template": "echo {thing_to_echo}",
             },
             "reported_job": {
