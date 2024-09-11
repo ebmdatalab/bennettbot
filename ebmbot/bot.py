@@ -241,6 +241,8 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         )
 
     def repost_support_request_to_channel(event, say, ack, keyword, channel_id):
+        # acknowledge the messages
+        ack()
         # Our matcher filters only allows messages with no subtype (i.e. just
         # straightforward posts) or message_changed subtype
         # For edited messages (message_changed), the text is found in the event's
