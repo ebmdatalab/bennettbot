@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from multiprocessing import Process
 from pathlib import Path
 
@@ -19,9 +19,11 @@ from .slack import notify_slack
 
 
 def run():  # pragma: no cover
-    """Start the dispatcher running."""
+    """Start the dispatcher and the message checker running."""
     slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
-
+    user_slack_client = WebClient(token=settings.SLACK_BOT_USER_TOKEN)
+    checker = MessageChecker(slack_client, user_slack_client)
+    checker.run_check()
     while True:
         run_once(slack_client, job_configs.config)
         time.sleep(1)
@@ -212,6 +214,84 @@ class JobDispatcher:
         self.stdout_path = self.log_dir / "stdout"
         self.stderr_path = self.log_dir / "stderr"
         self.log_dir.mkdir(parents=True, exist_ok=True)
+
+
+class MessageChecker:
+    def __init__(self, bot_slack_client, user_slack_client):
+        # The MessageChecker needs both a slack client with a bot token
+        # (for fetching channel info, and posting/reacting as the bod)
+        # and a client with a user token for the search messages endpoint
+        # https://api.slack.com/methods/search.messages
+        self.bot_slack_client = bot_slack_client
+        self.user_slack_client = user_slack_client
+
+        self.config = {
+            "tech-support": {
+                "reaction": "sos",
+                "channel_id": get_channel_id(
+                    bot_slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
+                ),
+            },
+            "bennett-admins": {
+                "reaction": "flamingo",
+                "channel_id": get_channel_id(
+                    bot_slack_client, settings.SLACK_BENNETT_ADMINS_CHANNEL
+                ),
+            },
+        }
+
+    def run_check(self):  # pragma: no cover
+        """Start running the check in a new subprocess."""
+        p = Process(target=self.do_check)
+        p.start()
+        return p
+
+    def do_check(self, run_fn=lambda: True, delay=5):  # pragma: no branch
+        # In production, we want this check to run forever. Using a
+        # function means that we can test it on a finite number of loops.
+        while run_fn():
+            today = datetime.today()
+            yesterday = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+            tomorrow = (today + timedelta(days=1)).strftime("%Y-%m-%d")
+            for keyword in self.config:
+                self.check_messages(keyword, tomorrow, yesterday)
+            time.sleep(delay)
+
+    def check_messages(self, keyword, before, after):
+        logger.info("Checking %s messages", keyword)
+        reaction = self.config[keyword]["reaction"]
+        channel_id = self.config[keyword]["channel_id"]
+        messages = self.user_slack_client.search_messages(
+            query=(
+                # Search for messages with the keyword but without the expected reaction
+                f"{KeyboardInterrupt} -has::{reaction}: "
+                # exclude messages in the channel itself
+                f"-in:#{channel_id} "
+                # exclude messages from the bot
+                f"-from:@{settings.SLACK_APP_USERNAME} "
+                # exclude DMs as the auto-responders don't respond to these anyway
+                f"-is:dm "
+                # only include messages from today
+                f"before:{before} after:{after} "
+            )
+        )["messages"]["matches"]
+        for message in messages:
+            if keyword not in message["text"]:
+                # Skip this message as it doesn't itself contain the magic keyword.
+                # It's likely to be a forwarded message or a copy/pasted link.
+                # The re-posted text appears in a search, but we only want to
+                # react to original messages.
+                continue
+            logger.info("Messages", message=message["text"])
+            # add reaction
+            self.bot_slack_client.reactions_add(
+                channel=message["channel"]["id"], timestamp=message["ts"], name=reaction
+            )
+            # repost the message url to relevant channel
+            message_url = self.bot_slack_client.chat_getPermalink(
+                channel=message["channel"]["id"], message_ts=message["ts"]
+            )["permalink"]
+            notify_slack(self.bot_slack_client, channel_id, message_url)
 
 
 if __name__ == "__main__":

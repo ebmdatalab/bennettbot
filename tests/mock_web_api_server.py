@@ -174,6 +174,9 @@ class MockHandler(SimpleHTTPRequestHandler):
             {"ok": True, "channel": "C0002", "ts": 1234.0}
         ).encode("utf-8"),
         "/reactions.add": json.dumps({"ok": True}).encode("utf-8"),
+        "/search.messages": json.dumps(
+            {"ok": True, "messages": {"matches": []}}
+        ).encode("utf-8"),
     }
 
     def _handle(self):
