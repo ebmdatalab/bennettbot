@@ -8,6 +8,9 @@ from apiclient import discovery
 from google.oauth2 import service_account
 
 
+tech_support_rota_spreadsheet_id = "1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8"
+
+
 def config_file():
     return Path(environ["WRITEABLE_DIR"]) / "techsupport_ooo.json"
 
@@ -18,6 +21,41 @@ def today():
 
 def convert_date(date_string):
     return date.fromisoformat(date_string)
+
+
+def format_week(monday: date):
+    friday = monday + timedelta(days=4)  # Work week
+    return f"{monday.strftime("%d/%m")}-{friday.strftime("%d/%m")}"
+
+
+def get_rota_block_for_week(rota: dict, monday: date, this_or_next: str):
+    try:
+        primary, secondary = rota[str(monday)]
+        return {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"Primary tech support {this_or_next} week ({format_week(monday)}): {primary} (secondary: {secondary})",
+            },
+        }
+    except KeyError:
+        return {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"No rota data found for {this_or_next} week",
+            },
+        }
+
+
+def get_block_linking_rota_spreadsheet(spreadsheet_id):
+    return {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"<https://docs.google.com/spreadsheets/d/{spreadsheet_id}|Open rota spreadsheet>",
+        },
+    }
 
 
 def get_dates_from_config():
@@ -94,52 +132,13 @@ def report_rota():
     ]
 
     today = date.today()
-    if today.weekday() == 0:  # Monday
-        if str(today) in rota:
-            primary, secondary = rota[str(today)]
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"Primary tech support this week: {primary} (secondary: {secondary})",
-                    },
-                }
-            )
-        else:
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "No rota data found for this week",
-                    },
-                }
-            )
+    this_monday = today - timedelta(days=today.weekday())
+    blocks.append(get_rota_block_for_week(rota, this_monday, this_or_next="this"))
 
-    next_monday = str(today + timedelta(7 - today.weekday()))
-    if next_monday in rota:
-        primary, secondary = rota[str(next_monday)]
-        blocks.append(
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"Primary tech support next week: {primary} (secondary: {secondary})",
-                },
-            }
-        )
-    else:
-        blocks.append(
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "No rota data found for next week",
-                },
-            }
-        )
+    next_monday = today + timedelta(7 - today.weekday())
+    blocks.append(get_rota_block_for_week(rota, next_monday, this_or_next="next"))
 
+    blocks.append(get_block_linking_rota_spreadsheet(tech_support_rota_spreadsheet_id))
     return json.dumps(blocks, indent=2)
 
 
@@ -154,7 +153,7 @@ def get_rota_data_from_sheet():  # pragma: no cover
         service.spreadsheets()
         .values()
         .get(
-            spreadsheetId="1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8",
+            spreadsheetId=tech_support_rota_spreadsheet_id,
             range="Rota",
         )
         .execute()

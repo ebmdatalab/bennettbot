@@ -15,17 +15,24 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
         {"text": {"text": "Tech support rota", "type": "plain_text"}, "type": "header"},
         {
             "text": {
-                "text": "Primary tech support this week: Iain (secondary: Peter, Steve)",
+                "text": "Primary tech support this week (24/07-28/07): Iain (secondary: Peter, Steve)",
                 "type": "mrkdwn",
             },
             "type": "section",
         },
         {
             "text": {
-                "text": "Primary tech support next week: Ben (secondary: Becky)",
+                "text": "Primary tech support next week (31/07-04/08): Ben (secondary: Becky)",
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8|Open rota spreadsheet>",
+            },
         },
     ]
 
@@ -40,10 +47,24 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
         {"text": {"text": "Tech support rota", "type": "plain_text"}, "type": "header"},
         {
             "text": {
-                "text": "Primary tech support next week: Ben (secondary: Becky)",
+                "text": "Primary tech support this week (24/07-28/07): Iain (secondary: Peter, Steve)",
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "text": {
+                "text": "Primary tech support next week (31/07-04/08): Ben (secondary: Becky)",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8|Open rota spreadsheet>",
+            },
         },
     ]
 
@@ -69,5 +90,12 @@ def test_rota_report_with_no_future_dates(get_rota_data_from_sheet, freezer):
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8|Open rota spreadsheet>",
+            },
         },
     ]
