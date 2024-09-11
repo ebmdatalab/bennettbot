@@ -50,6 +50,7 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
 
     # bitwarden item ids
     SLACK_BOT_TOKEN_BW_ID=2c424941-672a-4bde-847c-b1e70093aadb
+    SLACK_BOT_USER_TOKEN_BW_ID=d01a1f9f-3576-4aea-94db-b1e800e5db3a
     SLACK_APP_TOKEN_BW_ID=3738619b-4e7d-4932-84b0-b1e700942908
     SLACK_SIGNING_SECRET_BW_ID=946080f1-c50f-4edf-9773-b1e70095747a
     DATA_TEAM_GITHUB_API_TOKEN_BW_ID=3c8ca5df-2fa1-49ac-afd6-b1e70092fd2a
@@ -60,6 +61,7 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
 
     # add the secrets to the env file
     ensure_value SLACK_BOT_TOKEN "$(bw get password $SLACK_BOT_TOKEN_BW_ID)" "$ENV_FILE"
+    ensure_value SLACK_BOT_USER_TOKEN "$(bw get password $SLACK_BOT_USER_TOKEN_BW_ID)" "$ENV_FILE"
     ensure_value SLACK_APP_TOKEN "$(bw get password $SLACK_APP_TOKEN_BW_ID)" "$ENV_FILE"
     ensure_value SLACK_SIGNING_SECRET "$(bw get password $SLACK_SIGNING_SECRET_BW_ID)" "$ENV_FILE"
     ensure_value DATA_TEAM_GITHUB_API_TOKEN "$(bw get password $DATA_TEAM_GITHUB_API_TOKEN_BW_ID)" "$ENV_FILE"
