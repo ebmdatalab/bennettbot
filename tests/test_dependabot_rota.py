@@ -15,10 +15,17 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
         {"text": {"text": "Dependabot rota", "type": "plain_text"}, "type": "header"},
         {
             "text": {
-                "text": "To review dependabot PRs this week: Lucy",
+                "text": "To review dependabot PRs this week (25 Mar-29 Mar): Lucy",
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU|Open rota spreadsheet>",
+            },
         },
     ]
 
@@ -38,15 +45,36 @@ def test_rota_report_on_monday_with_no_future_dates(get_rota_data_from_sheet, fr
             },
             "type": "section",
         },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU|Open rota spreadsheet>",
+            },
+        },
     ]
 
 
 @patch("workspace.dependabot.jobs.get_rota_data_from_sheet")
 def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
-    freezer.move_to("2023-07-25")
+    freezer.move_to("2024-03-26")
     with open("tests/workspace/dependabot-rota.csv") as f:
         get_rota_data_from_sheet.return_value = list(csv.reader(f))
     blocks = json.loads(report_rota())
     assert blocks == [
         {"text": {"text": "Dependabot rota", "type": "plain_text"}, "type": "header"},
+        {
+            "text": {
+                "text": "To review dependabot PRs this week (25 Mar-29 Mar): Lucy",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU|Open rota spreadsheet>",
+            },
+        },
     ]
