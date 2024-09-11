@@ -19,15 +19,14 @@ ensure_value SLACK_BENNETT_ADMINS_CHANNEL tech-noise "$ENV_FILE"
 ensure_value SLACK_APP_USERNAME bennett_test_bot "$ENV_FILE"
 ensure_value GCP_CREDENTIALS_PATH "$GCP_CREDENTIALS_PATH" "$ENV_FILE"
 
-# shellcheck disable=SC1091
-. $ENV_FILE
+# shellcheck disable=SC1090
+. "$ENV_FILE"
 
 # setup secrets
 # this only needs to be done very rarely, and bw client is a faff, so add a check to only do it if needed
 if test -n "${CI:-}"; then
     echo "Skipping BW setup as it is CI"
 elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
-    tmp=$(mktemp)
     if ! command -v bw > /dev/null; then
         echo "bitwarden cli client bw not found"
         echo "We need it to automatically setup Bennett Bot's SLACK_BOT_TOKEN and other secrets as a one time thing"
@@ -66,6 +65,8 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
     ensure_value DATA_TEAM_GITHUB_API_TOKEN "$(bw get password $DATA_TEAM_GITHUB_API_TOKEN_BW_ID)" "$ENV_FILE"
 
     # create/update the GCP credentials file with the JSON retrieved from bitwarden
+    echo "Writing credentials to $GCP_CREDENTIALS_PATH"
+    # shellcheck disable=SC2005
     echo "$(bw get password $GCP_BW_ID)" > "$GCP_CREDENTIALS_PATH"
 
 else
