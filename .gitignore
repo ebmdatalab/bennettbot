@@ -1,7 +1,14 @@
+# secrets
 environment
-.env
-workspace/techsupport/ooo.json
+.env*
 gcp-credentials.json
+# Fabric files that are fetched by jobs
+workspace/op/fabfile.py
+workspace/fdaaa/fabfile.py
+# Files written by jobs
+*techsupport_ooo.json
+logs
+# startup check file, used as a dokku healthcheck
 .bot_startup_check
 
 # System files
@@ -35,4 +42,3 @@ htmlcov
 venv/
 .venv/
 tmp
-logs
