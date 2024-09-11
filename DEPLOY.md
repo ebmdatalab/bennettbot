@@ -12,7 +12,7 @@ service (bot, dispatcher and webserver) as defined in the `Procfile`.
 ## Creating the Slack app
 (This should only need to be done once).
 
-ebmbot needs a new-stye Slack app and uses
+ebmbot needs a new-style Slack app and uses
 [socket mode](https://slack.dev/bolt-python/concepts#socket-mode) to listen for messages.
 To create one:
 
