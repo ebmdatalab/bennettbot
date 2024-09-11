@@ -4,6 +4,7 @@ dynamic_context = "test_function"
 omit = [
     ".venv/*",
     "venv/*",
+    "scripts/*",
     "fabfile.py",
     "*/__main__.py",
     "tests/mock_web_api_server.py",

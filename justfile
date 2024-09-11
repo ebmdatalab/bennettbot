@@ -118,7 +118,7 @@ test *ARGS: devenv
 check *args: devenv
     $BIN/ruff format --diff --quiet .
     $BIN/ruff check --output-format=full .
-
+    shellcheck scripts/*
 
 # fix format and linting
 fix: devenv

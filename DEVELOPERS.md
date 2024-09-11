@@ -4,46 +4,88 @@
 
 ### just
 
+Follow installation instructions from the [Just Programmer's Manual](Follow [installation instructions](https://just.systems/man/en/chapter_4.html) for your OS.
+
+#### Add completion for your shell. E.g. for bash:
+```
+source <(just --completions bash)
+```
+
+#### Show all available commands
+```
+just #  shortcut for just --list
+```
+
+### shellcheck
 ```sh
 # macOS
-brew install just
+brew install shellcheck
 
 # Linux
-# Install from https://github.com/casey/just/releases
-
-# Add completion for your shell. E.g. for bash:
-source <(just --completions bash)
-
-# Show all available commands
-just #  shortcut for just --list
+apt install shellcheck
 ```
 
 
 ## Local development environment
 
+Set up your local .env file by running
 
-Set up a local development environment with:
 ```
-just devenv
+./scripts/local-setup-sh
 ```
 
-This will create a virtual environment, install requurements and create a
-`.env` file by copying `dotenv-sample`; update it as necessary with valid dev
-values for environment variables.
+This will create a `.env` file by copying `dotenv-sample`, and will use the
+Bitwarden CLI to retrieve relevant dev secrets and update environment variables and credentials.
 
 
-### Set up a test slack workspace and app
+### bitwarden CLI
 
-Create a [new slack workspace](https://slack.com/intl/en-gb/get-started#/createnew) to use for testing.
-
-Follow the steps to [create a slack app with the required scopes](DEPLOY.md#creating-the-slack-app)
-and install it into your test workspace.
+If you don't have the Bitwarden CLI already installed, the `local-setup.sh`
+will prompt you to [install it](https://bitwarden.com/help/cli/#download-and-install).
 
 
-### Set up environment
+### Join the test slack workspace
 
-Edit `.env` with the slack app tokens etc for the test slack app.
+Join the test Slack workspace at [bennetttest.slack.com](https://bennetttest.slack.com).
 
+The test slack bot's is already installed to this workspace.  Its username is
+`bennett_test_bot` and, when you are running the bot locally, you can
+interact with it by using `@Bennett Test Bot`.
+
+Alternatively, you can [create your own new slack workspace](https://slack.com/get-started#/createnew) to use for testing, and follow the instructions in the [deployment docs](DEPLOY.md) to create a new test slack app, generate tokens
+and install it to the workspace. You will need to update your `.env` file with
+the relevant environment variables.
+
+## Run locally
+
+### Run checks
+
+Run linter, formatter and shellcheck:
+```
+just check
+```
+
+Fix issues:
+```
+just fix
+```
+
+### Tests
+Run the tests with:
+```
+just test <args>
+```
+
+### Run individual services:
+```
+just run <service>
+```
+
+To run the slack bot and use it to run jobs, run both the bot and dispatcher:
+```
+just run bot
+just run dispatcher
+```
 
 ## Run in docker
 
@@ -95,37 +137,4 @@ Stop running services and remove containers:
 
 ```
 just docker/rm-all
-```
-
-
-
-## Run locally
-
-### Run checks
-
-Run linter and formatter:
-```
-just check
-```
-
-Fix issues:
-```
-just fix
-```
-
-### Tests
-Run the tests with:
-```
-just test <args>
-```
-
-### Run individual services:
-```
-just run <service>
-```
-
-To run the slack bot and test jobs, run both the bot and dispatcher:
-```
-just run bot
-just run dispatcher
 ```
