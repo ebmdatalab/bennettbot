@@ -34,28 +34,35 @@ def run_once(slack_client, config):
     We collect and return started processes so that we can wait for them to
     finish in tests before asserting the tests have done anything.
     """
-
+    tech_support_channel = get_channel_id(
+        slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
+    )
     scheduler.remove_expired_suppressions()
 
     processes = []
-
     while True:
         job_id = scheduler.reserve_job()
         if job_id is None:
             break
-        job_dispatcher = JobDispatcher(slack_client, job_id, config)
+        job_dispatcher = JobDispatcher(
+            slack_client, job_id, config, tech_support_channel
+        )
         processes.append(job_dispatcher.start_job())
 
     return processes
 
 
+def get_channel_id(slack_client, channel_name):
+    return get_channels(slack_client)[channel_name]
+
+
 class JobDispatcher:
-    def __init__(self, slack_client, job_id, config):
+    def __init__(self, slack_client, job_id, config, tech_support_channel=None):
         logger.info("starting job", job_id=job_id)
         self.slack_client = slack_client
-        self.tech_support_channel = get_channels(self.slack_client)[
-            settings.SLACK_TECH_SUPPORT_CHANNEL
-        ]
+        self.tech_support_channel = tech_support_channel or get_channel_id(
+            self.slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
+        )
         self.job = scheduler.get_job(job_id)
         self.job_config = config["jobs"][self.job["type"]]
 
