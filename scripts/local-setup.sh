@@ -1,6 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
+
+FORCE_UPDATE='false'
+while getopts ':f' 'OPTKEY'; do
+    case ${OPTKEY} in
+        'f')
+            FORCE_UPDATE='true'
+            ;;
+        *)
+            echo "Unknown option -- ${OPTARG}"
+            ;;
+    esac
+done
+
 BASE_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && cd .. &> /dev/null && pwd )
 ENV_FILE="$BASE_DIR/.env"
 GCP_CREDENTIALS_PATH="$BASE_DIR/gcp-credentials.json"
@@ -26,7 +39,7 @@ ensure_value GCP_CREDENTIALS_PATH "$GCP_CREDENTIALS_PATH" "$ENV_FILE"
 # this only needs to be done very rarely, and bw client is a faff, so add a check to only do it if needed
 if test -n "${CI:-}"; then
     echo "Skipping BW setup as it is CI"
-elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
+elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN" -o "$FORCE_UPDATE" = "true" ; then
     if ! command -v bw > /dev/null; then
         echo "bitwarden cli client bw not found"
         echo "We need it to automatically setup Bennett Bot's SLACK_BOT_TOKEN and other secrets as a one time thing"
@@ -72,5 +85,6 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
     echo "$(bw get password $GCP_BW_ID)" > "$GCP_CREDENTIALS_PATH"
 
 else
-    echo "Skipping bitwarden secrets setup as it is already done"
+    echo "Skipping bitwarden secrets setup as it is already done. " \
+         "To force an update, run this script again with the -f option."
 fi

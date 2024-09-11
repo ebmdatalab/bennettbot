@@ -37,6 +37,12 @@ Set up your local .env file by running
 This will create a `.env` file by copying `dotenv-sample`, and will use the
 Bitwarden CLI to retrieve relevant dev secrets and update environment variables and credentials.
 
+By default, re-running the script will skip updating secrets from Bitwarden
+if they are already populated. To force them to update again:
+
+```
+./scripts/local-setup-sh -f
+```
 
 ### bitwarden CLI
 
