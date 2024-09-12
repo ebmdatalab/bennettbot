@@ -258,7 +258,7 @@ class MessageChecker:
             time.sleep(delay)
 
     def check_messages(self, keyword, before, after):
-        logger.info("Checking %s messages", keyword)
+        logger.debug("Checking %s messages", keyword)
         reaction = self.config[keyword]["reaction"]
         channel_id = self.config[keyword]["channel_id"]
         messages = self.user_slack_client.search_messages(
@@ -282,7 +282,9 @@ class MessageChecker:
                 # The re-posted text appears in a search, but we only want to
                 # react to original messages.
                 continue
-            logger.info("Messages", message=message["text"])
+            logger.info(
+                "Found unreacted message", keyword=keyword, message=message["text"]
+            )
             # add reaction
             self.bot_slack_client.reactions_add(
                 channel=message["channel"]["id"], timestamp=message["ts"], name=reaction
