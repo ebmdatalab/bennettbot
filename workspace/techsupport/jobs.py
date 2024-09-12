@@ -25,7 +25,7 @@ def convert_date(date_string):
 
 def format_week(monday: date):
     friday = monday + timedelta(days=4)  # Work week
-    return f"{monday.strftime("%d/%m")}-{friday.strftime("%d/%m")}"
+    return f"{monday.strftime("%d %b")}-{friday.strftime("%d %b")}"
 
 
 def get_rota_block_for_week(rota: dict, monday: date, this_or_next: str):
@@ -135,7 +135,7 @@ def report_rota():
     this_monday = today - timedelta(days=today.weekday())
     blocks.append(get_rota_block_for_week(rota, this_monday, this_or_next="this"))
 
-    next_monday = today + timedelta(7 - today.weekday())
+    next_monday = this_monday + timedelta(days=7)
     blocks.append(get_rota_block_for_week(rota, next_monday, this_or_next="next"))
 
     blocks.append(get_block_linking_rota_spreadsheet(tech_support_rota_spreadsheet_id))

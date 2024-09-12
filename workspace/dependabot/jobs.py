@@ -1,9 +1,47 @@
 import json
-from datetime import date
+from datetime import date, timedelta
 from os import environ
 
 from apiclient import discovery
 from google.oauth2 import service_account
+
+
+dependabot_rota_spreadsheet_id = "1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU"
+
+
+def format_week(monday: date):
+    friday = monday + timedelta(days=4)  # Work week
+    return f"{monday.strftime("%d %b")}-{friday.strftime("%d %b")}"
+
+
+def get_rota_block_for_week(rota: dict, monday: date, this_or_next: str):
+    try:
+        checker = rota[str(monday)]
+        return {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"To review dependabot PRs {this_or_next} week ({format_week(monday)}): {checker}",
+            },
+        }
+    except KeyError:
+        return {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"No rota data found for {this_or_next} week",
+            },
+        }
+
+
+def get_block_linking_rota_spreadsheet(spreadsheet_id):
+    return {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"<https://docs.google.com/spreadsheets/d/{spreadsheet_id}|Open rota spreadsheet>",
+        },
+    }
 
 
 def report_rota():
@@ -21,29 +59,13 @@ def report_rota():
     ]
 
     today = date.today()
-    if today.weekday() == 0:  # Monday
-        if str(today) in rota:
-            checker = rota[str(today)]
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"To review dependabot PRs this week: {checker}",
-                    },
-                }
-            )
-        else:
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "No rota data found for this week",
-                    },
-                }
-            )
+    this_monday = today - timedelta(days=today.weekday())
+    blocks.append(get_rota_block_for_week(rota, this_monday, this_or_next="this"))
 
+    next_monday = this_monday + timedelta(days=7)
+    blocks.append(get_rota_block_for_week(rota, next_monday, this_or_next="next"))
+
+    blocks.append(get_block_linking_rota_spreadsheet(dependabot_rota_spreadsheet_id))
     return json.dumps(blocks, indent=2)
 
 
@@ -58,7 +80,7 @@ def get_rota_data_from_sheet():  # pragma: no cover
         service.spreadsheets()
         .values()
         .get(
-            spreadsheetId="1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU",
+            spreadsheetId=dependabot_rota_spreadsheet_id,
             range="Rota",
         )
         .execute()

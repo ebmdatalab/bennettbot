@@ -18,17 +18,24 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
         },
         {
             "text": {
-                "text": "Lead reviewer this week: Louis Fisher (secondary: Colm Andrews)",
+                "text": "Lead reviewer this week (20 Feb-24 Feb): Louis Fisher (secondary: Colm Andrews)",
                 "type": "mrkdwn",
             },
             "type": "section",
         },
         {
             "text": {
-                "text": "Lead reviewer next week: Jon Massey (secondary: Lisa Hopcroft)",
+                "text": "Lead reviewer next week (27 Feb-03 Mar): Jon Massey (secondary: Lisa Hopcroft)",
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1i3D_HtuYUCU_dqvRug94YkfK6pG4ECyxTdOangubUlY|Open rota spreadsheet>",
+            },
         },
     ]
 
@@ -46,10 +53,24 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
         },
         {
             "text": {
-                "text": "Lead reviewer next week: Jon Massey (secondary: Lisa Hopcroft)",
+                "text": "Lead reviewer this week (20 Feb-24 Feb): Louis Fisher (secondary: Colm Andrews)",
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "text": {
+                "text": "Lead reviewer next week (27 Feb-03 Mar): Jon Massey (secondary: Lisa Hopcroft)",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1i3D_HtuYUCU_dqvRug94YkfK6pG4ECyxTdOangubUlY|Open rota spreadsheet>",
+            },
         },
     ]
 
@@ -78,5 +99,12 @@ def test_rota_report_missing_future_dates(get_rota_data_from_sheet, freezer):
                 "type": "mrkdwn",
             },
             "type": "section",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://docs.google.com/spreadsheets/d/1i3D_HtuYUCU_dqvRug94YkfK6pG4ECyxTdOangubUlY|Open rota spreadsheet>",
+            },
         },
     ]
