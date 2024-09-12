@@ -1,14 +1,10 @@
 import json
 from argparse import ArgumentParser
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from os import environ
 from pathlib import Path
 
-from apiclient import discovery
-from google.oauth2 import service_account
-
-
-tech_support_rota_spreadsheet_id = "1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8"
+from ..utils.rota import RotaReporter
 
 
 def config_file():
@@ -21,41 +17,6 @@ def today():
 
 def convert_date(date_string):
     return date.fromisoformat(date_string)
-
-
-def format_week(monday: date):
-    friday = monday + timedelta(days=4)  # Work week
-    return f"{monday.strftime("%d %b")}-{friday.strftime("%d %b")}"
-
-
-def get_rota_block_for_week(rota: dict, monday: date, this_or_next: str):
-    try:
-        primary, secondary = rota[str(monday)]
-        return {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"Primary tech support {this_or_next} week ({format_week(monday)}): {primary} (secondary: {secondary})",
-            },
-        }
-    except KeyError:
-        return {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"No rota data found for {this_or_next} week",
-            },
-        }
-
-
-def get_block_linking_rota_spreadsheet(spreadsheet_id):
-    return {
-        "type": "section",
-        "text": {
-            "type": "mrkdwn",
-            "text": f"<https://docs.google.com/spreadsheets/d/{spreadsheet_id}|Open rota spreadsheet>",
-        },
-    }
 
 
 def get_dates_from_config():
@@ -117,47 +78,29 @@ def out_of_office_status():
         return f"Tech support out of office is currently ON until {end}."
 
 
-def report_rota():
-    rows = get_rota_data_from_sheet()
-    rota = {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
-
-    blocks = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Tech support rota",
-            },
-        },
-    ]
-
-    today = date.today()
-    this_monday = today - timedelta(days=today.weekday())
-    blocks.append(get_rota_block_for_week(rota, this_monday, this_or_next="this"))
-
-    next_monday = this_monday + timedelta(days=7)
-    blocks.append(get_rota_block_for_week(rota, next_monday, this_or_next="next"))
-
-    blocks.append(get_block_linking_rota_spreadsheet(tech_support_rota_spreadsheet_id))
-    return json.dumps(blocks, indent=2)
-
-
-def get_rota_data_from_sheet():  # pragma: no cover
-    credentials = service_account.Credentials.from_service_account_file(
-        environ["GCP_CREDENTIALS_PATH"],
-        scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    )
-    service = discovery.build("sheets", "v4", credentials=credentials)
-
-    return (
-        service.spreadsheets()
-        .values()
-        .get(
-            spreadsheetId=tech_support_rota_spreadsheet_id,
-            range="Rota",
+class TechSupportRotaReporter(RotaReporter):
+    def __init__(self):
+        super().__init__(
+            title="Tech support rota",
+            spreadsheet_id="1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8",
+            sheet_range="Rota",
         )
-        .execute()
-    )["values"]
+
+    @staticmethod
+    def convert_rota_data_to_dictionary(rows) -> dict:
+        rota = {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
+        return rota
+
+    def get_rota_text_for_week(self, rota: dict, monday: date, this_or_next: str):
+        try:
+            primary, secondary = rota[str(monday)]
+            return f"Primary tech support {this_or_next} week ({self.format_week(monday)}): {primary} (secondary: {secondary})"
+        except KeyError:
+            return f"No rota data found for {this_or_next} week"
+
+
+def report_rota():
+    return TechSupportRotaReporter().report()
 
 
 if __name__ == "__main__":
