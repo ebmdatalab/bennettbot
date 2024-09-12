@@ -4,7 +4,7 @@ from datetime import date, datetime
 from os import environ
 from pathlib import Path
 
-from ..utils.rota import RotaReporter
+from workspace.utils.rota import RotaReporter
 
 
 def config_file():
