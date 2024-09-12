@@ -62,6 +62,9 @@ def report_rota():
     this_monday = today - timedelta(days=today.weekday())
     blocks.append(get_rota_block_for_week(rota, this_monday, this_or_next="this"))
 
+    next_monday = this_monday + timedelta(days=7)
+    blocks.append(get_rota_block_for_week(rota, next_monday, this_or_next="next"))
+
     blocks.append(get_block_linking_rota_spreadsheet(dependabot_rota_spreadsheet_id))
     return json.dumps(blocks, indent=2)
 

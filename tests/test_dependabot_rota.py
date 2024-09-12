@@ -21,6 +21,13 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
             "type": "section",
         },
         {
+            "text": {
+                "text": "To review dependabot PRs next week (01 Apr-05 Apr): Jon",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
@@ -46,6 +53,13 @@ def test_rota_report_on_monday_with_no_future_dates(get_rota_data_from_sheet, fr
             "type": "section",
         },
         {
+            "text": {
+                "text": "No rota data found for next week",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
@@ -66,6 +80,13 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
         {
             "text": {
                 "text": "To review dependabot PRs this week (25 Mar-29 Mar): Lucy",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
+            "text": {
+                "text": "To review dependabot PRs next week (01 Apr-05 Apr): Jon",
                 "type": "mrkdwn",
             },
             "type": "section",
