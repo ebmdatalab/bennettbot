@@ -1,6 +1,13 @@
-# See comments in ebmbot/settings.py
+# See comments in ebmbot/settings.py and DEVELPOPERS.md
+# For local dev environments, these variables can be
+# configured by running ./scripts/local-setup.sh
 LOGS_DIR=changeme
 WRITEABLE_DIR=changeme
+GCP_CREDENTIALS_PATH=changeme/gcp-credentials.json
+# Use these settings for running in docker
+# GCP_CREDENTIALS_PATH="/app/writeable_dir/gcp-credentials.json"
+# LOGS_DIR="/app/logs"
+# WRITEABLE_DIR="/app/writeable_dir"
 SLACK_LOGS_CHANNEL=changeme
 SLACK_BENNETT_ADMINS_CHANNEL=changeme
 SLACK_TECH_SUPPORT_CHANNEL=changeme
@@ -12,4 +19,3 @@ GITHUB_WEBHOOK_SECRET=changeme
 EBMBOT_WEBHOOK_SECRET=changeme
 WEBHOOK_ORIGIN=http://changeme:1234
 DATA_TEAM_GITHUB_API_TOKEN=changeme
-GCP_CREDENTIALS_PATH=changeme/gcp-credentials.json
