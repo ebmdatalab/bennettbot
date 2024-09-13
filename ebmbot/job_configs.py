@@ -57,6 +57,29 @@ raw_config = {
             },
         ],
     },
+    "test-remote": {
+        "description": "Some commands to test remote jobs work",
+        # Note: we're making use of the fabfile config here to fetch a file
+        # from a remote repo.
+        # The file it's fetching is just a standard python file, not a fabfile,
+        # but the job will fetch and write it as 'fabfile.py' irrespective of its
+        # original name - so we need to run it with `python fabfile.py`
+        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/ebmbot/main/workspace/test/jobs.py",
+        "jobs": {
+            "hello_world": {
+                "run_args_template": "python fabfile.py",
+                "report_stdout": True,
+            },
+        },
+        "slack": [
+            {
+                "command": "hello",
+                "help": "A test job that runs a script fetched from a remote location",
+                "action": "schedule_job",
+                "job_type": "hello_world",
+            },
+        ]
+    },
     "fdaaa": {
         "restricted": True,
         "description": "Trials Tracker (https://fdaaa.trialstracker.net)",
