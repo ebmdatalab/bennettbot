@@ -104,7 +104,7 @@ class JobDispatcher:
                     cwd=self.cwd,
                     stdout=stdout,
                     stderr=stderr,
-                    env={**os.environ, "PYTHONPATH": self.workspace_dir.parent},
+                    env={**os.environ, "PYTHONPATH": settings.APPLICATION_ROOT},
                     shell=True,
                 )
                 rc = rv.returncode
