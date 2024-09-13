@@ -1,10 +1,8 @@
 import abc
 import json
 from datetime import date, timedelta
-from os import environ
 
-from apiclient import discovery
-from google.oauth2 import service_account
+from workspace.utils.spreadsheets import get_data_from_sheet
 
 
 class RotaReporter(abc.ABC):
@@ -15,20 +13,7 @@ class RotaReporter(abc.ABC):
         pass
 
     def get_rota_data_from_sheet(self):  # pragma: no cover
-        credentials = service_account.Credentials.from_service_account_file(
-            environ["GCP_CREDENTIALS_PATH"],
-            scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
-        )
-        service = discovery.build("sheets", "v4", credentials=credentials)
-        return (
-            service.spreadsheets()
-            .values()
-            .get(
-                spreadsheetId=self.spreadsheet_id,
-                range=self.sheet_range,
-            )
-            .execute()
-        )["values"]
+        return get_data_from_sheet(self.spreadsheet_id, self.sheet_range)
 
     def report(self):
         rota = self.get_rota()
