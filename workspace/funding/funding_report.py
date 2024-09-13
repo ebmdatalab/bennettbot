@@ -1,13 +1,17 @@
 import json
 from datetime import date, datetime
-from os import environ
 
-from apiclient import discovery
-from google.oauth2 import service_account
+from workspace.utils.spreadsheets import get_data_from_sheet
+
+
+funding_spreadsheet_id = "18xM7nu1aD9dZe-eJbqrIRxinO5tjSBZv0EpJRlvz_BI"
 
 
 def main():
-    rows = get_data_from_sheet()
+    rows = get_data_from_sheet(
+        spreadsheet_id=funding_spreadsheet_id,
+        sheet_range="Calls",
+    )
 
     headers = rows[0]
     rows = [dict(zip(headers, row)) for row in rows[1:]]
@@ -130,7 +134,7 @@ def main():
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "Further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/18xM7nu1aD9dZe-eJbqrIRxinO5tjSBZv0EpJRlvz_BI/|funding tracker>.",
+                    "text": f"Further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/{funding_spreadsheet_id}/|funding tracker>.",
                 },
             },
         ]
@@ -145,30 +149,12 @@ def main():
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Report truncated* - further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/18xM7nu1aD9dZe-eJbqrIRxinO5tjSBZv0EpJRlvz_BI/|funding tracker>.",
+                        "text": f"*Report truncated* - further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/{funding_spreadsheet_id}/|funding tracker>.",
                     },
                 },
             ]
         )
     return json.dumps(blocks, indent=2)
-
-
-def get_data_from_sheet():  # pragma: no cover
-    credentials = service_account.Credentials.from_service_account_file(
-        environ["GCP_CREDENTIALS_PATH"],
-        scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    )
-    service = discovery.build("sheets", "v4", credentials=credentials)
-
-    return (
-        service.spreadsheets()
-        .values()
-        .get(
-            spreadsheetId="18xM7nu1aD9dZe-eJbqrIRxinO5tjSBZv0EpJRlvz_BI",
-            range="Calls",
-        )
-        .execute()
-    )["values"]
 
 
 if __name__ == "__main__":
