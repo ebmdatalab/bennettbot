@@ -5,7 +5,7 @@ from unittest.mock import patch
 from workspace.techsupport.jobs import report_rota
 
 
-@patch("workspace.techsupport.jobs.get_rota_data_from_sheet")
+@patch("workspace.techsupport.jobs.TechSupportRotaReporter.get_rota_data_from_sheet")
 def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
     freezer.move_to("2023-07-24")
     with open("tests/workspace/tech-support-rota.csv") as f:
@@ -37,7 +37,7 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
     ]
 
 
-@patch("workspace.techsupport.jobs.get_rota_data_from_sheet")
+@patch("workspace.techsupport.jobs.TechSupportRotaReporter.get_rota_data_from_sheet")
 def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
     freezer.move_to("2023-07-25")
     with open("tests/workspace/tech-support-rota.csv") as f:
@@ -69,7 +69,7 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
     ]
 
 
-@patch("workspace.techsupport.jobs.get_rota_data_from_sheet")
+@patch("workspace.techsupport.jobs.TechSupportRotaReporter.get_rota_data_from_sheet")
 def test_rota_report_with_no_future_dates(get_rota_data_from_sheet, freezer):
     freezer.move_to("2024-01-08")
     with open("tests/workspace/tech-support-rota.csv") as f:

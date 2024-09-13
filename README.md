@@ -158,8 +158,8 @@ Some caveats:
 - Scripts run in a job have access to all environment variables, but they do not have
   access to the app itself, so e.g. can't use `ebmbot.settings`; use the environment
   variables these are based on instead.
-- PYTHONPATH is set to the parent workspace directory, so scripts can access other
-  modules under `workspace`).
+- PYTHONPATH is set to the root directory of the application, so scripts can access other
+  modules.
 - If a script needs to write to the filesystem, it MUST write to a location within
   `WRITEABLE_DIR`, not its namespace directory.
 

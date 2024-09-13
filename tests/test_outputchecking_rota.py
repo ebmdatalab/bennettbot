@@ -5,7 +5,9 @@ from unittest.mock import patch
 from workspace.outputchecking.jobs import report_rota
 
 
-@patch("workspace.outputchecking.jobs.get_rota_data_from_sheet")
+@patch(
+    "workspace.outputchecking.jobs.OutputCheckingRotaReporter.get_rota_data_from_sheet"
+)
 def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
     freezer.move_to("2023-02-20")
     with open("tests/workspace/output-checking-rota.csv") as f:
@@ -40,7 +42,9 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
     ]
 
 
-@patch("workspace.outputchecking.jobs.get_rota_data_from_sheet")
+@patch(
+    "workspace.outputchecking.jobs.OutputCheckingRotaReporter.get_rota_data_from_sheet"
+)
 def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
     freezer.move_to("2023-02-21")
     with open("tests/workspace/output-checking-rota.csv") as f:
@@ -75,7 +79,9 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
     ]
 
 
-@patch("workspace.outputchecking.jobs.get_rota_data_from_sheet")
+@patch(
+    "workspace.outputchecking.jobs.OutputCheckingRotaReporter.get_rota_data_from_sheet"
+)
 def test_rota_report_missing_future_dates(get_rota_data_from_sheet, freezer):
     freezer.move_to("2024-01-08")
     with open("tests/workspace/output-checking-rota.csv") as f:
