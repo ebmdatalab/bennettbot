@@ -4,13 +4,6 @@ from workspace.utils.rota import RotaReporter
 
 
 class OutputCheckingRotaReporter(RotaReporter):
-    def __init__(self):
-        super().__init__(
-            title="Output checking rota",
-            spreadsheet_id="1i3D_HtuYUCU_dqvRug94YkfK6pG4ECyxTdOangubUlY",
-            sheet_range="Rota 2024",
-        )
-
     def convert_rota_data_to_dictionary(self, rows) -> dict:
         return {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
 
@@ -23,7 +16,11 @@ class OutputCheckingRotaReporter(RotaReporter):
 
 
 def report_rota():
-    return OutputCheckingRotaReporter().report()
+    return OutputCheckingRotaReporter(
+        title="Output checking rota",
+        spreadsheet_id="1i3D_HtuYUCU_dqvRug94YkfK6pG4ECyxTdOangubUlY",
+        sheet_range="Rota 2024",
+    ).report()
 
 
 if __name__ == "__main__":

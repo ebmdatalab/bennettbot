@@ -4,13 +4,6 @@ from workspace.utils.rota import RotaReporter
 
 
 class DependabotRotaReporter(RotaReporter):
-    def __init__(self):
-        super().__init__(
-            title="Dependabot rota",
-            spreadsheet_id="1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU",
-            sheet_range="Rota",
-        )
-
     def convert_rota_data_to_dictionary(self, rows) -> dict:
         return {row[0]: row[1] for row in rows[1:]}
 
@@ -23,7 +16,11 @@ class DependabotRotaReporter(RotaReporter):
 
 
 def report_rota():
-    return DependabotRotaReporter().report()
+    return DependabotRotaReporter(
+        title="Dependabot rota",
+        spreadsheet_id="1mxAks8tfVEBTSarKoNREsdztW3bTqvIPgV-83GY6CFU",
+        sheet_range="Rota",
+    ).report()
 
 
 if __name__ == "__main__":

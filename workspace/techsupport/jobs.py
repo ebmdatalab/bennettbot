@@ -79,13 +79,6 @@ def out_of_office_status():
 
 
 class TechSupportRotaReporter(RotaReporter):
-    def __init__(self):
-        super().__init__(
-            title="Tech support rota",
-            spreadsheet_id="1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8",
-            sheet_range="Rota",
-        )
-
     @staticmethod
     def convert_rota_data_to_dictionary(rows) -> dict:
         rota = {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
@@ -100,7 +93,11 @@ class TechSupportRotaReporter(RotaReporter):
 
 
 def report_rota():
-    return TechSupportRotaReporter().report()
+    return TechSupportRotaReporter(
+        title="Tech support rota",
+        spreadsheet_id="1q6EzPQ9iG9Rb-VoYvylObhsJBckXuQdt3Y_pOGysxG8",
+        sheet_range="Rota",
+    ).report()
 
 
 if __name__ == "__main__":
