@@ -1,12 +1,12 @@
 import json
 import os
 import shutil
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from ebmbot import scheduler, settings
-from ebmbot.dispatcher import JobDispatcher, run_once
+from ebmbot.dispatcher import JobDispatcher, MessageChecker, run_once
 
 from .assertions import assert_slack_client_sends_messages
 from .job_configs import config
@@ -478,3 +478,83 @@ def build_log_dir(job_type_with_namespace):
     return os.path.join(
         settings.LOGS_DIR, job_type_with_namespace, T0.strftime("%Y%m%d-%H%M%S")
     )
+
+
+def test_message_checker_config(mock_client):
+    checker = MessageChecker(mock_client.client, mock_client.client)
+    # channel IDs are retrieved from mock_web_api_server
+    assert checker.config == {
+        "tech-support": {"reaction": "sos", "channel_id": "C0001"},
+        "bennett-admins": {"reaction": "flamingo", "channel_id": "C0000"},
+    }
+
+
+def test_message_checker_run(mock_client):
+    checker = MessageChecker(mock_client.client, mock_client.client)
+
+    # Mock the run function so the checker runs twice, not forever
+    run_fn = Mock(side_effect=[True, True, False])
+    checker.do_check(run_fn, delay=0.1)
+
+    # By default the mock client's response to search.messages is empty
+    # conversations.list is called twice on instantiation, to get the
+    # channel IDs for tech-support and bennett-admins
+    # search.messages is called twice for each run of the checker
+    # no reactions or messages reposted.
+    assert mock_client.recorder.mock_received_requests == {
+        "/conversations.list": 2,
+        "/search.messages": 4,
+    }
+
+
+@patch("ebmbot.dispatcher.WebClient.search_messages")
+@pytest.mark.parametrize(
+    "keyword,support_channel,reaction",
+    (["tech-support", "C0001", "sos"], ["bennett-admins", "C0000", "flamingo"]),
+)
+def test_message_checker_tech_support_messages(
+    mock_search, mock_client, keyword, support_channel, reaction
+):
+    # Mock the return of the search_messages call
+    mock_search.return_value = {
+        "ok": True,
+        "messages": {
+            "matches": [
+                {
+                    "text": f"Calling {keyword}",
+                    "channel": {"id": "C4444"},
+                    "ts": "1709460000.0",
+                },
+                {
+                    "text": "This is a forwarded message",
+                    "channel": {"id": "C4444"},
+                    "ts": "1709000000.0",
+                },
+            ],
+        },
+    }
+    checker = MessageChecker(mock_client.client, mock_client.client)
+
+    checker.check_messages(keyword, "2024-03-04", "2024-03-02")
+    # conversations.list is called twice on instantiation, to get the
+    # channel IDs for tech-support and bennett-admins
+    # search.messages is mocked, so it doesn't get recorded on the mock client
+    # Only one matched message required reaction and reposting.
+    assert mock_client.recorder.mock_received_requests == {
+        "/conversations.list": 2,
+        "/chat.getPermalink": 1,
+        "/chat.postMessage": 1,
+        "/reactions.add": 1,
+    }
+    # fetch the permalink for the message with ts matching the message to be reposted
+    mock_client.recorder.mock_received_requests_kwargs["/chat.getPermalink"] == [
+        {"channel": "C4444", "message_ts": "1709460000.0"}
+    ]
+    # reposted to correct channel
+    mock_client.recorder.mock_received_requests_kwargs["/chat.postMessage"] == [
+        {"channel": support_channel, "text": "http://test"}
+    ]
+    # reacted with correct emoji
+    mock_client.recorder.mock_received_requests_kwargs["/reactions.add"] == [
+        {"channel": "C4444", "name": reaction, "timestamp": "1709460000.0"}
+    ]

@@ -1,6 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
+
+FORCE_UPDATE='false'
+while getopts ':f' 'OPTKEY'; do
+    case ${OPTKEY} in
+        'f')
+            FORCE_UPDATE='true'
+            ;;
+        *)
+            echo "Unknown option -- ${OPTARG}"
+            ;;
+    esac
+done
+
 BASE_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && cd .. &> /dev/null && pwd )
 ENV_FILE="$BASE_DIR/.env"
 WRITEABLE_DIR="$BASE_DIR/writeable_dir"
@@ -30,7 +43,7 @@ ensure_value GCP_CREDENTIALS_PATH "$GCP_CREDENTIALS_PATH" "$ENV_FILE"
 # this only needs to be done very rarely, and bw client is a faff, so add a check to only do it if needed
 if test -n "${CI:-}"; then
     echo "Skipping BW setup as it is CI"
-elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
+elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN" -o "$FORCE_UPDATE" = "true" ; then
     if ! command -v bw > /dev/null; then
         echo "bitwarden cli client bw not found"
         echo "We need it to automatically setup Bennett Bot's SLACK_BOT_TOKEN and other secrets as a one time thing"
@@ -54,6 +67,7 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
 
     # bitwarden item ids
     SLACK_BOT_TOKEN_BW_ID=2c424941-672a-4bde-847c-b1e70093aadb
+    SLACK_BOT_USER_TOKEN_BW_ID=d01a1f9f-3576-4aea-94db-b1e800e5db3a
     SLACK_APP_TOKEN_BW_ID=3738619b-4e7d-4932-84b0-b1e700942908
     SLACK_SIGNING_SECRET_BW_ID=946080f1-c50f-4edf-9773-b1e70095747a
     DATA_TEAM_GITHUB_API_TOKEN_BW_ID=3c8ca5df-2fa1-49ac-afd6-b1e70092fd2a
@@ -64,6 +78,7 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
 
     # add the secrets to the env file
     ensure_value SLACK_BOT_TOKEN "$(bw get password $SLACK_BOT_TOKEN_BW_ID)" "$ENV_FILE"
+    ensure_value SLACK_BOT_USER_TOKEN "$(bw get password $SLACK_BOT_USER_TOKEN_BW_ID)" "$ENV_FILE"
     ensure_value SLACK_APP_TOKEN "$(bw get password $SLACK_APP_TOKEN_BW_ID)" "$ENV_FILE"
     ensure_value SLACK_SIGNING_SECRET "$(bw get password $SLACK_SIGNING_SECRET_BW_ID)" "$ENV_FILE"
     ensure_value DATA_TEAM_GITHUB_API_TOKEN "$(bw get password $DATA_TEAM_GITHUB_API_TOKEN_BW_ID)" "$ENV_FILE"
@@ -74,5 +89,6 @@ elif test "$SLACK_BOT_TOKEN" = "changeme" -o -z "$SLACK_BOT_TOKEN"; then
     echo "$(bw get password $GCP_BW_ID)" > "$GCP_CREDENTIALS_PATH"
 
 else
-    echo "Skipping bitwarden secrets setup as it is already done"
+    echo "Skipping bitwarden secrets setup as it is already done. " \
+         "To force an update, run this script again with the -f option."
 fi
