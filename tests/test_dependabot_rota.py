@@ -5,7 +5,7 @@ from unittest.mock import patch
 from workspace.dependabot.jobs import report_rota
 
 
-@patch("workspace.dependabot.jobs.get_rota_data_from_sheet")
+@patch("workspace.dependabot.jobs.DependabotRotaReporter.get_rota_data_from_sheet")
 def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
     freezer.move_to("2024-03-25")
     with open("tests/workspace/dependabot-rota.csv") as f:
@@ -37,7 +37,7 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
     ]
 
 
-@patch("workspace.dependabot.jobs.get_rota_data_from_sheet")
+@patch("workspace.dependabot.jobs.DependabotRotaReporter.get_rota_data_from_sheet")
 def test_rota_report_on_monday_with_no_future_dates(get_rota_data_from_sheet, freezer):
     freezer.move_to("2024-10-07")
     with open("tests/workspace/dependabot-rota.csv") as f:
@@ -69,7 +69,7 @@ def test_rota_report_on_monday_with_no_future_dates(get_rota_data_from_sheet, fr
     ]
 
 
-@patch("workspace.dependabot.jobs.get_rota_data_from_sheet")
+@patch("workspace.dependabot.jobs.DependabotRotaReporter.get_rota_data_from_sheet")
 def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
     freezer.move_to("2024-03-26")
     with open("tests/workspace/dependabot-rota.csv") as f:
