@@ -5,6 +5,7 @@ gcp-credentials.json
 # Fabric files that are fetched by jobs
 workspace/op/fabfile.py
 workspace/fdaaa/fabfile.py
+writeable_dir/
 # Files written by jobs
 *techsupport_ooo.json
 logs

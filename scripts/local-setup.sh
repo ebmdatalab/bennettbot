@@ -3,7 +3,11 @@ set -euo pipefail
 
 BASE_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && cd .. &> /dev/null && pwd )
 ENV_FILE="$BASE_DIR/.env"
-GCP_CREDENTIALS_PATH="$BASE_DIR/gcp-credentials.json"
+WRITEABLE_DIR="$BASE_DIR/writeable_dir"
+GCP_CREDENTIALS_PATH="$WRITEABLE_DIR/gcp-credentials.json"
+
+# ensure writeable_dir exists
+mkdir -p "$WRITEABLE_DIR"
 
 # load ensure_values function
 # shellcheck disable=SC1091
@@ -12,7 +16,7 @@ GCP_CREDENTIALS_PATH="$BASE_DIR/gcp-credentials.json"
 test -f "$ENV_FILE" || cp "$BASE_DIR/dotenv-sample" "$ENV_FILE"
 
 ensure_value LOGS_DIR "$BASE_DIR/logs" "$ENV_FILE"
-ensure_value WRITEABLE_DIR "$BASE_DIR" "$ENV_FILE"
+ensure_value WRITEABLE_DIR "$WRITEABLE_DIR" "$ENV_FILE"
 ensure_value SLACK_LOGS_CHANNEL tech-noise "$ENV_FILE"
 ensure_value SLACK_TECH_SUPPORT_CHANNEL tech-support-channel "$ENV_FILE"
 ensure_value SLACK_BENNETT_ADMINS_CHANNEL tech-noise "$ENV_FILE"
