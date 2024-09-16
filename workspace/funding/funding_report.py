@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime
 
+from workspace.utils.blocks import get_text_block
 from workspace.utils.spreadsheets import get_data_from_sheet
 
 
@@ -77,66 +78,41 @@ def main():
     )
 
     blocks = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": ":moneybag: *Funding update* :moneybag:",
-            },
-        },
+        get_text_block(
+            ":moneybag: *Funding update* :moneybag:",
+            block_type="header",
+            text_type="plain_text",
+        ),
     ]
 
     if calls_recently_added:  # pragma: no branch
         blocks.extend(
             [
                 {"type": "divider"},
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": "*Recently added calls*"},
-                },
+                get_text_block("*Recently added calls*"),
             ]
         )
 
         for call in calls_recently_added:
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": call["line"]},
-                }
-            )
+            blocks.append(get_text_block(call["line"]))
 
     if calls_closing_soon:  # pragma: no branch
         blocks.extend(
             [
                 {"type": "divider"},
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "*Calls closing within 30 days*",
-                    },
-                },
+                get_text_block("*Calls closing within 30 days*"),
             ]
         )
 
         for call in calls_closing_soon:
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": call["line"]},
-                }
-            )
+            blocks.append(get_text_block(call["line"]))
 
     blocks.extend(
         [
             {"type": "divider"},
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"Further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/{funding_spreadsheet_id}/|funding tracker>.",
-                },
-            },
+            get_text_block(
+                f"Further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/{funding_spreadsheet_id}/|funding tracker>."
+            ),
         ]
     )
 
@@ -145,13 +121,9 @@ def main():
         blocks.extend(
             [
                 {"type": "divider"},
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Report truncated* - further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/{funding_spreadsheet_id}/|funding tracker>.",
-                    },
-                },
+                get_text_block(
+                    f"*Report truncated* - further details for all funding opportunities are available on the <https://docs.google.com/spreadsheets/d/{funding_spreadsheet_id}/|funding tracker>."
+                ),
             ]
         )
     return json.dumps(blocks, indent=2)
