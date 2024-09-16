@@ -35,7 +35,7 @@ def test_run_once(mock_client):
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
 
-    processes = run_once(slack_client, config)
+    processes = run_once(slack_client, config, tech_support_channel="None")
 
     for p in processes:
         p.join()
