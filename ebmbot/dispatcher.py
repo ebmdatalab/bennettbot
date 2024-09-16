@@ -24,21 +24,21 @@ def run():  # pragma: no cover
     user_slack_client = WebClient(token=settings.SLACK_BOT_USER_TOKEN)
     checker = MessageChecker(slack_client, user_slack_client)
     checker.run_check()
+    tech_support_channel = get_channel_id(
+        slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
+    )
     while True:
-        run_once(slack_client, job_configs.config)
+        run_once(slack_client, job_configs.config, tech_support_channel)
         time.sleep(1)
 
 
-def run_once(slack_client, config):
+def run_once(slack_client, config, tech_support_channel):
     """Clear any expired suppressions, then start a new subprocess for each
     available job.
 
     We collect and return started processes so that we can wait for them to
     finish in tests before asserting the tests have done anything.
     """
-    tech_support_channel = get_channel_id(
-        slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
-    )
     scheduler.remove_expired_suppressions()
 
     processes = []
@@ -55,6 +55,7 @@ def run_once(slack_client, config):
 
 
 def get_channel_id(slack_client, channel_name):
+    logger.debug(f"Getting channel ID for {channel_name}")
     return get_channels(slack_client)[channel_name]
 
 
