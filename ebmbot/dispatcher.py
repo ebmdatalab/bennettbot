@@ -246,9 +246,13 @@ class MessageChecker:
         p.start()
         return p
 
-    def do_check(self, run_fn=lambda: True, delay=5):  # pragma: no branch
+    def do_check(self, run_fn=lambda: True, delay=10):  # pragma: no branch
         # In production, we want this check to run forever. Using a
         # function means that we can test it on a finite number of loops.
+        # Note that the message search endpoint is a tier2 endpoint and is
+        # rate limited at around 20 calls per min
+        # https://api.slack.com/apis/rate-limits#tier_t2
+        # A 10s delay should be safe for our 2 calls per loop
         while run_fn():
             today = datetime.today()
             yesterday = (today - timedelta(days=1)).strftime("%Y-%m-%d")
