@@ -13,7 +13,6 @@ import requests
 from slack_sdk import WebClient
 
 from . import job_configs, scheduler, settings
-from .bot import get_channels
 from .logger import logger
 from .slack import notify_slack
 
@@ -24,15 +23,12 @@ def run():  # pragma: no cover
     user_slack_client = WebClient(token=settings.SLACK_BOT_USER_TOKEN)
     checker = MessageChecker(slack_client, user_slack_client)
     checker.run_check()
-    tech_support_channel = get_channel_id(
-        slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
-    )
     while True:
-        run_once(slack_client, job_configs.config, tech_support_channel)
+        run_once(slack_client, job_configs.config)
         time.sleep(1)
 
 
-def run_once(slack_client, config, tech_support_channel):
+def run_once(slack_client, config):
     """Clear any expired suppressions, then start a new subprocess for each
     available job.
 
@@ -46,26 +42,16 @@ def run_once(slack_client, config, tech_support_channel):
         job_id = scheduler.reserve_job()
         if job_id is None:
             break
-        job_dispatcher = JobDispatcher(
-            slack_client, job_id, config, tech_support_channel
-        )
+        job_dispatcher = JobDispatcher(slack_client, job_id, config)
         processes.append(job_dispatcher.start_job())
 
     return processes
 
 
-def get_channel_id(slack_client, channel_name):
-    logger.debug(f"Getting channel ID for {channel_name}")
-    return get_channels(slack_client)[channel_name]
-
-
 class JobDispatcher:
-    def __init__(self, slack_client, job_id, config, tech_support_channel=None):
+    def __init__(self, slack_client, job_id, config):
         logger.info("starting job", job_id=job_id)
         self.slack_client = slack_client
-        self.tech_support_channel = tech_support_channel or get_channel_id(
-            self.slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
-        )
         self.job = scheduler.get_job(job_id)
         self.job_config = config["jobs"][self.job["type"]]
 
@@ -179,7 +165,7 @@ class JobDispatcher:
                 channel=slack_message["channel"], message_ts=slack_message["ts"]
             )["permalink"]
             self.slack_client.chat_postMessage(
-                channel=self.tech_support_channel, text=message_url
+                channel=settings.SLACK_TECH_SUPPORT_CHANNEL, text=message_url
             )
 
     def set_up_cwd(self):
@@ -229,15 +215,11 @@ class MessageChecker:
         self.config = {
             "tech-support": {
                 "reaction": "sos",
-                "channel_id": get_channel_id(
-                    bot_slack_client, settings.SLACK_TECH_SUPPORT_CHANNEL
-                ),
+                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
             },
             "bennett-admins": {
                 "reaction": "flamingo",
-                "channel_id": get_channel_id(
-                    bot_slack_client, settings.SLACK_BENNETT_ADMINS_CHANNEL
-                ),
+                "channel": settings.SLACK_BENNETT_ADMINS_CHANNEL,
             },
         }
 
@@ -265,13 +247,13 @@ class MessageChecker:
     def check_messages(self, keyword, before, after):
         logger.debug("Checking %s messages", keyword)
         reaction = self.config[keyword]["reaction"]
-        channel_id = self.config[keyword]["channel_id"]
+        channel = self.config[keyword]["channel"]
         messages = self.user_slack_client.search_messages(
             query=(
                 # Search for messages with the keyword but without the expected reaction
                 f"{KeyboardInterrupt} -has::{reaction}: "
                 # exclude messages in the channel itself
-                f"-in:#{channel_id} "
+                f"-in:#{channel} "
                 # exclude messages from the bot
                 f"-from:@{settings.SLACK_APP_USERNAME} "
                 # exclude DMs as the auto-responders don't respond to these anyway
@@ -298,7 +280,7 @@ class MessageChecker:
             message_url = self.bot_slack_client.chat_getPermalink(
                 channel=message["channel"]["id"], message_ts=message["ts"]
             )["permalink"]
-            notify_slack(self.bot_slack_client, channel_id, message_url)
+            notify_slack(self.bot_slack_client, channel, message_url)
 
 
 if __name__ == "__main__":

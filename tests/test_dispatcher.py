@@ -35,7 +35,7 @@ def test_run_once(mock_client):
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
 
-    processes = run_once(slack_client, config, tech_support_channel="None")
+    processes = run_once(slack_client, config)
 
     for p in processes:
         p.join()
@@ -184,8 +184,8 @@ def test_job_failure(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
-            # failed message url reposted to tech support channel (C0001 in the mock)
-            {"channel": "C0001", "text": "http://test"},
+            # failed message url reposted to tech support channel
+            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
         ],
     )
 
@@ -230,8 +230,8 @@ def test_job_failure_when_command_not_found(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": f"failed.\nFind logs in {log_dir}"},
-            # failed message url reposted to tech support channel (C0001 in the mock)
-            {"channel": "C0001", "text": "http://test"},
+            # failed message url reposted to tech support channel
+            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
         ],
     )
 
@@ -255,8 +255,8 @@ def test_job_failure_with_host_log_dirs_setting(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed.\nFind logs in /host/logs/"},
-            # failed message url reposted to tech support channel (C0001 in the mock)
-            {"channel": "C0001", "text": "http://test"},
+            # failed message url reposted to tech support channel
+            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
         ],
     )
 
@@ -353,8 +353,8 @@ def test_python_job_failure_with_blocks(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
-            # failed message url reposted to tech support channel (C0001 in the mock)
-            {"channel": "C0001", "text": "http://test"},
+            # failed message url reposted to tech support channel
+            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
         ],
     )
 
@@ -378,8 +378,8 @@ def test_python_job_failure(mock_client):
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
-            # failed message url reposted to tech support channel (C0001 in the mock)
-            {"channel": "C0001", "text": "http://test"},
+            # failed message url reposted to tech support channel
+            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
         ],
     )
 
@@ -484,8 +484,14 @@ def test_message_checker_config(mock_client):
     checker = MessageChecker(mock_client.client, mock_client.client)
     # channel IDs are retrieved from mock_web_api_server
     assert checker.config == {
-        "tech-support": {"reaction": "sos", "channel_id": "C0001"},
-        "bennett-admins": {"reaction": "flamingo", "channel_id": "C0000"},
+        "tech-support": {
+            "reaction": "sos",
+            "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
+        },
+        "bennett-admins": {
+            "reaction": "flamingo",
+            "channel": settings.SLACK_BENNETT_ADMINS_CHANNEL,
+        },
     }
 
 
@@ -497,12 +503,9 @@ def test_message_checker_run(mock_client):
     checker.do_check(run_fn, delay=0.1)
 
     # By default the mock client's response to search.messages is empty
-    # conversations.list is called twice on instantiation, to get the
-    # channel IDs for tech-support and bennett-admins
     # search.messages is called twice for each run of the checker
     # no reactions or messages reposted.
     assert mock_client.recorder.mock_received_requests == {
-        "/conversations.list": 2,
         "/search.messages": 4,
     }
 
@@ -510,7 +513,10 @@ def test_message_checker_run(mock_client):
 @patch("ebmbot.dispatcher.WebClient.search_messages")
 @pytest.mark.parametrize(
     "keyword,support_channel,reaction",
-    (["tech-support", "C0001", "sos"], ["bennett-admins", "C0000", "flamingo"]),
+    (
+        ["tech-support", settings.SLACK_TECH_SUPPORT_CHANNEL, "sos"],
+        ["bennett-admins", settings.SLACK_BENNETT_ADMINS_CHANNEL, "flamingo"],
+    ),
 )
 def test_message_checker_tech_support_messages(
     mock_search, mock_client, keyword, support_channel, reaction
@@ -536,25 +542,22 @@ def test_message_checker_tech_support_messages(
     checker = MessageChecker(mock_client.client, mock_client.client)
 
     checker.check_messages(keyword, "2024-03-04", "2024-03-02")
-    # conversations.list is called twice on instantiation, to get the
-    # channel IDs for tech-support and bennett-admins
     # search.messages is mocked, so it doesn't get recorded on the mock client
     # Only one matched message required reaction and reposting.
     assert mock_client.recorder.mock_received_requests == {
-        "/conversations.list": 2,
         "/chat.getPermalink": 1,
         "/chat.postMessage": 1,
         "/reactions.add": 1,
     }
     # fetch the permalink for the message with ts matching the message to be reposted
-    mock_client.recorder.mock_received_requests_kwargs["/chat.getPermalink"] == [
+    assert mock_client.recorder.mock_received_requests_kwargs["/chat.getPermalink"] == [
         {"channel": "C4444", "message_ts": "1709460000.0"}
     ]
     # reposted to correct channel
-    mock_client.recorder.mock_received_requests_kwargs["/chat.postMessage"] == [
+    assert mock_client.recorder.mock_received_requests_kwargs["/chat.postMessage"] == [
         {"channel": support_channel, "text": "http://test"}
     ]
     # reacted with correct emoji
-    mock_client.recorder.mock_received_requests_kwargs["/reactions.add"] == [
+    assert mock_client.recorder.mock_received_requests_kwargs["/reactions.add"] == [
         {"channel": "C4444", "name": reaction, "timestamp": "1709460000.0"}
     ]
