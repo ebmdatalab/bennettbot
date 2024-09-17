@@ -1,6 +1,11 @@
 from time import sleep
 
+from workspace.utils.blocks import get_basic_header_and_text_blocks
+
 from .logger import logger
+
+
+COULD_NOT_NOTIFY_SLACK = "Could not notify slack"
 
 
 def notify_slack(
@@ -46,10 +51,27 @@ def notify_slack(
             sleep(1)
             error = err
 
-    logger.error(
-        "Could not notify slack",
-        channel=channel,
-        message=message_text,
-        thread_ts=thread_ts,
-        error=error,
+    msg_kwargs["text"] = COULD_NOT_NOTIFY_SLACK
+    msg_kwargs["blocks"] = get_slack_error_blocks(message_text, error)
+    try:
+        slack_client.chat_postMessage(**msg_kwargs)
+    except Exception:
+        logger.error(
+            COULD_NOT_NOTIFY_SLACK,
+            channel=channel,
+            message=message_text,
+            thread_ts=thread_ts,
+            error=error,
+        )
+
+
+def get_slack_error_blocks(message_text, error):
+    return get_basic_header_and_text_blocks(
+        header_text=COULD_NOT_NOTIFY_SLACK,
+        texts=[
+            "Slack encountered the error",
+            f"```{str(error)}```",
+            "when trying to post the following message:",
+            f"```{message_text}```",
+        ],
     )
