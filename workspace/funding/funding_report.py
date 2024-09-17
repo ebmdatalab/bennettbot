@@ -1,7 +1,7 @@
 import json
 from datetime import date, datetime
 
-from workspace.utils.blocks import get_text_block
+from workspace.utils.blocks import get_header_block, get_text_block
 from workspace.utils.spreadsheets import get_data_from_sheet
 
 
@@ -77,13 +77,7 @@ def main():
         key=lambda row: (types.index(row["type"]), str(row["deadline_date"]))
     )
 
-    blocks = [
-        get_text_block(
-            ":moneybag: *Funding update* :moneybag:",
-            block_type="header",
-            text_type="plain_text",
-        ),
-    ]
+    blocks = [get_header_block(":moneybag: *Funding update* :moneybag:")]
 
     if calls_recently_added:  # pragma: no branch
         blocks.extend(
