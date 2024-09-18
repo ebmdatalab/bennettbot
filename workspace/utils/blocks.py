@@ -24,9 +24,16 @@ def get_basic_header_and_text_blocks(
     header_block = get_header_block(header_text)
     if isinstance(texts, str):
         texts = [texts]
-    if len(texts) > 49:
+    if len(texts) > 49:  # pragma: no cover
         raise ValueError(
             f"""Slack has a limit of 50 blocks per message. Currently there are {len(texts)+1} blocks including the header block."""
         )
     text_blocks = [get_text_block(text, text_type=text_type) for text in texts]
     return [header_block] + text_blocks
+
+
+def truncate_text(text, max_len=3000):
+    # Slack has a limit of 3000 characters per text block
+    if len(text) > max_len:
+        text = text[: max_len - 3] + "..."
+    return text

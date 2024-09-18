@@ -1,6 +1,6 @@
 from time import sleep
 
-from workspace.utils.blocks import get_basic_header_and_text_blocks
+from workspace.utils.blocks import get_basic_header_and_text_blocks, truncate_text
 
 from .logger import logger
 
@@ -49,11 +49,11 @@ def notify_slack(
             error = err
     # The message has failed to post.
     # Modify the Slack message to report the error and try posting it to the channel
-    COULD_NOT_NOTIFY_SLACK = "Could not notify slack"
+    header_text = "Could not notify slack"
     try:
-        msg_kwargs["text"] = COULD_NOT_NOTIFY_SLACK
+        msg_kwargs["text"] = header_text
         msg_kwargs["blocks"] = get_slack_error_blocks(
-            COULD_NOT_NOTIFY_SLACK, message_text, error=error
+            header_text, message_text, error=error
         )
         slack_client.chat_postMessage(**msg_kwargs)
     except Exception:
@@ -63,7 +63,7 @@ def notify_slack(
     finally:
         # Log the error
         logger.error(
-            COULD_NOT_NOTIFY_SLACK,
+            header_text,
             channel=channel,
             message=message_text,
             thread_ts=thread_ts,
@@ -72,17 +72,14 @@ def notify_slack(
 
 
 def get_slack_error_blocks(header_text, message_text, error):
-    error_text = str(error)
-    if len(error_text) > 2994:
-        error_text = error_text[:2991] + "..."
-    if len(message_text) > 2994:
-        message_text = message_text[:2991] + "..."
+    error_text = f"```{str(error)}```"
+    message_text = f"```{message_text}```"
     return get_basic_header_and_text_blocks(
         header_text=header_text,
         texts=[
             "Slack encountered the error",
-            f"```{error_text}```",
+            truncate_text(error_text),
             "when trying to post the following message:",
-            f"```{message_text}```",
+            truncate_text(message_text),
         ],
     )
