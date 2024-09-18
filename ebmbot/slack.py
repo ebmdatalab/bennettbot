@@ -5,9 +5,6 @@ from workspace.utils.blocks import get_basic_header_and_text_blocks
 from .logger import logger
 
 
-COULD_NOT_NOTIFY_SLACK = "Could not notify slack"
-
-
 def notify_slack(
     slack_client, channel, message_text, thread_ts=None, message_format=None
 ):
@@ -37,7 +34,7 @@ def notify_slack(
             msg_kwargs["text"] = f"```{msg_kwargs['text']}```"
 
     # In case of any unexpected transient exception posting to slack, retry up to 3
-    # times and then log the error, to avoid errors in scheduled jobs.
+    # times and then report and log the error, to avoid errors in scheduled jobs.
     attempts = 0
     while attempts < 3:
         try:
@@ -50,12 +47,21 @@ def notify_slack(
             attempts += 1
             sleep(1)
             error = err
-
-    msg_kwargs["text"] = COULD_NOT_NOTIFY_SLACK
-    msg_kwargs["blocks"] = get_slack_error_blocks(message_text, error)
+    # The message has failed to post.
+    # Modify the Slack message to report the error and try posting it to the channel
+    COULD_NOT_NOTIFY_SLACK = "Could not notify slack"
     try:
+        msg_kwargs["text"] = COULD_NOT_NOTIFY_SLACK
+        msg_kwargs["blocks"] = get_slack_error_blocks(
+            COULD_NOT_NOTIFY_SLACK, message_text, error=error
+        )
         slack_client.chat_postMessage(**msg_kwargs)
     except Exception:
+        # Not even the error message could not be posted to Slack, so
+        pass
+
+    finally:
+        # Log the error
         logger.error(
             COULD_NOT_NOTIFY_SLACK,
             channel=channel,
@@ -65,12 +71,17 @@ def notify_slack(
         )
 
 
-def get_slack_error_blocks(message_text, error):
+def get_slack_error_blocks(header_text, message_text, error):
+    error_text = str(error)
+    if len(error_text) > 2994:
+        error_text = error_text[:2991] + "..."
+    if len(message_text) > 2994:
+        message_text = message_text[:2991] + "..."
     return get_basic_header_and_text_blocks(
-        header_text=COULD_NOT_NOTIFY_SLACK,
+        header_text=header_text,
         texts=[
             "Slack encountered the error",
-            f"```{str(error)}```",
+            f"```{error_text}```",
             "when trying to post the following message:",
             f"```{message_text}```",
         ],
