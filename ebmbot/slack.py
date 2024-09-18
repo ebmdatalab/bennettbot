@@ -72,14 +72,12 @@ def notify_slack(
 
 
 def get_slack_error_blocks(header_text, message_text, error):
-    error_text = f"```{str(error)}```"
-    message_text = f"```{message_text}```"
     return get_basic_header_and_text_blocks(
         header_text=header_text,
         texts=[
             "Slack encountered the error",
-            truncate_text(error_text),
+            f"```{truncate_text(str(error), max_len=2994)}```",
             "when trying to post the following message:",
-            truncate_text(message_text),
+            f"```{truncate_text(message_text,max_len=2994)}```",
         ],
     )
