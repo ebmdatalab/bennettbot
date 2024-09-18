@@ -4,6 +4,8 @@ import os
 
 import requests
 
+from workspace.utils.blocks import get_basic_header_and_text_blocks
+
 
 URL = "https://api.github.com/graphql"
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
@@ -32,22 +34,10 @@ def main(project_num, statuses):
         if status and status in statuses:
             tickets_by_status[status].append(summary)
 
-    report_output = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": ":newspaper: Project Board Summary :newspaper:",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/orgs/opensafely-core/projects/{project_num}/views/1|View board>",
-            },
-        },
-    ]
+    report_output = get_basic_header_and_text_blocks(
+        header_text=":newspaper: Project Board Summary :newspaper:",
+        texts=f"<https://github.com/orgs/opensafely-core/projects/{project_num}/views/1|View board>",
+    )
 
     for status, tickets in tickets_by_status.items():
         if tickets:
