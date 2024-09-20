@@ -299,6 +299,35 @@ raw_config = {
             },
         ]
     },
+    "workflows": {
+        "description": "Report GitHub Actions workflow runs",
+        "jobs": {
+            "show": {
+                "run_args_template": "python jobs.py --target {target}",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "show_actions": {
+                "run_args_template": "python jobs.py --target {repo} --detailed",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "show [target]",
+                "help": "Summarize GitHub Actions workflow runs for the target, the form of which can be either `org` or `org/repo`",
+                "action": "schedule_job",
+                "job_type": "show",
+            },
+            {
+                "command": "show-actions [repo]",
+                "help": "Show GitHub Actions workflow runs for a given repo, provided in the form of `org/repo`.",
+                "action": "schedule_job",
+                "job_type": "show_actions",
+            },
+        ]
+    },
     "techsupport": {
         "restricted": True,
         "description": "Tech Support out of office and rota",
