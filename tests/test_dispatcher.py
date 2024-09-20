@@ -561,3 +561,11 @@ def test_message_checker_tech_support_messages(
     assert mock_client.recorder.mock_received_requests_kwargs["/reactions.add"] == [
         {"channel": "C4444", "name": reaction, "timestamp": "1709460000.0"}
     ]
+    mock_search.assert_called_once()
+    mock_search.assert_called_with(
+        query=(
+            f"{keyword} -has::{reaction}: -in:#{support_channel} "
+            f"-from:@{settings.SLACK_APP_USERNAME} -is:dm "
+            "before:2024-03-04 after:2024-03-02 "
+        )
+    )
