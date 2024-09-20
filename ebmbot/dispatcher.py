@@ -251,7 +251,7 @@ class MessageChecker:
         messages = self.user_slack_client.search_messages(
             query=(
                 # Search for messages with the keyword but without the expected reaction
-                f"{KeyboardInterrupt} -has::{reaction}: "
+                f"{keyword} -has::{reaction}: "
                 # exclude messages in the channel itself
                 f"-in:#{channel} "
                 # exclude messages from the bot
