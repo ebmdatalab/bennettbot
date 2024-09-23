@@ -61,8 +61,3 @@ EBMBOT_WEBHOOK_SECRET = env.str("EBMBOT_WEBHOOK_SECRET").encode("ascii")
 
 # TTL in seconds for webhook token
 EBMBOT_WEBHOOK_TOKEN_TTL = 60 * 60
-
-# Repos of interest for reporting workflow run status
-REPOS = {
-    "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"],
-}

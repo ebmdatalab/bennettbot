@@ -1,0 +1,5 @@
+{
+   "repos" : {
+    "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"]
+    }
+}
