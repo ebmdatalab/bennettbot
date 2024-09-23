@@ -8,15 +8,17 @@ import pytest
 from workspace.workflows import jobs
 
 
-WORKFLOWS = {
+WORKFLOWS_MAIN = {
     82728346: "CI",
     88048829: "CodeQL",
-    94122733: "Docs",
     94331150: "Trigger a deploy of opensafely documentation site",
     108457763: "Dependabot Updates",
     113602598: "Local job-server setup CI",
 }
-WORKFLOW_IDS_ON_MAIN = set(WORKFLOWS.keys()).difference({94122733})
+WORKFLOWS = {
+    **WORKFLOWS_MAIN,
+    **{94122733: "Docs"},
+}
 
 
 @pytest.fixture
@@ -57,15 +59,28 @@ def test_invalid_target(args):
         jobs.parse_args()
 
 
-def test_get_workflows(mock_airlock_reporter):
-    assert mock_airlock_reporter.workflows == WORKFLOWS
+@httpretty.activate(allow_net_connect=False)
+@pytest.mark.parametrize(
+    "branch, num_workflows, workflows",
+    [("main", 5, WORKFLOWS_MAIN), (None, 6, WORKFLOWS)],
+)
+def test_get_workflows(branch, num_workflows, workflows):
+    httpretty.register_uri(
+        httpretty.GET,
+        uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
+        match_querystring=True,
+        body=Path("tests/workspace/workflows.json").read_text(),
+    )
+    reporter = jobs.WorkflowReporter("opensafely-core", "airlock", branch=branch)
+    assert len(reporter.workflows) == num_workflows
+    assert reporter.workflows == workflows
 
 
+@httpretty.activate(allow_net_connect=False)
 @pytest.mark.parametrize(
     "branch, uri_param",
     [("main", "branch=main&"), (None, "")],
 )
-@httpretty.activate(allow_net_connect=False)
 def test_get_all_runs(mock_airlock_reporter, branch, uri_param):
     mock_airlock_reporter.branch = branch  # Overwrite branch to test branch=None
     httpretty.register_uri(
@@ -84,7 +99,7 @@ def test_get_latest_conclusions(mock_all_runs, mock_airlock_reporter):
     mock_all_runs.return_value = all_runs_json["workflow_runs"]
 
     conclusions = mock_airlock_reporter.get_latest_conclusions()
-    assert conclusions == {key: "success" for key in WORKFLOW_IDS_ON_MAIN}
+    assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
 
 
 @pytest.mark.parametrize(
@@ -115,7 +130,7 @@ def test_get_conclusion_for_run(run, conclusion):
 @patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
 def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emoji):
     mock_conclusions.return_value = {
-        key: conclusion for key in sorted(list(WORKFLOW_IDS_ON_MAIN))
+        key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
     }
 
     blocks = json.loads(mock_airlock_reporter.report(detailed=False))
@@ -137,6 +152,7 @@ def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emo
         ("running", "Running", ":large_yellow_circle:"),
         ("failure", "Failure", ":red_circle:"),
         ("skipped", "Skipped", ":white_circle:"),
+        ("startup_failure", "Startup Failure", ":grey_question:"),
         ("None", "None", ":grey_question:"),
         ("", "", ":grey_question:"),
     ],
@@ -146,7 +162,7 @@ def test_repo_detailed(
     mock_conclusions, mock_airlock_reporter, conclusion, reported, emoji
 ):
     mock_conclusions.return_value = {
-        key: conclusion for key in sorted(list(WORKFLOW_IDS_ON_MAIN))
+        key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
     }
     status = f"{emoji} {reported}"
     blocks = json.loads(mock_airlock_reporter.report(detailed=True))
@@ -189,10 +205,10 @@ def test_valid_org(
     mock_config, mock_workflows, mock_conclusions, repo, blocks_starting_ind
 ):
     mock_config.return_value = {"repos": {"opensafely-core": ["airlock"]}}
-    mock_workflows.return_value = WORKFLOWS
+    mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
-    mock_conclusions.return_value = {key: conclusion for key in WORKFLOW_IDS_ON_MAIN}
+    mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
     blocks = json.loads(
         jobs.main("opensafely-core", repo, detailed=False, branch="main")
     )

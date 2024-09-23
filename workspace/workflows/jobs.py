@@ -63,7 +63,14 @@ class WorkflowReporter:
     def get_workflows(self) -> dict:
         results = self.get_workflows_json_from_github()
         workflows = {wf["id"]: wf["name"] for wf in results}
+        if self.branch is not None and self.branch == "main":
+            self.remove_workflows_skipped_on_main(workflows)
         return workflows
+
+    def remove_workflows_skipped_on_main(self, workflows):
+        skipped = load_config()["skipped_workflows_on_main"].get(self.location, [])
+        for workflow_id in skipped:
+            workflows.pop(workflow_id, None)
 
     def get_all_runs(self) -> list:
         url = f"https://api.github.com/repos/{self.location}/actions/runs"
@@ -120,7 +127,7 @@ class WorkflowReporter:
     def get_text_reporting_workflow(self, workflow_id, conclusion) -> str:
         name = self.workflows[workflow_id]
         emoji = self.get_emoji(conclusion)
-        return f"{name}: {emoji} {conclusion.title()}"
+        return f"{name}: {emoji} {conclusion.title().replace('_', ' ')}"
 
     def filter_for_latest_of_each_workflow(self, all_runs) -> list:
         latest_runs = []

@@ -16,8 +16,8 @@
     "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"],
     "ebmdatalab": ["openprescribing","bennett.ox.ac.uk","opensafely.org","team-manual"]
     },
-    "skipped_workflows": {
-        "airlock":[94122733]
+    "skipped_workflows_on_main": {
+        "opensafely-core/airlock":[94122733]
     },
     "status_aliases":{
         "in_progress": "running"
