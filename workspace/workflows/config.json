@@ -4,6 +4,7 @@
         "running": ":large_yellow_circle:",
         "failure": ":red_circle:",
         "skipped": ":white_circle:",
+        "cancelled": ":heavy_multiplication_x:",
         "other": ":grey_question:"
     },
     "shorthands": {
@@ -13,11 +14,17 @@
     },
    "repos" : {
     "opensafely": ["documentation"],
-    "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"],
-    "ebmdatalab": ["openprescribing","bennett.ox.ac.uk","opensafely.org","team-manual"]
+    "opensafely-core": ["job-server","job-runner", "ehrql","airlock","opencodelists","pipeline","opensafely-cli","python-docker","backend-server","sqlrunner","cohort-extractor","actions-registry","interactive-templates","reports"],
+    "ebmdatalab": ["openprescribing","bennett.ox.ac.uk","opensafely.org","team-manual","metrics","kissh"]
     },
     "skipped_workflows_on_main": {
-        "opensafely-core/airlock":[94122733]
+        "opensafely-core/airlock":[94122733],
+        "opensafely-core/job-runner":[26915902,25002877,26915901],
+        "opensafely-core/pipeline":[21951759],
+        "opensafely-core/python-docker":[21967294],
+        "opensafely-core/sqlrunner":[37329087],
+        "opensafely-core/cohort-extractor":[13520184]
+
     },
     "status_aliases":{
         "in_progress": "running"

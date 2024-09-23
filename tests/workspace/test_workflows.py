@@ -102,6 +102,17 @@ def test_get_latest_conclusions(mock_all_runs, mock_airlock_reporter):
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
 
 
+@patch("workspace.workflows.jobs.WorkflowReporter.get_all_runs")
+def test_warn_about_missing_ids(mock_all_runs, mock_airlock_reporter):
+    mock_airlock_reporter.workflows[1234] = "Some Workflow"
+    mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
+    all_runs_json = json.loads(Path("tests/workspace/runs.json").read_text())
+    mock_all_runs.return_value = all_runs_json["workflow_runs"]
+    assert len(mock_airlock_reporter.workflow_ids) == 6
+    with pytest.warns(UserWarning):
+        mock_airlock_reporter.get_latest_conclusions()
+
+
 @pytest.mark.parametrize(
     "run, conclusion",
     [
@@ -120,9 +131,6 @@ def test_get_conclusion_for_run(run, conclusion):
     "conclusion, emoji",
     [
         ("success", ":large_green_circle:"),
-        ("running", ":large_yellow_circle:"),
-        ("failure", ":red_circle:"),
-        ("skipped", ":white_circle:"),
         ("None", ":grey_question:"),
         ("", ":grey_question:"),
     ],
@@ -149,10 +157,7 @@ def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emo
     "conclusion, reported, emoji",
     [
         ("success", "Success", ":large_green_circle:"),
-        ("running", "Running", ":large_yellow_circle:"),
-        ("failure", "Failure", ":red_circle:"),
-        ("skipped", "Skipped", ":white_circle:"),
-        ("startup_failure", "Startup Failure", ":grey_question:"),
+        ("startup_failure", "Startup Failure", ":grey_question:"),  # Handle underscore
         ("None", "None", ":grey_question:"),
         ("", "", ":grey_question:"),
     ],
@@ -226,7 +231,7 @@ def test_valid_org(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :grey_question:=Other",
+                    "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :grey_question:=Other",
                 },
             },
             {

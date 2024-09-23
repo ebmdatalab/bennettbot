@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import warnings
 
 import requests
 
@@ -133,7 +134,10 @@ class WorkflowReporter:
         latest_runs = []
         run_id = 0
         found_ids = set()
-        while found_ids != self.workflow_ids and run_id < len(all_runs):
+        while found_ids != self.workflow_ids and run_id <= len(all_runs):
+            if run_id == len(all_runs):
+                self.warn_about_missing_ids(found_ids)
+                break
             run = all_runs[run_id]
             run_id += 1
             if run["workflow_id"] in found_ids:
@@ -141,6 +145,12 @@ class WorkflowReporter:
             latest_runs.append(run)
             found_ids.add(run["workflow_id"])
         return latest_runs
+
+    def warn_about_missing_ids(self, found_ids):
+        missing_ids = self.workflow_ids - found_ids
+        missing = "\n".join([f"{i}={self.workflows[i]}" for i in missing_ids])
+        message = f"Missing IDs for {self.location}: \n{missing}."
+        warnings.warn(message=message, category=UserWarning)
 
     @staticmethod
     def get_emoji_key() -> str:
