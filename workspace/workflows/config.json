@@ -1,5 +1,14 @@
 {
+    "emoji": {
+        "success": ":large_green_circle:",
+        "failure": ":red_circle:",
+        "skipped": ":white_circle:",
+        "other": ":grey_question:"
+    },
    "repos" : {
     "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"]
+    },
+    "skipped_workflows": {
+        "airlock":[94122733]
     }
 }

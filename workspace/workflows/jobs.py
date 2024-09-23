@@ -12,6 +12,15 @@ from workspace.utils.blocks import (
 )
 
 
+def load_config():
+    path = settings.APPLICATION_ROOT / "workspace" / "workflows" / "config.json"
+    return json.loads(path.read_text())
+
+
+def get_organization_repos(org):
+    return load_config()["repos"][org]
+
+
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
 
 
@@ -25,12 +34,7 @@ def get_api_result_as_json(url: str, params: dict) -> dict:  #  pragma: no cover
 
 
 class WorkflowReporter:
-    EMOJI = {
-        "success": ":large_green_circle:",
-        "failure": ":red_circle:",
-        "skipped": ":white_circle:",
-        "other": ":grey_question:",
-    }
+    EMOJI = load_config()["emoji"]
 
     def __init__(self, org_name, repo_name):
         self.org_name = org_name
@@ -54,7 +58,7 @@ class WorkflowReporter:
         params = {"branch": branch} if branch else {}
         return get_api_result_as_json(url, params)["workflow_runs"]
 
-    def get_latest_runs(self, branch) -> list:  # pragma: no cover
+    def get_latest_runs(self, branch) -> list:
         all_runs = self.get_all_runs(branch)
         latest_runs = self.filter_for_latest_of_each_workflow(all_runs)
         return latest_runs
@@ -112,7 +116,7 @@ class WorkflowReporter:
         return latest_runs
 
     @staticmethod
-    def get_emoji_key() -> str:  # pragma: no cover
+    def get_emoji_key() -> str:
         return " / ".join(
             [f"{v}={k.title()}" for k, v in WorkflowReporter.EMOJI.items()]
         )
@@ -120,31 +124,44 @@ class WorkflowReporter:
 
 def summarize_org(org, branch) -> list:
     try:
-        blocks = [
-            get_header_block(f"Workflows for {org}"),
-            get_text_block(WorkflowReporter.get_emoji_key()),
-        ]
-        for repo in settings.REPOS[org]:
-            blocks.append(WorkflowReporter(org, repo).summarize(branch=branch))
-        return json.dumps(blocks)
+        return _summarize_org(org, branch)
     except KeyError:
-        blocks = get_basic_header_and_text_blocks(
-            header_text=f"No repos specified for {org}",
-            texts=[
-                "Use one of the following commands to report a specific repo:",
-                "```report workflows [org] [repo]```",
-                "```report workflows-actions [org] [repo]```",
-            ],
-        )
-        return json.dumps(blocks)
+        return request_user_to_specify_repo(org)
 
 
-def parse_args():
+def _summarize_org(org, branch):
+    repos = get_organization_repos(org)
+    blocks = [
+        get_header_block(f"Workflows for {org}"),
+        get_text_block(WorkflowReporter.get_emoji_key()),
+    ]
+    for repo in repos:
+        blocks.append(WorkflowReporter(org, repo).summarize(branch=branch))
+    return json.dumps(blocks)
+
+
+def request_user_to_specify_repo(org):
+    blocks = get_basic_header_and_text_blocks(
+        header_text=f"No repos specified for {org}",
+        texts=[
+            "Use one of the following commands to report a specific repo (provided in the form of `org/repo`):",
+            "```workflows show [repo]```",
+            "```workflows show-actions [repo]```",
+        ],
+    )
+    return json.dumps(blocks)
+
+
+def _get_command_line_args():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", required=True)
     parser.add_argument("--detailed", default=False, action="store_true")
     parser.add_argument("--branch", default="main")
-    args = vars(parser.parse_args())
+    return vars(parser.parse_args())
+
+
+def parse_args():
+    args = _get_command_line_args()
     # Parse target, which can either be org or org/repo
     target = args.pop("target").split("/")
     if len(target) not in [1, 2]:
@@ -154,7 +171,7 @@ def parse_args():
     return args
 
 
-def main(org, repo, detailed, branch):  # pragma: no cover
+def main(org, repo, detailed, branch):
     if repo is not None:
         reporter = WorkflowReporter(org, repo)
         return reporter.report(detailed, branch=branch)
