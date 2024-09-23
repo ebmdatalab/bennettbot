@@ -161,8 +161,11 @@ def test_job_success_with_no_report():
         assert f.read() == ""
 
 
+@patch("ebmbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 0)
 def test_job_success_with_slack_exception():
     # Test that the job still succeeds even if notifying slack errors
+    # We mock the MAX_SLACK_NOTIFY_RETRIES so that this test doesn't do the
+    # (time-consuming) retrying in slack.py
     httpretty_register(
         {"chat.postMessage": [{"ok": False, "error": "error"}]},
     )
