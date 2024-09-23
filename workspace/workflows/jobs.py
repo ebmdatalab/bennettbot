@@ -17,6 +17,10 @@ def load_config():
     return json.loads(path.read_text())
 
 
+def match_shorthand(org):
+    return load_config()["shorthands"].get(org, org)
+
+
 def get_organization_repos(org):
     return load_config()["repos"][org]
 
@@ -36,11 +40,15 @@ def get_api_result_as_json(url: str, params: dict) -> dict:  #  pragma: no cover
 class WorkflowReporter:
     EMOJI = load_config()["emoji"]
 
-    def __init__(self, org_name, repo_name):
+    def __init__(self, org_name, repo_name, branch="main"):
         self.org_name = org_name
         self.repo_name = repo_name
+        # Little application for anything other than main, so default to that
+        self.branch = branch
         self.location = f"{org_name}/{repo_name}"
-        self.github_actions_link = f"https://github.com/{self.location}/actions"
+        self.github_actions_link = (
+            f"https://github.com/{self.location}/actions?query=branch%3A{self.branch}"
+        )
         self.workflows = self.get_workflows()
         self.workflow_ids = set(self.workflows.keys())
 
@@ -53,27 +61,27 @@ class WorkflowReporter:
         workflows = {wf["id"]: wf["name"] for wf in results}
         return workflows
 
-    def get_all_runs(self, branch) -> list:
+    def get_all_runs(self) -> list:
         url = f"https://api.github.com/repos/{self.location}/actions/runs"
-        params = {"branch": branch} if branch else {}
+        params = {"branch": self.branch} if self.branch else {}
         return get_api_result_as_json(url, params)["workflow_runs"]
 
-    def get_latest_runs(self, branch) -> list:
-        all_runs = self.get_all_runs(branch)
+    def get_latest_runs(self) -> list:
+        all_runs = self.get_all_runs()
         latest_runs = self.filter_for_latest_of_each_workflow(all_runs)
         return latest_runs
 
-    def get_latest_conclusions(self, branch) -> dict:
-        latest_runs = self.get_latest_runs(branch)
+    def get_latest_conclusions(self) -> dict:
+        latest_runs = self.get_latest_runs()
         return {run["workflow_id"]: run["conclusion"] for run in latest_runs}
 
-    def report(self, detailed: bool, branch="main") -> str:
+    def report(self, detailed: bool) -> str:
         if not detailed:
-            return json.dumps([self.summarize(branch)])
-        return self._report(branch)
+            return json.dumps([self.summarize()])
+        return self._report()
 
-    def _report(self, branch) -> str:
-        conclusions = self.get_latest_conclusions(branch)
+    def _report(self) -> str:
+        conclusions = self.get_latest_conclusions()
         lines = [
             self.get_text_reporting_workflow(wf_id, conc)
             for wf_id, conc in conclusions.items()
@@ -85,11 +93,11 @@ class WorkflowReporter:
         ]
         return json.dumps(blocks)
 
-    def summarize(self, branch) -> str:
-        conclusions = self.get_latest_conclusions(branch)
+    def summarize(self) -> str:
+        conclusions = self.get_latest_conclusions()
         emojis = "".join([self.get_emoji(c) for c in conclusions.values()])
-        link = f"<{self.github_actions_link}|{self.location}>"
-        return get_text_block(f"{link}: {emojis}")
+        link = f"<{self.github_actions_link}|link>"
+        return get_text_block(f"{self.location}: {emojis} ({link})")
 
     def get_block_linking_to_gh_actions(self):
         return get_text_block(f"<{self.github_actions_link}|View Github Actions>")
@@ -100,7 +108,7 @@ class WorkflowReporter:
     def get_text_reporting_workflow(self, workflow_id, conclusion) -> str:
         name = self.workflows[workflow_id]
         emoji = self.get_emoji(conclusion)
-        return f"{name}: {str(conclusion).title()} {emoji}"
+        return f"{name}: {emoji} {str(conclusion).title()}"
 
     def filter_for_latest_of_each_workflow(self, all_runs) -> list:
         latest_runs = []
@@ -136,7 +144,7 @@ def _summarize_org(org, branch):
         get_text_block(WorkflowReporter.get_emoji_key()),
     ]
     for repo in repos:
-        blocks.append(WorkflowReporter(org, repo).summarize(branch=branch))
+        blocks.append(WorkflowReporter(org, repo, branch).summarize())
     return json.dumps(blocks)
 
 
@@ -166,15 +174,15 @@ def parse_args():
     target = args.pop("target").split("/")
     if len(target) not in [1, 2]:
         raise ValueError("Argument must be in the format org or org/repo")
-    args["org"] = target[0]
+    args["org"] = match_shorthand(target[0])
     args["repo"] = target[1] if len(target) == 2 else None
     return args
 
 
 def main(org, repo, detailed, branch):
     if repo is not None:
-        reporter = WorkflowReporter(org, repo)
-        return reporter.report(detailed, branch=branch)
+        reporter = WorkflowReporter(org, repo, branch)
+        return reporter.report(detailed)
     return summarize_org(org, branch)
 
 

@@ -5,8 +5,15 @@
         "skipped": ":white_circle:",
         "other": ":grey_question:"
     },
+    "shorthands": {
+        "os": "opensafely",
+        "osc": "opensafely-core",
+        "ebm": "ebmdatalab"
+    },
    "repos" : {
-    "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"]
+    "opensafely": ["documentation"],
+    "opensafely-core": ["airlock", "job-runner", "job-server", "ehrql"],
+    "ebmdatalab": ["openprescribing","bennett.ox.ac.uk","opensafely.org","team-manual"]
     },
     "skipped_workflows": {
         "airlock":[94122733]
