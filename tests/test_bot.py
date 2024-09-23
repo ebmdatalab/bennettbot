@@ -111,6 +111,11 @@ def test_schedule_suppression(mock_app):
     ss = scheduler.get_suppressions()
     assert len(ss) == 1
     assert_suppression_matches(ss[0], "test_good_job", T(467), T(1067))
+    # confirmation message posted
+    assert_call_counts({"/api/chat.postMessage": 1})
+    assert_slack_client_sends_messages(
+        messages_kwargs=[{"channel": "channel", "text": "test_good_job suppressed"}],
+    )
 
 
 @pytest.mark.parametrize(
@@ -136,6 +141,16 @@ def test_schedule_suppression_with_bad_times(mock_app, message_text):
         messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}],
     )
     assert not scheduler.get_suppressions()
+    # info message sent
+    assert_call_counts({"/api/chat.postMessage": 1})
+    assert_slack_client_sends_messages(
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]",
+            }
+        ],
+    )
 
 
 def test_cancel_suppression(mock_app):
@@ -144,6 +159,15 @@ def test_cancel_suppression(mock_app):
 
     handle_message(mock_app, "<@U1234> test cancel suppression", reaction_count=2)
     assert not scheduler.get_suppressions()
+
+    # confirmation messages posted
+    assert_call_counts({"/api/chat.postMessage": 2})
+    assert_slack_client_sends_messages(
+        messages_kwargs=[
+            {"channel": "channel", "text": "test_good_job suppressed"},
+            {"channel": "channel", "text": "test_good_job suppressions cancelled"},
+        ],
+    )
 
 
 def test_namespace_help(mock_app):

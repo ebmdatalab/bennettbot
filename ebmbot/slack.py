@@ -9,6 +9,13 @@ from .logger import logger
 
 
 def slack_web_client(token_type="bot"):
+    match token_type:
+        case "bot":
+            token = settings.SLACK_BOT_TOKEN
+        case "user":
+            token = settings.SLACK_BOT_USER_TOKEN
+        case _:
+            assert False, "Unknown token type"
     token = (
         settings.SLACK_BOT_TOKEN
         if token_type == "bot"
