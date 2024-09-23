@@ -55,9 +55,16 @@ def check_slack_client_calls(actual_call_kwargs_list, expected_messages_kwargs):
                 assert actual_call[key] == value
 
 
-def assert_slack_client_reacts_to_message(test_recorder, reaction_count):
-    assert test_recorder.mock_received_requests["/reactions.add"] == reaction_count
+def assert_slack_client_reacts_to_message(reaction_count):
+    assert_call_counts({"/api/reactions.add": reaction_count})
 
 
-def assert_slack_client_doesnt_react_to_message(test_recorder):
-    assert not test_recorder.mock_received_requests.get("/reactions.add")
+def assert_slack_client_doesnt_react_to_message():
+    requests_by_path = get_mock_received_requests()
+    assert "/api/reactions.add" not in requests_by_path
+
+
+def assert_call_counts(call_counts):
+    requests_by_path = get_mock_received_requests()
+    for path, count in call_counts.items():
+        assert len(requests_by_path[path]) == count
