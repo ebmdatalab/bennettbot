@@ -259,7 +259,7 @@ class MessageChecker:
                 # exclude DMs as the auto-responders don't respond to these anyway
                 f"-is:dm "
                 # only include messages from today
-                f"before:{before} after:{after} "
+                f"before:{before} after:{after}"
             )
         )["messages"]["matches"]
         for message in messages:

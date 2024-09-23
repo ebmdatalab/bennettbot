@@ -1,3 +1,6 @@
+from .mock_http_request import get_mock_received_requests
+
+
 def assert_job_matches(job, type_, args, channel, start_after, started_at):
     assert_subdict(
         {
@@ -30,14 +33,10 @@ def assert_subdict(d1, d2):
         assert d1[k] == d2[k]
 
 
-def assert_slack_client_sends_messages(
-    test_recorder, messages_kwargs=None, message_format=None
-):
+def assert_slack_client_sends_messages(messages_kwargs=None, message_format=None):
     messages_kwargs = messages_kwargs or []
     message_format = message_format or "text"
-    actual_call_kwargs = test_recorder.mock_received_requests_kwargs.get(
-        "/chat.postMessage", []
-    )
+    actual_call_kwargs = get_mock_received_requests().get("/api/chat.postMessage", [])
     check_slack_client_calls(actual_call_kwargs, messages_kwargs)
     # check the format of the final message sent to slack
     if message_format == "text" and messages_kwargs:
