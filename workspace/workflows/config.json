@@ -1,6 +1,7 @@
 {
     "emoji": {
         "success": ":large_green_circle:",
+        "running": ":large_yellow_circle:",
         "failure": ":red_circle:",
         "skipped": ":white_circle:",
         "other": ":grey_question:"
@@ -17,5 +18,8 @@
     },
     "skipped_workflows": {
         "airlock":[94122733]
+    },
+    "status_aliases":{
+        "in_progress": "running"
     }
 }

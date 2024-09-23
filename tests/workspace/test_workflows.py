@@ -88,12 +88,28 @@ def test_get_latest_conclusions(mock_all_runs, mock_airlock_reporter):
 
 
 @pytest.mark.parametrize(
+    "run, conclusion",
+    [
+        ({"status": "completed", "conclusion": "success"}, "success"),
+        ({"status": "in_progress", "conclusion": None}, "running"),
+        ({"status": "completed", "conclusion": "failure"}, "failure"),
+        ({"status": "completed", "conclusion": "skipped"}, "skipped"),
+        ({"status": None, "conclusion": None}, "None"),
+    ],
+)
+def test_get_conclusion_for_run(run, conclusion):
+    assert jobs.WorkflowReporter.get_conclusion_for_run(run) == conclusion
+
+
+@pytest.mark.parametrize(
     "conclusion, emoji",
     [
         ("success", ":large_green_circle:"),
+        ("running", ":large_yellow_circle:"),
         ("failure", ":red_circle:"),
         ("skipped", ":white_circle:"),
-        (None, ":grey_question:"),
+        ("None", ":grey_question:"),
+        ("", ":grey_question:"),
     ],
 )
 @patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
@@ -118,9 +134,11 @@ def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emo
     "conclusion, reported, emoji",
     [
         ("success", "Success", ":large_green_circle:"),
+        ("running", "Running", ":large_yellow_circle:"),
         ("failure", "Failure", ":red_circle:"),
         ("skipped", "Skipped", ":white_circle:"),
-        (None, "None", ":grey_question:"),
+        ("None", "None", ":grey_question:"),
+        ("", "", ":grey_question:"),
     ],
 )
 @patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
@@ -192,7 +210,7 @@ def test_valid_org(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": ":large_green_circle:=Success / :red_circle:=Failure / :white_circle:=Skipped / :grey_question:=Other",
+                    "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :grey_question:=Other",
                 },
             },
             {

@@ -25,6 +25,10 @@ def get_organization_repos(org):
     return load_config()["repos"][org]
 
 
+def alias_status(status):
+    return load_config()["status_aliases"].get(status, status)
+
+
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
 
 
@@ -73,7 +77,15 @@ class WorkflowReporter:
 
     def get_latest_conclusions(self) -> dict:
         latest_runs = self.get_latest_runs()
-        return {run["workflow_id"]: run["conclusion"] for run in latest_runs}
+        return {
+            run["workflow_id"]: self.get_conclusion_for_run(run) for run in latest_runs
+        }
+
+    @staticmethod
+    def get_conclusion_for_run(run):
+        if run["conclusion"] is None:
+            return alias_status(str(run["status"]))
+        return str(run["conclusion"])
 
     def report(self, detailed: bool) -> str:
         if not detailed:
@@ -108,7 +120,7 @@ class WorkflowReporter:
     def get_text_reporting_workflow(self, workflow_id, conclusion) -> str:
         name = self.workflows[workflow_id]
         emoji = self.get_emoji(conclusion)
-        return f"{name}: {emoji} {str(conclusion).title()}"
+        return f"{name}: {emoji} {conclusion.title()}"
 
     def filter_for_latest_of_each_workflow(self, all_runs) -> list:
         latest_runs = []
