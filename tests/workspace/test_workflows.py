@@ -17,7 +17,7 @@ WORKFLOWS_MAIN = {
 }
 WORKFLOWS = {
     **WORKFLOWS_MAIN,
-    **{94122733: "Docs"},
+    94122733: "Docs",
 }
 
 
@@ -138,21 +138,20 @@ def test_get_conclusion_for_run(run, conclusion):
 @patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
 def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emoji):
     mock_conclusions.return_value = {
-        key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
+        key: conclusion for key in sorted(WORKFLOWS_MAIN.keys())
     }
 
-    blocks = json.loads(mock_airlock_reporter.report(detailed=False))
-    assert blocks == [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"opensafely-core/airlock: {emoji}{emoji}{emoji}{emoji}{emoji} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
-            },
-        }
-    ]
+    block = mock_airlock_reporter.summarize()
+    assert block == {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+        },
+    }
 
 
+@httpretty.activate(allow_net_connect=False)
 @pytest.mark.parametrize(
     "conclusion, reported, emoji",
     [
@@ -163,14 +162,18 @@ def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emo
     ],
 )
 @patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
-def test_repo_detailed(
-    mock_conclusions, mock_airlock_reporter, conclusion, reported, emoji
-):
+def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
+    httpretty.register_uri(
+        httpretty.GET,
+        uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
+        match_querystring=True,
+        body=Path("tests/workspace/workflows.json").read_text(),
+    )
     mock_conclusions.return_value = {
         key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
     }
     status = f"{emoji} {reported}"
-    blocks = json.loads(mock_airlock_reporter.report(detailed=True))
+    blocks = json.loads(jobs.main("opensafely-core", "airlock", branch="main"))
     assert blocks == [
         {
             "type": "header",
@@ -196,84 +199,56 @@ def test_repo_detailed(
     ]
 
 
-@pytest.mark.parametrize(
-    "repo, blocks_starting_ind",
-    [
-        ("airlock", 2),
-        (None, 0),
-    ],
-)
 @patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
 @patch("workspace.workflows.jobs.WorkflowReporter.get_workflows")
 @patch("workspace.workflows.jobs.load_config")
-def test_valid_org(
-    mock_config, mock_workflows, mock_conclusions, repo, blocks_starting_ind
-):
+def test_main_for_organisation(mock_config, mock_workflows, mock_conclusions):
     mock_config.return_value = {"repos": {"opensafely-core": ["airlock"]}}
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
     mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
-    blocks = json.loads(
-        jobs.main("opensafely-core", repo, detailed=False, branch="main")
-    )
-    assert (
-        blocks
-        == [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Workflows for opensafely-core",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :grey_question:=Other",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"opensafely-core/airlock: {emoji}{emoji}{emoji}{emoji}{emoji} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
-                },
-            },
-        ][blocks_starting_ind:]
-    )
-
-
-def test_invalid_org():
-    blocks = json.loads(jobs.summarize_org("invalid-org", branch="main"))
+    blocks = json.loads(jobs.main("opensafely-core", repo=None, branch="main"))
     assert blocks == [
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "No repos specified for invalid-org",
+                "text": "Workflows for opensafely-core",
             },
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Use one of the following commands to report a specific repo (provided in the form of `org/repo`):",
+                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :grey_question:=Other",
             },
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "```workflows show [repo]```",
+                "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+            },
+        },
+    ]
+
+
+def test_invalid_org():
+    blocks = json.loads(jobs.main("invalid-org", repo=None, branch="main"))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "invalid-org was not recognised",
             },
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "```workflows show-actions [repo]```",
+                "text": "Run `@test_username workflows help` to see the available organisations.",
             },
         },
     ]

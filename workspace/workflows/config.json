@@ -14,7 +14,7 @@
     },
    "repos" : {
     "opensafely": ["documentation"],
-    "opensafely-core": ["job-server","job-runner", "ehrql","airlock","opencodelists","pipeline","opensafely-cli","python-docker","backend-server","sqlrunner","cohort-extractor","actions-registry","interactive-templates","reports"],
+    "opensafely-core": ["job-server","job-runner", "ehrql","airlock","opencodelists","pipeline","opensafely-cli","python-docker","backend-server","sqlrunner","cohort-extractor","actions-registry","reports"],
     "ebmdatalab": ["openprescribing","bennett.ox.ac.uk","opensafely.org","team-manual","metrics","kissh"]
     },
     "skipped_workflows_on_main": {

@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import warnings
+from urllib.parse import urljoin
 
 import requests
 
@@ -13,6 +14,9 @@ from workspace.utils.blocks import (
 )
 
 
+TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
+
+
 def load_config():
     path = settings.APPLICATION_ROOT / "workspace" / "workflows" / "config.json"
     return json.loads(path.read_text())
@@ -22,7 +26,7 @@ def match_shorthand(org):
     return load_config()["shorthands"].get(org, org)
 
 
-def get_organization_repos(org):
+def get_organisation_repos(org):
     return load_config()["repos"][org]
 
 
@@ -30,39 +34,49 @@ def alias_status(status):
     return load_config()["status_aliases"].get(status, status)
 
 
-TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
+def report_invalid_org(org):
+    blocks = get_basic_header_and_text_blocks(
+        header_text=f"{org} was not recognised",
+        texts=f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
+    )
+    return json.dumps(blocks)
 
 
 # TODO:Make this a shared function
-def get_api_result_as_json(url: str, params: dict) -> dict:  #  pragma: no cover
+def get_api_result_as_json(url: str, params: dict | None = None) -> dict:
+    params = params or {}
+    params["format"] = "json"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    prms = {**params, **{"format": "json"}}
-    response = requests.get(url, headers=headers, params=prms)
+    response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()
     return response.json()
 
 
 class WorkflowReporter:
     EMOJI = load_config()["emoji"]
+    EMOJI_KEY = " / ".join([f"{v}={k.title()}" for k, v in EMOJI.items()])
 
     def __init__(self, org_name, repo_name, branch="main"):
         self.org_name = org_name
         self.repo_name = repo_name
         # Little application for anything other than main, so default to that
         self.branch = branch
+
         self.location = f"{org_name}/{repo_name}"
+        self.base_api_url = f"https://api.github.com/repos/{self.location}/"
         self.github_actions_link = (
             f"https://github.com/{self.location}/actions?query=branch%3A{self.branch}"
         )
+
         self.workflows = self.get_workflows()
         self.workflow_ids = set(self.workflows.keys())
 
-    def get_workflows_json_from_github(self) -> dict:
-        url = f"https://api.github.com/repos/{self.location}/actions/workflows"
-        return get_api_result_as_json(url, params={})["workflows"]
+    def _get_json_response(self, path, params=None):
+        url = urljoin(self.base_api_url, path)
+        return get_api_result_as_json(url, params)
 
     def get_workflows(self) -> dict:
-        results = self.get_workflows_json_from_github()
+        results = self._get_json_response("actions/workflows")["workflows"]
         workflows = {wf["id"]: wf["name"] for wf in results}
         if self.branch is not None and self.branch == "main":
             self.remove_workflows_skipped_on_main(workflows)
@@ -74,42 +88,37 @@ class WorkflowReporter:
             workflows.pop(workflow_id, None)
 
     def get_all_runs(self) -> list:
-        url = f"https://api.github.com/repos/{self.location}/actions/runs"
         params = {"branch": self.branch} if self.branch else {}
-        return get_api_result_as_json(url, params)["workflow_runs"]
-
-    def get_latest_runs(self) -> list:
-        all_runs = self.get_all_runs()
-        latest_runs = self.filter_for_latest_of_each_workflow(all_runs)
-        return latest_runs
+        return self._get_json_response("actions/runs", params)["workflow_runs"]
 
     def get_latest_conclusions(self) -> dict:
-        latest_runs = self.get_latest_runs()
+        all_runs = self.get_all_runs()
+        latest_runs = self.filter_for_latest_of_each_workflow(all_runs)
         return {
             run["workflow_id"]: self.get_conclusion_for_run(run) for run in latest_runs
         }
 
     @staticmethod
-    def get_conclusion_for_run(run):
+    def get_conclusion_for_run(run) -> str:
         if run["conclusion"] is None:
             return alias_status(str(run["status"]))
         return str(run["conclusion"])
 
-    def report(self, detailed: bool) -> str:
-        if not detailed:
-            return json.dumps([self.summarize()])
-        return self._report()
+    def get_emoji(self, conclusion) -> str:
+        return self.EMOJI.get(conclusion, self.EMOJI["other"])
 
-    def _report(self) -> str:
+    def report(self) -> str:
+        def format_text(workflow_id, conclusion) -> str:
+            name = self.workflows[workflow_id]
+            emoji = self.get_emoji(conclusion)
+            return f"{name}: {emoji} {conclusion.title().replace('_', ' ')}"
+
         conclusions = self.get_latest_conclusions()
-        lines = [
-            self.get_text_reporting_workflow(wf_id, conc)
-            for wf_id, conc in conclusions.items()
-        ]
+        lines = [format_text(wf, conclusion) for wf, conclusion in conclusions.items()]
         blocks = [
             get_header_block(f"Workflows for {self.location}"),
             get_text_block("\n".join(lines)),  # Show in one block for compactness
-            self.get_block_linking_to_gh_actions(),
+            get_text_block(f"<{self.github_actions_link}|View Github Actions>"),
         ]
         return json.dumps(blocks)
 
@@ -119,80 +128,41 @@ class WorkflowReporter:
         link = f"<{self.github_actions_link}|link>"
         return get_text_block(f"{self.location}: {emojis} ({link})")
 
-    def get_block_linking_to_gh_actions(self):
-        return get_text_block(f"<{self.github_actions_link}|View Github Actions>")
-
-    def get_emoji(self, conclusion) -> str:
-        return self.EMOJI.get(conclusion, self.EMOJI["other"])
-
-    def get_text_reporting_workflow(self, workflow_id, conclusion) -> str:
-        name = self.workflows[workflow_id]
-        emoji = self.get_emoji(conclusion)
-        return f"{name}: {emoji} {conclusion.title().replace('_', ' ')}"
-
     def filter_for_latest_of_each_workflow(self, all_runs) -> list:
         latest_runs = []
-        run_id = 0
         found_ids = set()
-        while found_ids != self.workflow_ids and run_id <= len(all_runs):
-            if run_id == len(all_runs):
-                self.warn_about_missing_ids(found_ids)
-                break
-            run = all_runs[run_id]
-            run_id += 1
+        for run in all_runs:
             if run["workflow_id"] in found_ids:
                 continue
             latest_runs.append(run)
             found_ids.add(run["workflow_id"])
+            if found_ids == self.workflow_ids:
+                return latest_runs
+        # Some workflows were not found in the last ~1000 runs on this branch
+        self.warn_about_missing_workflows(found_ids)
         return latest_runs
 
-    def warn_about_missing_ids(self, found_ids):
+    def warn_about_missing_workflows(self, found_ids):
         missing_ids = self.workflow_ids - found_ids
         missing = "\n".join([f"{i}={self.workflows[i]}" for i in missing_ids])
         message = f"Missing IDs for {self.location}: \n{missing}."
         warnings.warn(message=message, category=UserWarning)
 
-    @staticmethod
-    def get_emoji_key() -> str:
-        return " / ".join(
-            [f"{v}={k.title()}" for k, v in WorkflowReporter.EMOJI.items()]
-        )
 
-
-def summarize_org(org, branch) -> list:
-    try:
-        return _summarize_org(org, branch)
-    except KeyError:
-        return request_user_to_specify_repo(org)
-
-
-def _summarize_org(org, branch):
-    repos = get_organization_repos(org)
+def summarize_org(org, branch):
+    repos = get_organisation_repos(org)
     blocks = [
         get_header_block(f"Workflows for {org}"),
-        get_text_block(WorkflowReporter.get_emoji_key()),
+        get_text_block(WorkflowReporter.EMOJI_KEY),
     ]
     for repo in repos:
         blocks.append(WorkflowReporter(org, repo, branch).summarize())
     return json.dumps(blocks)
 
 
-def request_user_to_specify_repo(org):
-    blocks = get_basic_header_and_text_blocks(
-        header_text=f"No repos specified for {org}",
-        texts=[
-            "Use one of the following commands to report a specific repo (provided in the form of `org/repo`):",
-            "```workflows show [repo]```",
-            "```workflows show-actions [repo]```",
-        ],
-    )
-    return json.dumps(blocks)
-
-
 def _get_command_line_args():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", required=True)
-    parser.add_argument("--detailed", default=False, action="store_true")
     parser.add_argument("--branch", default="main")
     return vars(parser.parse_args())
 
@@ -208,11 +178,14 @@ def parse_args():
     return args
 
 
-def main(org, repo, detailed, branch):
-    if repo is not None:
-        reporter = WorkflowReporter(org, repo, branch)
-        return reporter.report(detailed)
-    return summarize_org(org, branch)
+def main(org, repo, branch):
+    if org not in load_config()["repos"].keys():
+        return report_invalid_org(org)
+    if repo is None:
+        # Main usage: Summarise status for multiple repos in an org
+        return summarize_org(org, branch)
+    # Single repo usage: Report status for all workflows in a specified repo
+    return WorkflowReporter(org, repo, branch).report()
 
 
 if __name__ == "__main__":

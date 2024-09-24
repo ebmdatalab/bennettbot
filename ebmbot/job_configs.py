@@ -316,15 +316,10 @@ raw_config = {
         "slack": [
             {
                 "command": "show [target]",
-                "help": "Summarize GitHub Actions workflow runs for the target, the form of which can be either `org` or `org/repo`",
+                # There is a line break in this help message because it's too long and this is the only action in the workspace so it doesn't look ugly anyway.
+                "help": "Summarise GitHub Actions workflow runs for a given `target` organisation or repo, provided in the form of `org` or `org/repo`. \n`org` is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)`, `ebm (ebmdatalab)`.",
                 "action": "schedule_job",
                 "job_type": "show",
-            },
-            {
-                "command": "show-actions [repo]",
-                "help": "Show GitHub Actions workflow runs for a given repo, provided in the form of `org/repo`.",
-                "action": "schedule_job",
-                "job_type": "show_actions",
             },
         ]
     },
