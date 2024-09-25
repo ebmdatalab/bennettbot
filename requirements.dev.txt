@@ -104,6 +104,9 @@ freezegun==1.5.1 \
     --hash=sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9 \
     --hash=sha256:bf111d7138a8abe55ab48a71755673dbaa4ab87f4cff5634a4442dfec34c15f1
     # via pytest-freezer
+httpretty==1.0.5 \
+    --hash=sha256:e53c927c4d3d781a0761727f1edfad64abef94e828718e12b672a678a8b3e0b5
+    # via -r requirements.dev.in
 identify==2.6.0 \
     --hash=sha256:cb171c685bdc31bcc4c1734698736a7d5b6c8bf2e0c15117f4d469c8640ae5cf \
     --hash=sha256:e79ae4406387a9d300332b5fd366d8994f1525e8414984e1a59e058b2eda2dd0

@@ -3,13 +3,20 @@ import os
 import shutil
 from unittest.mock import Mock, patch
 
+import httpretty
 import pytest
+from slack_sdk import WebClient
 
 from ebmbot import scheduler, settings
 from ebmbot.dispatcher import JobDispatcher, MessageChecker, run_once
 
-from .assertions import assert_slack_client_sends_messages
+from .assertions import assert_call_counts, assert_slack_client_sends_messages
 from .job_configs import config
+from .mock_http_request import (
+    get_mock_received_requests,
+    httpretty_register,
+    register_dispatcher_uris,
+)
 from .time_helpers import T0, TS, T
 
 
@@ -22,11 +29,16 @@ def remove_logs_dir():
     shutil.rmtree(settings.LOGS_DIR, ignore_errors=True)
 
 
-def test_run_once(mock_client):
-    # Because this mock gets used in a subprocess (I think) we can't actually
-    # get any information out of it about how it was used.
-    slack_client = mock_client.client
+@pytest.fixture(autouse=True)
+def mock_http():
+    httpretty.enable(allow_net_connect=False)
+    register_dispatcher_uris()
+    yield
+    httpretty.disable()
+    httpretty.reset()
 
+
+def test_run_once():
     scheduler.schedule_suppression("test_good_job", T(-15), T(-5))
     scheduler.schedule_suppression("test_bad_job", T(-15), T(-5))
     scheduler.schedule_suppression("test_really_bad_job", T(-5), T(5))
@@ -35,7 +47,7 @@ def test_run_once(mock_client):
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
 
-    processes = run_once(slack_client, config)
+    processes = run_once(WebClient(), config)
 
     for p in processes:
         p.join()
@@ -45,16 +57,15 @@ def test_run_once(mock_client):
     assert not os.path.exists(build_log_dir("test_really_bad_job"))
 
 
-def test_job_success_with_unsafe_shell_args(mock_client):
+def test_job_success_with_unsafe_shell_args():
     log_dir = build_log_dir("test_parameterised_job_2")
 
     scheduler.schedule_job(
         "test_parameterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS, 0
     )
     job = scheduler.reserve_job()
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "succeeded"},
@@ -68,15 +79,15 @@ def test_job_success_with_unsafe_shell_args(mock_client):
         assert f.read() == ""
 
 
-def test_job_success(mock_client):
+def test_job_success():
     log_dir = build_log_dir("test_good_job")
 
     scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
+
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "succeeded"},
@@ -90,15 +101,14 @@ def test_job_success(mock_client):
         assert f.read() == ""
 
 
-def test_job_success_with_parameterised_args(mock_client):
+def test_job_success_with_parameterised_args():
     log_dir = build_log_dir("test_parameterised_job")
 
     scheduler.schedule_job("test_parameterised_job", {"path": "poem"}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "succeeded"},
@@ -112,15 +122,14 @@ def test_job_success_with_parameterised_args(mock_client):
         assert f.read() == ""
 
 
-def test_job_success_and_report(mock_client):
+def test_job_success_and_report():
     log_dir = build_log_dir("test_reported_job")
 
     scheduler.schedule_job("test_reported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "the owl"},
@@ -134,15 +143,14 @@ def test_job_success_and_report(mock_client):
         assert f.read() == ""
 
 
-def test_job_success_with_no_report(mock_client):
+def test_job_success_with_no_report():
     log_dir = build_log_dir("test_unreported_job")
 
     scheduler.schedule_job("test_unreported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[{"channel": "logs", "text": "about to start"}],
     )
 
@@ -153,18 +161,26 @@ def test_job_success_with_no_report(mock_client):
         assert f.read() == ""
 
 
-def test_job_success_with_slack_exception(mock_client_with_slack_exception):
+@patch("ebmbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 0)
+def test_job_success_with_slack_exception():
     # Test that the job still succeeds even if notifying slack errors
+    # We mock the MAX_SLACK_NOTIFY_RETRIES so that this test doesn't do the
+    # (time-consuming) retrying in slack.py
+    httpretty_register(
+        {"chat.postMessage": [{"ok": False, "error": "error"}]},
+    )
+
     log_dir = build_log_dir("test_good_job")
 
     scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client_with_slack_exception.client, job)
-    assert_slack_client_sends_messages(
-        mock_client_with_slack_exception.recorder,
-        messages_kwargs=[],
-    )
+    client = WebClient()
+    # confirm that posting a message with the client raises an error
+    with pytest.raises(Exception):
+        client.chat_postMessage(text="test", channel="channel")
+
+    do_job(client, job)
 
     with open(os.path.join(log_dir, "stdout")) as f:
         assert f.read() == "the owl and the pussycat\n"
@@ -173,19 +189,21 @@ def test_job_success_with_slack_exception(mock_client_with_slack_exception):
         assert f.read() == ""
 
 
-def test_job_failure(mock_client):
+def test_job_failure():
     log_dir = build_log_dir("test_bad_job")
 
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
             # failed message url reposted to tech support channel
-            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
+            {
+                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
+                "text": "http://example.com",
+            },
         ],
     )
 
@@ -196,14 +214,13 @@ def test_job_failure(mock_client):
         assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
-def test_job_failure_in_dm(mock_client):
+def test_job_failure_in_dm():
     log_dir = build_log_dir("test_bad_job")
 
     scheduler.schedule_job("test_bad_job", {}, "IM0001", TS, 0, is_im=True)
     job = scheduler.reserve_job()
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         # NOTE: NOT reposted to tech support from a DM with the bot
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -218,20 +235,22 @@ def test_job_failure_in_dm(mock_client):
         assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
-def test_job_failure_when_command_not_found(mock_client):
+def test_job_failure_when_command_not_found():
     log_dir = build_log_dir("test_really_bad_job")
 
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": f"failed.\nFind logs in {log_dir}"},
             # failed message url reposted to tech support channel
-            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
+            {
+                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
+                "text": "http://example.com",
+            },
         ],
     )
 
@@ -243,20 +262,22 @@ def test_job_failure_when_command_not_found(mock_client):
 
 
 @patch("ebmbot.settings.HOST_LOGS_DIR", "/host/logs/")
-def test_job_failure_with_host_log_dirs_setting(mock_client):
+def test_job_failure_with_host_log_dirs_setting():
     log_dir = build_log_dir("test_bad_job")
 
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
 
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed.\nFind logs in /host/logs/"},
             # failed message url reposted to tech support channel
-            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
+            {
+                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
+                "text": "http://example.com",
+            },
         ],
     )
 
@@ -264,15 +285,14 @@ def test_job_failure_with_host_log_dirs_setting(mock_client):
         assert f.read() == "cat: no-poem: No such file or directory\n"
 
 
-def test_python_job_success(mock_client):
+def test_python_job_success():
     log_dir = build_log_dir("test_good_python_job")
 
     scheduler.schedule_job("test_good_python_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "Hello World!\n"},
@@ -286,7 +306,7 @@ def test_python_job_success(mock_client):
         assert f.read() == ""
 
 
-def test_python_job_success_with_parameterised_args(mock_client):
+def test_python_job_success_with_parameterised_args():
     log_dir = build_log_dir("test_parameterised_python_job")
 
     scheduler.schedule_job(
@@ -294,9 +314,8 @@ def test_python_job_success_with_parameterised_args(mock_client):
     )
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "Hello Fred!\n"},
@@ -310,19 +329,18 @@ def test_python_job_success_with_parameterised_args(mock_client):
         assert f.read() == ""
 
 
-def test_python_job_success_with_blocks(mock_client):
+def test_python_job_success_with_blocks():
     log_dir = build_log_dir("test_good_python_job_with_blocks")
 
     scheduler.schedule_job("test_good_python_job_with_blocks", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     expected_blocks = [
         {"type": "section", "text": {"type": "plain_text", "text": "Hello World!"}}
     ]
 
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {
@@ -340,21 +358,23 @@ def test_python_job_success_with_blocks(mock_client):
         assert f.read() == ""
 
 
-def test_python_job_failure_with_blocks(mock_client):
+def test_python_job_failure_with_blocks():
     log_dir = build_log_dir("test_bad_python_job_with_blocks")
 
     scheduler.schedule_job("test_bad_python_job_with_blocks", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
 
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
             # failed message url reposted to tech support channel
-            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
+            {
+                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
+                "text": "http://example.com",
+            },
         ],
     )
 
@@ -367,19 +387,21 @@ def test_python_job_failure_with_blocks(mock_client):
         assert "An error was found!" in stderr
 
 
-def test_python_job_failure(mock_client):
+def test_python_job_failure():
     log_dir = build_log_dir("test_bad_python_job")
 
     scheduler.schedule_job("test_bad_python_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "failed"},
             # failed message url reposted to tech support channel
-            {"channel": settings.SLACK_TECH_SUPPORT_CHANNEL, "text": "http://test"},
+            {
+                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
+                "text": "http://example.com",
+            },
         ],
     )
 
@@ -391,15 +413,14 @@ def test_python_job_failure(mock_client):
         assert "No such file or directory" in stderr
 
 
-def test_python_job_with_no_output(mock_client):
+def test_python_job_with_no_output():
     log_dir = build_log_dir("test_python_job_no_output")
 
     scheduler.schedule_job("test_python_job_no_output", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "No output found for command"},
@@ -413,15 +434,14 @@ def test_python_job_with_no_output(mock_client):
         assert f.read() == ""
 
 
-def test_job_success_config_with_no_python_file(mock_client):
+def test_job_success_config_with_no_python_file():
     log_dir = build_log_dir("test1_good_job")
 
     scheduler.schedule_job("test1_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {"channel": "channel", "text": "succeeded"},
@@ -435,14 +455,13 @@ def test_job_success_config_with_no_python_file(mock_client):
         assert f.read() == ""
 
 
-def test_job_with_code_format(mock_client):
+def test_job_with_code_format():
     scheduler.schedule_job("test_good_job_with_code", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
 
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
             {
@@ -454,18 +473,43 @@ def test_job_with_code_format(mock_client):
     )
 
 
-def test_job_with_long_code_output_is_uploaded_as_file(mock_client):
+def test_job_with_long_code_output_is_uploaded_as_file():
+    httpretty_register(
+        {
+            "files.getUploadURLExternal": [
+                {
+                    "ok": True,
+                    "upload_url": "https://files.example.com/upload/v1/ABC123",
+                    "file_id": "F123ABC456",
+                }
+            ],
+            "files.completeUploadExternal": [
+                {"ok": True, "files": [{"id": "F123ABC456", "title": "test"}]}
+            ],
+        }
+    )
+    httpretty.register_uri(
+        httpretty.POST,
+        "https://files.example.com/upload/v1/ABC123",
+    )
+
     scheduler.schedule_job("test_python_job_long_code_output", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(mock_client.client, job)
+    do_job(WebClient(), job)
 
+    assert_call_counts(
+        {
+            "/api/chat.postMessage": 1,
+            "/api/files.getUploadURLExternal": 1,
+            "/upload/v1/ABC123": 1,
+            "/api/files.completeUploadExternal": 1,
+        }
+    )
     assert_slack_client_sends_messages(
-        mock_client.recorder,
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
         ],
-        message_format="file",
     )
 
 
@@ -480,8 +524,9 @@ def build_log_dir(job_type_with_namespace):
     )
 
 
-def test_message_checker_config(mock_client):
-    checker = MessageChecker(mock_client.client, mock_client.client)
+def test_message_checker_config():
+    mock_client = WebClient()
+    checker = MessageChecker(mock_client, mock_client)
     # channel IDs are retrieved from mock_web_api_server
     assert checker.config == {
         "tech-support": {
@@ -495,22 +540,26 @@ def test_message_checker_config(mock_client):
     }
 
 
-def test_message_checker_run(mock_client):
-    checker = MessageChecker(mock_client.client, mock_client.client)
+def test_message_checker_run():
+    httpretty_register(
+        {
+            "search.messages": [
+                {"ok": True, "messages": {"matches": []}},
+            ]
+        }
+    )
+
+    checker = MessageChecker(WebClient(), WebClient())
 
     # Mock the run function so the checker runs twice, not forever
     run_fn = Mock(side_effect=[True, True, False])
     checker.do_check(run_fn, delay=0.1)
 
-    # By default the mock client's response to search.messages is empty
     # search.messages is called twice for each run of the checker
-    # no reactions or messages reposted.
-    assert mock_client.recorder.mock_received_requests == {
-        "/search.messages": 4,
-    }
+    # no matches, so no reactions or messages reposted.
+    assert len(httpretty.latest_requests()) == 4
 
 
-@patch("ebmbot.dispatcher.WebClient.search_messages")
 @pytest.mark.parametrize(
     "keyword,support_channel,reaction",
     (
@@ -518,54 +567,68 @@ def test_message_checker_run(mock_client):
         ["bennett-admins", settings.SLACK_BENNETT_ADMINS_CHANNEL, "flamingo"],
     ),
 )
-def test_message_checker_tech_support_messages(
-    mock_search, mock_client, keyword, support_channel, reaction
-):
-    # Mock the return of the search_messages call
-    mock_search.return_value = {
-        "ok": True,
-        "messages": {
-            "matches": [
+def test_message_checker_tech_support_messages(keyword, support_channel, reaction):
+    httpretty_register(
+        {
+            "search.messages": [
                 {
-                    "text": f"Calling {keyword}",
-                    "channel": {"id": "C4444"},
-                    "ts": "1709460000.0",
-                },
-                {
-                    "text": "This is a forwarded message",
-                    "channel": {"id": "C4444"},
-                    "ts": "1709000000.0",
-                },
+                    "ok": True,
+                    "messages": {
+                        "matches": [
+                            {
+                                "text": f"Calling {keyword}",
+                                "channel": {"id": "C4444"},
+                                "ts": "1709460000.0",
+                            },
+                            {
+                                "text": "This is a forwarded message",
+                                "channel": {"id": "C4444"},
+                                "ts": "1709000000.0",
+                            },
+                        ],
+                    },
+                }
             ],
-        },
-    }
-    checker = MessageChecker(mock_client.client, mock_client.client)
+            "reactions.add": [{"ok": True}],
+        }
+    )
+
+    checker = MessageChecker(WebClient(), WebClient())
 
     checker.check_messages(keyword, "2024-03-04", "2024-03-02")
-    # search.messages is mocked, so it doesn't get recorded on the mock client
-    # Only one matched message required reaction and reposting.
-    assert mock_client.recorder.mock_received_requests == {
-        "/chat.getPermalink": 1,
-        "/chat.postMessage": 1,
-        "/reactions.add": 1,
-    }
+    # search.messages is called once
+    # other endpoints called once each for one matched message requiring
+    # reaction and reposting.
+    assert len(httpretty.latest_requests()) == 4
+
+    requests_by_path = get_mock_received_requests()
+    assert requests_by_path["/api/search.messages"] == [
+        {
+            "query": [
+                f"{keyword} -has::{reaction}: -in:#{support_channel} "
+                f"-from:@{settings.SLACK_APP_USERNAME} -is:dm "
+                "before:2024-03-04 after:2024-03-02"
+            ]
+        }
+    ]
     # fetch the permalink for the message with ts matching the message to be reposted
-    assert mock_client.recorder.mock_received_requests_kwargs["/chat.getPermalink"] == [
-        {"channel": "C4444", "message_ts": "1709460000.0"}
+    assert requests_by_path["/api/chat.getPermalink"] == [
+        {
+            "channel": ["C4444"],
+            "message_ts": ["1709460000.0"],
+        }
     ]
     # reposted to correct channel
-    assert mock_client.recorder.mock_received_requests_kwargs["/chat.postMessage"] == [
-        {"channel": support_channel, "text": "http://test"}
-    ]
+    assert requests_by_path["/api/chat.postMessage"][0] == {
+        "channel": support_channel,
+        "text": "http://example.com",
+    }
+
     # reacted with correct emoji
-    assert mock_client.recorder.mock_received_requests_kwargs["/reactions.add"] == [
-        {"channel": "C4444", "name": reaction, "timestamp": "1709460000.0"}
+    assert requests_by_path["/api/reactions.add"] == [
+        {
+            "channel": ["C4444"],
+            "name": [reaction],
+            "timestamp": ["1709460000.0"],
+        }
     ]
-    mock_search.assert_called_once()
-    mock_search.assert_called_with(
-        query=(
-            f"{keyword} -has::{reaction}: -in:#{support_channel} "
-            f"-from:@{settings.SLACK_APP_USERNAME} -is:dm "
-            "before:2024-03-04 after:2024-03-02 "
-        )
-    )
