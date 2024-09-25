@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 
 import httpretty
 import pytest
-from slack_sdk import WebClient
 
 from ebmbot import scheduler, settings
 from ebmbot.dispatcher import JobDispatcher, MessageChecker, run_once
+from ebmbot.slack import slack_web_client
 
 from .assertions import assert_call_counts, assert_slack_client_sends_messages
 from .job_configs import config
@@ -47,7 +47,7 @@ def test_run_once():
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
 
-    processes = run_once(WebClient(), config)
+    processes = run_once(slack_web_client(), config)
 
     for p in processes:
         p.join()
@@ -64,7 +64,7 @@ def test_job_success_with_unsafe_shell_args():
         "test_parameterised_job_2", {"thing_to_echo": "<poem>"}, "channel", TS, 0
     )
     job = scheduler.reserve_job()
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -85,7 +85,7 @@ def test_job_success():
     scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
 
     assert_slack_client_sends_messages(
         messages_kwargs=[
@@ -107,7 +107,7 @@ def test_job_success_with_parameterised_args():
     scheduler.schedule_job("test_parameterised_job", {"path": "poem"}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -128,7 +128,7 @@ def test_job_success_and_report():
     scheduler.schedule_job("test_reported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -149,7 +149,7 @@ def test_job_success_with_no_report():
     scheduler.schedule_job("test_unreported_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[{"channel": "logs", "text": "about to start"}],
     )
@@ -175,7 +175,7 @@ def test_job_success_with_slack_exception():
     scheduler.schedule_job("test_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    client = WebClient()
+    client = slack_web_client()
     # confirm that posting a message with the client raises an error
     with pytest.raises(Exception):
         client.chat_postMessage(text="test", channel="channel")
@@ -194,7 +194,7 @@ def test_job_failure():
 
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -219,7 +219,7 @@ def test_job_failure_in_dm():
 
     scheduler.schedule_job("test_bad_job", {}, "IM0001", TS, 0, is_im=True)
     job = scheduler.reserve_job()
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         # NOTE: NOT reposted to tech support from a DM with the bot
         messages_kwargs=[
@@ -241,7 +241,7 @@ def test_job_failure_when_command_not_found():
     scheduler.schedule_job("test_really_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -267,7 +267,7 @@ def test_job_failure_with_host_log_dirs_setting():
 
     scheduler.schedule_job("test_bad_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
 
     assert_slack_client_sends_messages(
         messages_kwargs=[
@@ -291,7 +291,7 @@ def test_python_job_success():
     scheduler.schedule_job("test_good_python_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -314,7 +314,7 @@ def test_python_job_success_with_parameterised_args():
     )
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -335,7 +335,7 @@ def test_python_job_success_with_blocks():
     scheduler.schedule_job("test_good_python_job_with_blocks", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     expected_blocks = [
         {"type": "section", "text": {"type": "plain_text", "text": "Hello World!"}}
     ]
@@ -364,7 +364,7 @@ def test_python_job_failure_with_blocks():
     scheduler.schedule_job("test_bad_python_job_with_blocks", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
 
     assert_slack_client_sends_messages(
         messages_kwargs=[
@@ -392,7 +392,7 @@ def test_python_job_failure():
 
     scheduler.schedule_job("test_bad_python_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -419,7 +419,7 @@ def test_python_job_with_no_output():
     scheduler.schedule_job("test_python_job_no_output", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -440,7 +440,7 @@ def test_job_success_config_with_no_python_file():
     scheduler.schedule_job("test1_good_job", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "logs", "text": "about to start"},
@@ -459,7 +459,7 @@ def test_job_with_code_format():
     scheduler.schedule_job("test_good_job_with_code", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
 
     assert_slack_client_sends_messages(
         messages_kwargs=[
@@ -496,7 +496,7 @@ def test_job_with_long_code_output_is_uploaded_as_file():
     scheduler.schedule_job("test_python_job_long_code_output", {}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
-    do_job(WebClient(), job)
+    do_job(slack_web_client(), job)
 
     assert_call_counts(
         {
@@ -525,8 +525,7 @@ def build_log_dir(job_type_with_namespace):
 
 
 def test_message_checker_config():
-    mock_client = WebClient()
-    checker = MessageChecker(mock_client, mock_client)
+    checker = MessageChecker(slack_web_client("bot"), slack_web_client("user"))
     # channel IDs are retrieved from mock_web_api_server
     assert checker.config == {
         "tech-support": {
@@ -549,7 +548,7 @@ def test_message_checker_run():
         }
     )
 
-    checker = MessageChecker(WebClient(), WebClient())
+    checker = MessageChecker(slack_web_client("bot"), slack_web_client("user"))
 
     # Mock the run function so the checker runs twice, not forever
     run_fn = Mock(side_effect=[True, True, False])
@@ -593,7 +592,7 @@ def test_message_checker_tech_support_messages(keyword, support_channel, reactio
         }
     )
 
-    checker = MessageChecker(WebClient(), WebClient())
+    checker = MessageChecker(slack_web_client("bot"), slack_web_client("user"))
 
     checker.check_messages(keyword, "2024-03-04", "2024-03-02")
     # search.messages is called once

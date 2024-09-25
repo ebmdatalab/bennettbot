@@ -6,6 +6,7 @@ from .. import scheduler, settings
 from ..job_configs import config
 from ..logger import logger
 from ..signatures import InvalidHMAC, validate_hmac
+from ..slack import notify_slack, slack_web_client
 
 
 def handle_github_webhook(project):
@@ -73,3 +74,25 @@ def schedule_deploy(project):
     logger.info("Scheduling deploy", project=project)
     channel = config["default_channel"][project]
     scheduler.schedule_job(job, {}, channel, "", delay_seconds=60)
+
+    # Notify if deploys are suppressed
+    active_suppression = next(
+        (
+            suppression
+            for suppression in scheduler.get_suppressions()
+            if suppression["start_at"] < str(scheduler._now())
+            and suppression["job_type"] == job
+        ),
+        None,
+    )
+    if active_suppression:
+        notify_slack(
+            slack_web_client(),
+            channel,
+            (
+                "PR merged, not deploying because deploys suppressed until "
+                f"{active_suppression['end_at']}.\n"
+                f"In an emergency, use `{project} suppress cancel` followed by "
+                f"`{project} deploy` to force a deployment"
+            ),
+        )
