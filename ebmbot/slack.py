@@ -1,21 +1,48 @@
 from time import sleep
 
+from slack_sdk import WebClient
+
+from ebmbot import settings
 from workspace.utils.blocks import get_basic_header_and_text_blocks, truncate_text
 
 from .logger import logger
 
 
+def slack_web_client(token_type="bot"):
+    match token_type:
+        case "bot":
+            token = settings.SLACK_BOT_TOKEN
+        case "user":
+            token = settings.SLACK_BOT_USER_TOKEN
+        case _:
+            assert False, "Unknown token type"
+    token = (
+        settings.SLACK_BOT_TOKEN
+        if token_type == "bot"
+        else settings.SLACK_BOT_USER_TOKEN
+    )
+    return WebClient(token=token)
+
+
 def notify_slack(
-    slack_client, channel, message_text, thread_ts=None, message_format=None
+    slack_client,
+    channel,
+    message_text,
+    thread_ts=None,
+    message_format=None,
+    retry_delay=1,
 ):
     """Send message to Slack."""
-    msg_kwargs = {"text": str(message_text), "thread_ts": thread_ts, "channel": channel}
+    # The message text can be either a string or blocks (a list of dicts),
+    # so stringify it for text arg and logs
+    message_string = str(message_text)
+    msg_kwargs = {"text": message_string, "thread_ts": thread_ts, "channel": channel}
     if message_format == "blocks":
         msg_kwargs["blocks"] = message_text
 
-    # Truncate message text to the first charcters
-    log_message_text = message_text[:500]
-    if len(log_message_text) < len(message_text):
+    # Truncate message text for log to the first 500 characters
+    log_message_text = message_string[:500]
+    if len(log_message_text) < len(message_string):
         log_message_text += " (truncated)"
 
     logger.info(
@@ -33,10 +60,12 @@ def notify_slack(
         else:
             msg_kwargs["text"] = f"```{msg_kwargs['text']}```"
 
-    # In case of any unexpected transient exception posting to slack, retry up to 3
-    # times and then report and log the error, to avoid errors in scheduled jobs.
-    attempts = 0
-    while attempts < 3:
+    # In case of any unexpected transient exception posting to slack, retry up to
+    # MAX_SLACK_NOTIFY_RETRIES times (default 2) and then report and log the error,
+    # to avoid errors in scheduled jobs.
+    retry_attempt = 0
+    error = None
+    while True:
         try:
             if message_format == "file":
                 resp = slack_client.files_upload_v2(content=message_text, **msg_kwargs)
@@ -44,9 +73,13 @@ def notify_slack(
                 resp = slack_client.chat_postMessage(**msg_kwargs)
             return resp.data
         except Exception as err:
-            attempts += 1
-            sleep(1)
+            retry_attempt += 1
             error = err
+
+        if retry_attempt > settings.MAX_SLACK_NOTIFY_RETRIES:
+            break
+        sleep(retry_delay)
+
     # The message has failed to post.
     # Modify the Slack message to report the error and try posting it to the channel
     header_text = "Could not notify slack"
@@ -59,7 +92,6 @@ def notify_slack(
     except Exception:
         # Not even the error message could not be posted to Slack, so
         pass
-
     finally:
         # Log the error
         logger.error(

@@ -1,11 +1,13 @@
 from unittest.mock import patch
 
+import httpretty
 import pytest
 
 from ebmbot import scheduler
 from ebmbot.job_configs import build_config
 
-from ..assertions import assert_job_matches
+from ..assertions import assert_job_matches, assert_slack_client_sends_messages
+from ..mock_http_request import httpretty_register
 from ..time_helpers import T0, T
 
 
@@ -56,7 +58,9 @@ def test_valid_auth_header(web_client):
     assert rsp.status_code == 200
 
 
+@httpretty.activate(allow_net_connect=False)
 def test_on_closed_merged_pr(web_client):
+    httpretty_register({"chat.postMessage": {"ok": True}})
     headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
 
     with patch("ebmbot.webserver.github.config", new=dummy_config):
@@ -66,6 +70,30 @@ def test_on_closed_merged_pr(web_client):
     jj = scheduler.get_jobs_of_type("test_deploy")
     assert len(jj) == 1
     assert_job_matches(jj[0], "test_deploy", {}, "#some-team", T(60), None)
+    # no suppressions, no messages sent
+    assert_slack_client_sends_messages(messages_kwargs=[])
+
+
+@httpretty.activate(allow_net_connect=False)
+def test_on_closed_merged_pr_with_suppression(web_client):
+    httpretty_register({"chat.postMessage": [{"ok": True}]})
+    scheduler.schedule_suppression("test_deploy", T(-60), T(60))
+
+    headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
+
+    with patch("ebmbot.webserver.github.config", new=dummy_config):
+        rsp = web_client.post("/github/test/", data=PAYLOAD_PR_CLOSED, headers=headers)
+
+    assert rsp.status_code == 200
+    jj = scheduler.get_jobs_of_type("test_deploy")
+    assert len(jj) == 1
+    assert_job_matches(jj[0], "test_deploy", {}, "#some-team", T(60), None)
+
+    # message sent for suppression
+    assert len(httpretty.latest_requests()) == 1
+    assert_slack_client_sends_messages(
+        messages_kwargs=[{"text": f"suppressed until {T(60)}", "channel": "#some-team"}]
+    )
 
 
 def test_on_closed_unmerged_pr(web_client):

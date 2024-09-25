@@ -528,6 +528,10 @@ def handle_schedule_suppression(message, say, slack_config, _is_im):
         return
 
     scheduler.schedule_suppression(slack_config["job_type"], start_at, end_at)
+    say(
+        f"{slack_config['job_type']} suppressed from {start_at} to {end_at}",
+        thread_ts=message.get("ts"),
+    )
 
 
 @log_call
@@ -535,6 +539,10 @@ def handle_cancel_suppression(message, say, slack_config, _is_im):
     """Cancel a suppression."""
 
     scheduler.cancel_suppressions(slack_config["job_type"])
+    say(
+        f"{slack_config['job_type']} suppressions cancelled",
+        thread_ts=message.get("ts"),
+    )
 
 
 @log_call

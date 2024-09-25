@@ -1,3 +1,6 @@
+from .mock_http_request import get_mock_received_requests
+
+
 def assert_job_matches(job, type_, args, channel, start_after, started_at):
     assert_subdict(
         {
@@ -30,14 +33,10 @@ def assert_subdict(d1, d2):
         assert d1[k] == d2[k]
 
 
-def assert_slack_client_sends_messages(
-    test_recorder, messages_kwargs=None, message_format=None
-):
+def assert_slack_client_sends_messages(messages_kwargs=None, message_format=None):
     messages_kwargs = messages_kwargs or []
     message_format = message_format or "text"
-    actual_call_kwargs = test_recorder.mock_received_requests_kwargs.get(
-        "/chat.postMessage", []
-    )
+    actual_call_kwargs = get_mock_received_requests().get("/api/chat.postMessage", [])
     check_slack_client_calls(actual_call_kwargs, messages_kwargs)
     # check the format of the final message sent to slack
     if message_format == "text" and messages_kwargs:
@@ -56,9 +55,16 @@ def check_slack_client_calls(actual_call_kwargs_list, expected_messages_kwargs):
                 assert actual_call[key] == value
 
 
-def assert_slack_client_reacts_to_message(test_recorder, reaction_count):
-    assert test_recorder.mock_received_requests["/reactions.add"] == reaction_count
+def assert_slack_client_reacts_to_message(reaction_count):
+    assert_call_counts({"/api/reactions.add": reaction_count})
 
 
-def assert_slack_client_doesnt_react_to_message(test_recorder):
-    assert not test_recorder.mock_received_requests.get("/reactions.add")
+def assert_slack_client_doesnt_react_to_message():
+    requests_by_path = get_mock_received_requests()
+    assert "/api/reactions.add" not in requests_by_path
+
+
+def assert_call_counts(call_counts):
+    requests_by_path = get_mock_received_requests()
+    for path, count in call_counts.items():
+        assert len(requests_by_path[path]) == count

@@ -10,18 +10,16 @@ from multiprocessing import Process
 from pathlib import Path
 
 import requests
-from slack_sdk import WebClient
 
 from . import job_configs, scheduler, settings
 from .logger import logger
-from .slack import notify_slack
+from .slack import notify_slack, slack_web_client
 
 
 def run():  # pragma: no cover
     """Start the dispatcher and the message checker running."""
-    slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
-    user_slack_client = WebClient(token=settings.SLACK_BOT_USER_TOKEN)
-    checker = MessageChecker(slack_client, user_slack_client)
+    slack_client = slack_web_client(token_type="bot")
+    checker = MessageChecker(slack_client, slack_web_client(token_type="user"))
     checker.run_check()
     while True:
         run_once(slack_client, job_configs.config)
@@ -259,7 +257,7 @@ class MessageChecker:
                 # exclude DMs as the auto-responders don't respond to these anyway
                 f"-is:dm "
                 # only include messages from today
-                f"before:{before} after:{after} "
+                f"before:{before} after:{after}"
             )
         )["messages"]["matches"]
         for message in messages:

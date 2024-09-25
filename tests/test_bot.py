@@ -3,7 +3,9 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
+import httpretty
 import pytest
+from slack_bolt import App
 from slack_bolt.request import BoltRequest
 from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
@@ -11,6 +13,7 @@ from slack_sdk.signature import SignatureVerifier
 from ebmbot import bot, scheduler
 
 from .assertions import (
+    assert_call_counts,
     assert_job_matches,
     assert_slack_client_doesnt_react_to_message,
     assert_slack_client_reacts_to_message,
@@ -18,6 +21,7 @@ from .assertions import (
     assert_suppression_matches,
 )
 from .job_configs import config
+from .mock_http_request import USERS, get_mock_received_requests, register_bot_uris
 from .time_helpers import T0, TS, T
 
 
@@ -25,22 +29,31 @@ from .time_helpers import T0, TS, T
 pytestmark = pytest.mark.freeze_time(T0)
 
 
-@pytest.fixture(autouse=True)
-def register_handler(mock_app):
-    app = mock_app.app
+def get_mock_app():
+    app = App(raise_error_for_unhandled_request=True)
     channels = bot.get_channels(app.client)
     bot_user_id, internal_user_ids = bot.get_users_info(app.client)
     bot.join_all_channels(app.client, channels, bot_user_id)
     bot.register_listeners(app, config, channels, bot_user_id, internal_user_ids)
-    yield
+    return app
+
+
+@pytest.fixture
+def mock_app():
+    httpretty.enable(allow_net_connect=False)
+    register_bot_uris()
+    mock_app = get_mock_app()
+    yield mock_app
+    httpretty.disable()
+    httpretty.reset()
 
 
 def test_joined_channels(mock_app):
-    recorder = mock_app.recorder
     # conversations.members called for each channel (4) (to check if bot is already a
     # member) and conversations.join 3 times to join the channels it's not already in
-    assert recorder.mock_received_requests["/conversations.members"] == 4
-    assert recorder.mock_received_requests["/conversations.join"] == 3
+    assert_call_counts(
+        {"/api/conversations.members": 4, "/api/conversations.join": 3},
+    )
 
 
 def test_schedule_job(mock_app):
@@ -55,7 +68,6 @@ def test_schedule_job_with_job_already_running(mock_app):
     with patch("ebmbot.scheduler.schedule_job", return_value=True):
         handle_message(mock_app, "<@U1234> test do job 1")
         assert_slack_client_sends_messages(
-            mock_app.recorder,
             messages_kwargs=[{"channel": "channel", "text": "already started"}],
         )
 
@@ -99,6 +111,11 @@ def test_schedule_suppression(mock_app):
     ss = scheduler.get_suppressions()
     assert len(ss) == 1
     assert_suppression_matches(ss[0], "test_good_job", T(467), T(1067))
+    # confirmation message posted
+    assert_call_counts({"/api/chat.postMessage": 1})
+    assert_slack_client_sends_messages(
+        messages_kwargs=[{"channel": "channel", "text": "test_good_job suppressed"}],
+    )
 
 
 @pytest.mark.parametrize(
@@ -121,10 +138,19 @@ def test_schedule_suppression(mock_app):
 def test_schedule_suppression_with_bad_times(mock_app, message_text):
     handle_message(mock_app, message_text)
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}],
     )
     assert not scheduler.get_suppressions()
+    # info message sent
+    assert_call_counts({"/api/chat.postMessage": 1})
+    assert_slack_client_sends_messages(
+        messages_kwargs=[
+            {
+                "channel": "channel",
+                "text": "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]",
+            }
+        ],
+    )
 
 
 def test_cancel_suppression(mock_app):
@@ -134,11 +160,19 @@ def test_cancel_suppression(mock_app):
     handle_message(mock_app, "<@U1234> test cancel suppression", reaction_count=2)
     assert not scheduler.get_suppressions()
 
+    # confirmation messages posted
+    assert_call_counts({"/api/chat.postMessage": 2})
+    assert_slack_client_sends_messages(
+        messages_kwargs=[
+            {"channel": "channel", "text": "test_good_job suppressed"},
+            {"channel": "channel", "text": "test_good_job suppressions cancelled"},
+        ],
+    )
+
 
 def test_namespace_help(mock_app):
     handle_message(mock_app, "<@U1234> test help", reaction_count=0)
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[
             {"channel": "channel", "text": "`test do job [n]`: do the job"}
         ],
@@ -148,7 +182,6 @@ def test_namespace_help(mock_app):
 def test_restricted_namespace_help(mock_app):
     handle_message(mock_app, "<@U1234> testrestricted help", reaction_count=0)
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[
             {
                 "channel": "channel",
@@ -167,7 +200,6 @@ def test_help(mock_app):
         "* :lock: `testrestricted`",
     ]:
         assert_slack_client_sends_messages(
-            mock_app.recorder,
             messages_kwargs=[
                 {"channel": "channel", "text": msg_fragment},
             ],
@@ -178,7 +210,6 @@ def test_not_understood(mock_app):
     handle_message(mock_app, "<@U1234> beep boop", reaction_count=0)
     for expected_fragment in ["I'm sorry", "Enter `@test_username [category] help`"]:
         assert_slack_client_sends_messages(
-            mock_app.recorder,
             messages_kwargs=[{"channel": "channel", "text": expected_fragment}],
         )
 
@@ -194,7 +225,6 @@ def test_not_understood_direct_message(mock_app):
     )
     for expected_fragment in ["I'm sorry", "Enter `[category] help`"]:
         assert_slack_client_sends_messages(
-            mock_app.recorder,
             messages_kwargs=[{"channel": "IM0001", "text": expected_fragment}],
         )
 
@@ -202,7 +232,6 @@ def test_not_understood_direct_message(mock_app):
 def test_status(mock_app):
     handle_message(mock_app, "<@U1234> status", reaction_count=0)
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[{"channel": "channel", "text": "Nothing is happening"}],
     )
 
@@ -211,7 +240,6 @@ def test_status(mock_app):
 def test_message_with_spaces(mock_app, message):
     handle_message(mock_app, f"<@U1234>{message}", reaction_count=0)
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[
             {"channel": "channel", "text": "`test do job [n]`: do the job"}
         ],
@@ -230,7 +258,6 @@ def test_direct_message(mock_app, message):
         event_kwargs={"channel_type": "im"},
     )
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[
             {"channel": "IM0001", "text": "`test do job [n]`: do the job"}
         ],
@@ -358,17 +385,25 @@ def test_tech_support_listener_ignores_non_message_changed_subtypes(mock_app):
     )
 
 
+def assert_tech_support_paths_not_called():
+    received_requests = get_mock_received_requests()
+    for path in ["/api/chat.getPermalink", "/api/chat.postMessage"]:
+        assert path not in received_requests
+
+
+def assert_tech_support_paths_called():
+    received_requests = get_mock_received_requests()
+    for path in ["/api/chat.getPermalink", "/api/chat.postMessage"]:
+        assert len(received_requests[path]) == 1
+
+
 def assert_expected_support_response(
     mock_app, text, channel, event_kwargs, repost_channel
 ):
     # the triggered tech support handler will first fetch the url for the message
     # and then post it to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
-
-    recorder = mock_app.recorder
-    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
-    for path in tech_support_call_paths:
-        assert path not in recorder.mock_received_requests
+    assert_tech_support_paths_not_called()
 
     handle_message(
         mock_app,
@@ -380,18 +415,18 @@ def assert_expected_support_response(
     )
 
     # After the dispatched message, each path has been called once
-    for path in tech_support_call_paths:
-        if repost_channel:
-            assert recorder.mock_received_requests[path] == 1
-        else:
-            assert path not in recorder.mock_received_requests
+    if repost_channel:
+        assert_tech_support_paths_called()
+    else:
+        assert_tech_support_paths_not_called()
 
     if repost_channel:
+        received_requests = get_mock_received_requests()
         # check the contents of the request kwargs for the postMessage
         # posts to the repost channel, with the url retrieved from the
-        # mocked getPermalink call (always "http://test")
-        post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
-        assert ("text", "http://test") in post_message.items()
+        # mocked getPermalink call (always "http://example.com")
+        post_message = received_requests["/api/chat.postMessage"][0]
+        assert ("text", "http://example.com") in post_message.items()
         assert ("channel", repost_channel) in post_message.items()
 
 
@@ -399,10 +434,7 @@ def test_tech_support_edited_message(mock_app):
     # the triggered tech support handler will first fetch the url for the message
     # and then post it to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
-    recorder = mock_app.recorder
-    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
-    for path in tech_support_call_paths:
-        assert path not in recorder.mock_received_requests
+    assert_tech_support_paths_not_called()
 
     handle_message(
         mock_app,
@@ -414,8 +446,7 @@ def test_tech_support_edited_message(mock_app):
     )
 
     # tech-support keyword typo, no tech support calls
-    for path in tech_support_call_paths:
-        assert path not in recorder.mock_received_requests
+    assert_tech_support_paths_not_called()
 
     # Editing the same message to include tech-support does repost
     handle_message(
@@ -427,8 +458,7 @@ def test_tech_support_edited_message(mock_app):
         event_kwargs={"subtype": "message_changed"},
     )
 
-    for path in tech_support_call_paths:
-        assert recorder.mock_received_requests[path] == 1
+    assert_tech_support_paths_called()
 
 
 @patch("ebmbot.bot.get_tech_support_dates")
@@ -440,10 +470,7 @@ def test_tech_support_out_of_office_listener(tech_support_dates, mock_app):
     # If tech-support is OOO, the handler will first reply with the OOO message, then
     # the repost the message URL to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
-    recorder = mock_app.recorder
-    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
-    for path in tech_support_call_paths:
-        assert path not in recorder.mock_received_requests
+    assert_tech_support_paths_not_called()
 
     handle_message(
         mock_app,
@@ -456,19 +483,20 @@ def test_tech_support_out_of_office_listener(tech_support_dates, mock_app):
 
     # After the dispatched message, postMessage has been called twice, for the OOO
     # reply and the reposted url
-    assert recorder.mock_received_requests["/chat.postMessage"] == 2
-    assert recorder.mock_received_requests["/chat.getPermalink"] == 1
+    received_requests = get_mock_received_requests()
+    assert len(received_requests["/api/chat.postMessage"]) == 2
+    assert len(received_requests["/api/chat.getPermalink"]) == 1
 
     # check the contents of the request kwargs for the OOO postMessage
     # posts to the same channel (C0002)
-    ooo_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    ooo_message = received_requests["/api/chat.postMessage"][0]
     assert "tech-support is currently out of office" in ooo_message["text"]
     assert ooo_message["channel"] == "C0002"
     # check the contents of the request kwargs for the reposted postMessage
     # posts to the techsupport channel (C0001), with the url retrieved from the
-    # mocked getPermalink call (always "http://test")
-    repost_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][1]
-    assert repost_message["text"] == "http://test"
+    # mocked getPermalink call (always "http://example.com")
+    repost_message = received_requests["/api/chat.postMessage"][1]
+    assert repost_message["text"] == "http://example.com"
     assert repost_message["channel"] == "C0001"
 
 
@@ -495,10 +523,7 @@ def test_tech_support_out_of_office_dates(
     # If tech-support is OOO, the handler will first reply with the OOO message, then
     # the repost the message URL to the techsupport channel
     # Before the dispatched message, neither of these paths have been called
-    recorder = mock_app.recorder
-    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
-    for path in tech_support_call_paths:
-        assert path not in recorder.mock_received_requests
+    assert_tech_support_paths_not_called()
 
     handle_message(
         mock_app,
@@ -511,25 +536,21 @@ def test_tech_support_out_of_office_dates(
 
     # After the dispatched message, postMessage has been called twice if OOO, for the OOO
     # reply and the reposted url
-    assert (
-        recorder.mock_received_requests["/chat.postMessage"] == 2 if ooo_message else 1
-    )
-    assert recorder.mock_received_requests["/chat.getPermalink"] == 1
+    received_requests = get_mock_received_requests()
+    assert len(received_requests["/api/chat.postMessage"]) == 2 if ooo_message else 1
+    assert len(received_requests["/api/chat.getPermalink"]) == 1
 
-    first_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    first_message = received_requests["/api/chat.postMessage"][0]
     if ooo_message:
         assert "tech-support is currently out of office" in first_message["text"]
     else:
-        assert first_message["text"] == "http://test"
+        assert first_message["text"] == "http://example.com"
 
 
 def test_tech_support_listener_in_direct_message(mock_app):
     # If the tech support handler is triggered in a DM, it doesn't get
     # reposted to the techsupport channel
-    recorder = mock_app.recorder
-    tech_support_call_paths = ["/chat.getPermalink", "/chat.postMessage"]
-    for path in tech_support_call_paths:
-        assert path not in recorder.mock_received_requests
+    assert_tech_support_paths_not_called()
 
     handle_message(
         mock_app,
@@ -539,11 +560,10 @@ def test_tech_support_listener_in_direct_message(mock_app):
         event_type="message",
         event_kwargs={"channel_type": "im"},
     )
-
-    # After the dispatched message, each path has been called once
-    assert "/chat.getPermalink" not in recorder.mock_received_requests
-    assert "/chat.postMessage" in recorder.mock_received_requests
-    post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    received_requests = get_mock_received_requests()
+    assert "/api/chat.getPermalink" not in received_requests
+    assert "/api/chat.postMessage" in received_requests
+    post_message = received_requests["/api/chat.postMessage"][0]
     assert (
         "text",
         "Sorry, I can't call tech-support from this conversation.",
@@ -565,7 +585,7 @@ def test_no_listener_found(mock_app):
         expected_status=200,
         event_type="message",
     )
-    assert_slack_client_sends_messages(mock_app.recorder, messages_kwargs=[])
+    assert_slack_client_sends_messages(messages_kwargs=[])
     assert resp.body == "Unhandled message"
 
 
@@ -579,7 +599,6 @@ def test_unexpected_error(mock_app):
             expected_status=500,
         )
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[
             {
                 "channel": "channel",
@@ -607,10 +626,7 @@ def test_already_reacted_to_tech_support_error(mock_app):
             expected_status=200,
         )
 
-    assert_slack_client_sends_messages(
-        mock_app.recorder,
-        messages_kwargs=[],
-    )
+    assert_slack_client_sends_messages(messages_kwargs=[])
 
 
 def test_already_reacted_to_non_tech_support_error(mock_app):
@@ -624,11 +640,13 @@ def test_already_reacted_to_non_tech_support_error(mock_app):
         ),
     ):
         handle_message(
-            mock_app, "<@U1234> test help", reaction_count=1, expected_status=500
+            mock_app,
+            "<@U1234> test help",
+            reaction_count=1,
+            expected_status=500,
         )
 
     assert_slack_client_sends_messages(
-        mock_app.recorder,
         messages_kwargs=[
             {
                 "channel": "channel",
@@ -645,14 +663,15 @@ def test_new_channel_created(mock_app):
         event_type="channel_created",
         event_kwargs={"channel": {"id": "C0NEW", "name": "new-channel"}},
     )
-    assert_slack_client_sends_messages(mock_app.recorder, messages_kwargs=[])
-    assert mock_app.recorder.mock_received_requests_kwargs["/conversations.join"][
-        -1
-    ] == {"channel": "C0NEW", "users": "U1234"}
+    assert_slack_client_sends_messages(messages_kwargs=[])
+    received_requests = get_mock_received_requests()
+    assert received_requests["/api/conversations.join"][-1] == {
+        "channel": ["C0NEW"],
+        "users": ["U1234"],
+    }
 
 
 def test_remove_job(mock_app):
-    recorder = mock_app.recorder
     handle_message(mock_app, "<@U1234> test do job 10", reaction_count=1)
     jobs = scheduler.get_jobs_of_type("test_good_job")
     assert len(jobs) == 1
@@ -660,7 +679,8 @@ def test_remove_job(mock_app):
     handle_message(mock_app, f"<@U1234> remove job id {job_id}", reaction_count=2)
     assert not scheduler.get_jobs_of_type("test_good_job")
 
-    post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    received_requests = get_mock_received_requests()
+    post_message = received_requests["/api/chat.postMessage"][0]
     assert (
         "text",
         "Job id [1] removed",
@@ -668,9 +688,9 @@ def test_remove_job(mock_app):
 
 
 def test_remove_non_existent_job(mock_app):
-    recorder = mock_app.recorder
     handle_message(mock_app, "<@U1234> remove job id 10", reaction_count=1)
-    post_message = recorder.mock_received_requests_kwargs["/chat.postMessage"][0]
+    received_requests = get_mock_received_requests()
+    post_message = received_requests["/api/chat.postMessage"][0]
     assert (
         "text",
         "Job id [10] not found in running or scheduled jobs",
@@ -695,6 +715,14 @@ def test_remove_non_existent_job(mock_app):
 def test_restricted_jobs_only_scheduled_for_internal_users(
     mock_app, user, command, reaction_count, scheduled_job_count
 ):
+    httpretty.register_uri(
+        httpretty.POST,
+        "https://slack.com/api/users.info",
+        responses=[
+            httpretty.Response(body=json.dumps({"ok": True, "user": USERS[user]}))
+        ],
+    )
+
     assert not scheduler.get_jobs()
     handle_message(
         mock_app,
@@ -705,7 +733,6 @@ def test_restricted_jobs_only_scheduled_for_internal_users(
     assert len(scheduler.get_jobs()) == scheduled_job_count
     if scheduled_job_count == 0:
         assert_slack_client_sends_messages(
-            mock_app.recorder,
             messages_kwargs=[{"channel": "channel", "text": ":no_entry:"}],
         )
 
@@ -740,16 +767,16 @@ def handle_message(
     )
 
     if reaction_count:
-        assert_slack_client_reacts_to_message(mock_app.recorder, reaction_count)
+        assert_slack_client_reacts_to_message(reaction_count)
     else:
-        assert_slack_client_doesnt_react_to_message(mock_app.recorder)
+        assert_slack_client_doesnt_react_to_message()
 
     return resp
 
 
 def handle_event(mock_app, event_type, event_kwargs, expected_status=200):
     request = get_mock_request(event_type, event_kwargs)
-    resp = mock_app.app.dispatch(request)
+    resp = mock_app.dispatch(request)
     time.sleep(0.1)
     assert resp.status == expected_status
     return resp
