@@ -26,7 +26,6 @@ def report_invalid_org(org):
     return json.dumps(blocks)
 
 
-# TODO:Make this a shared function
 def get_api_result_as_json(url: str, params: dict | None = None) -> dict:
     params = params or {}
     params["format"] = "json"
