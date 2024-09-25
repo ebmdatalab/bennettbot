@@ -150,7 +150,7 @@ The following webhook environment variables need to be set. These relate to call
 OpenPrescribing, and are configured at https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427.
 - `GITHUB_WEBHOOK_SECRET`
 - `WEBHOOK_ORIGIN`
-- `EBMBOT_WEBHOOK_SECRET`
+- `BENNETTBOT_WEBHOOK_SECRET`
 
 The following environment variable allows the bot to authenticate with Github to retrieve
 project information.

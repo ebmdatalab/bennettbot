@@ -57,10 +57,10 @@ GITHUB_WEBHOOK_SECRET = env.str("GITHUB_WEBHOOK_SECRET").encode("ascii")
 GCP_CREDENTIALS_PATH = env.path("GCP_CREDENTIALS_PATH")
 
 # A secret that we generate ourselves
-EBMBOT_WEBHOOK_SECRET = env.str("EBMBOT_WEBHOOK_SECRET").encode("ascii")
+BENNETTBOT_WEBHOOK_SECRET = env.str("BENNETTBOT_WEBHOOK_SECRET").encode("ascii")
 
 # TTL in seconds for webhook token
-EBMBOT_WEBHOOK_TOKEN_TTL = 60 * 60
+BENNETTBOT_WEBHOOK_TOKEN_TTL = 60 * 60
 
 # Number of times to retry sending messages to slack
 MAX_SLACK_NOTIFY_RETRIES = env.int("MAX_SLACK_NOTIFY_RETRIES", default=2)
