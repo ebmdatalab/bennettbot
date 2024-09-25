@@ -86,13 +86,13 @@ def test_get_workflows(branch, num_workflows, workflows):
 
 
 @pytest.mark.parametrize(
-    "branch, params_str",
-    [("main", "branch=main&format=json"), (None, "format=json")],
+    "branch, querystring",
+    [("main", {"branch": ["main"], "format": ["json"]}), (None, {"format": ["json"]})],
 )
-def test_get_all_runs(mock_airlock_reporter, branch, params_str):
+def test_get_all_runs(mock_airlock_reporter, branch, querystring):
     mock_airlock_reporter.branch = branch  # Overwrite branch to test branch=None
     all_runs = mock_airlock_reporter.get_all_runs()
-    assert httpretty.latest_requests()[-1].path.split("?")[1] == params_str
+    assert httpretty.last_request().querystring == querystring
     assert len(all_runs) == 6
 
 
