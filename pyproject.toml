@@ -26,7 +26,7 @@ show_contexts = true
 
 [tool.pytest.ini_options]
 env = [
-    "DB_PATH=tests/ebmbot.db",
+    "DB_PATH=tests/bennettbot.db",
     "WORKSPACE_DIR=tests/workspace",
     "WRITEABLE_WORKSPACE_DIR=tests/writeable_workspace",
     "WRITEABLE_DIR=tests/",

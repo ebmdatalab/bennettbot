@@ -1,6 +1,6 @@
 import pytest
 
-from ebmbot import webserver
+from bennettbot import webserver
 
 
 @pytest.fixture()

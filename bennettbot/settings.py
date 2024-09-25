@@ -12,7 +12,7 @@ APPLICATION_ROOT = Path(__file__).resolve().parent.parent
 # that is mounted into the dokku app and is owned by the non-root docker user
 WRITEABLE_DIR = env.path("WRITEABLE_DIR", default=APPLICATION_ROOT)
 
-DB_PATH = env.path("DB_PATH", default=WRITEABLE_DIR / "ebmbot.db")
+DB_PATH = env.path("DB_PATH", default=WRITEABLE_DIR / "bennettbot.db")
 
 # location of job workspaces that live in this repo
 WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace")

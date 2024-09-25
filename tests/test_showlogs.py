@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ebmbot import settings
+from bennettbot import settings
 
 from .test_dispatcher import build_log_dir
 

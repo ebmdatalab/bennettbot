@@ -1,6 +1,6 @@
-# ebmbot
+# bennettbot
 
-ebmbot is a service for running jobs in reponse to Slack commands and GitHub webhooks.
+bennettbot is a service for running jobs in reponse to Slack commands and GitHub webhooks.
 
 A job runs a bash command in a given directory.
 Jobs are organised by namespace, and are defined in `job_configs.py`.
@@ -156,7 +156,7 @@ raw_config = {
 Some caveats:
 - Note that if the job is expected to report to slack, it must print output to stdout.
 - Scripts run in a job have access to all environment variables, but they do not have
-  access to the app itself, so e.g. can't use `ebmbot.settings`; use the environment
+  access to the app itself, so e.g. can't use `bennettbot.settings`; use the environment
   variables these are based on instead.
 - PYTHONPATH is set to the root directory of the application, so scripts can access other
   modules.

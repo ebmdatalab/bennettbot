@@ -1,4 +1,4 @@
-# See comments in ebmbot/settings.py and DEVELPOPERS.md
+# See comments in bennettbot/settings.py and DEVELPOPERS.md
 # For local dev environments, these variables can be
 # configured by running ./scripts/local-setup.sh
 LOGS_DIR=changeme

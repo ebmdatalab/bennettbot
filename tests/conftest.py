@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from ebmbot import settings
+from bennettbot import settings
 
 
 pytest.register_assert_rewrite("tests.assertions")

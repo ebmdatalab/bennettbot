@@ -3,8 +3,8 @@ from unittest.mock import patch
 import httpretty
 import pytest
 
-from ebmbot import scheduler
-from ebmbot.job_configs import build_config
+from bennettbot import scheduler
+from bennettbot.job_configs import build_config
 
 from ..assertions import assert_job_matches, assert_slack_client_sends_messages
 from ..mock_http_request import httpretty_register
@@ -52,7 +52,7 @@ def test_invalid_auth_header(web_client):
 def test_valid_auth_header(web_client):
     headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
 
-    with patch("ebmbot.webserver.github.config", new=dummy_config):
+    with patch("bennettbot.webserver.github.config", new=dummy_config):
         rsp = web_client.post("/github/test/", data=PAYLOAD_PR_CLOSED, headers=headers)
 
     assert rsp.status_code == 200
@@ -63,7 +63,7 @@ def test_on_closed_merged_pr(web_client):
     httpretty_register({"chat.postMessage": {"ok": True}})
     headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
 
-    with patch("ebmbot.webserver.github.config", new=dummy_config):
+    with patch("bennettbot.webserver.github.config", new=dummy_config):
         rsp = web_client.post("/github/test/", data=PAYLOAD_PR_CLOSED, headers=headers)
 
     assert rsp.status_code == 200
@@ -81,7 +81,7 @@ def test_on_closed_merged_pr_with_suppression(web_client):
 
     headers = {"X-Hub-Signature": "sha1=3e09e676b4a62b634401b44b4c4ff1f58404e746"}
 
-    with patch("ebmbot.webserver.github.config", new=dummy_config):
+    with patch("bennettbot.webserver.github.config", new=dummy_config):
         rsp = web_client.post("/github/test/", data=PAYLOAD_PR_CLOSED, headers=headers)
 
     assert rsp.status_code == 200

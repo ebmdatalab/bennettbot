@@ -3,8 +3,8 @@ from unittest.mock import patch
 import httpretty
 import pytest
 
-from ebmbot import settings
-from ebmbot.slack import notify_slack, slack_web_client
+from bennettbot import settings
+from bennettbot.slack import notify_slack, slack_web_client
 from workspace.utils.blocks import get_text_block
 
 from .mock_http_request import get_mock_received_requests, httpretty_register
@@ -50,7 +50,7 @@ def test_notify_slack_success_blocks():
 
 
 @httpretty.activate(allow_net_connect=False)
-@patch("ebmbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 1)
+@patch("bennettbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 1)
 def test_notify_slack_retries():
     # Mock 2 responses from the postMessage endpoint
     # We allow 1 retry to notify slack with the original message
@@ -74,7 +74,7 @@ def test_notify_slack_retries():
 
 
 @httpretty.activate(allow_net_connect=False)
-@patch("ebmbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 0)
+@patch("bennettbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 0)
 def test_notify_slack_retries_fallback():
     # Mock 2 responses from the postMessage endpoint
     # We only allow 1 atttempt to notify slack with the original message
@@ -101,7 +101,7 @@ def test_notify_slack_retries_fallback():
 
 
 @httpretty.activate(allow_net_connect=False)
-@patch("ebmbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 1)
+@patch("bennettbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 1)
 def test_notify_slack_retries_fallback_error():
     # Make the postMessage endpoint always error
     # We only allow 2 atttempt to notify slack with the original message

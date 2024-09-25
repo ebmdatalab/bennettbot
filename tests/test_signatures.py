@@ -1,6 +1,6 @@
 import pytest
 
-from ebmbot import signatures
+from bennettbot import signatures
 
 from .time_helpers import TS, T
 

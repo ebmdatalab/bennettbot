@@ -282,5 +282,5 @@ class MessageChecker:
 
 
 if __name__ == "__main__":
-    logger.info("running ebmbot.dispatcher")
+    logger.info("running bennettbot.dispatcher")
     run()

@@ -12,7 +12,7 @@ service (bot, dispatcher and webserver) as defined in the `Procfile`.
 ## Creating the Slack app
 (This should only need to be done once).
 
-ebmbot needs a new-style Slack app and uses
+bennettbot needs a new-style Slack app and uses
 [socket mode](https://slack.dev/bolt-python/concepts#socket-mode) to listen for messages.
 To create one:
 
@@ -134,7 +134,7 @@ Add the ebmbot user's key to any servers that it requires access to
 
 ### Configure app environment variables
 
-See also comments in `ebmbot/settings.py`.
+See also comments in `bennettbot/settings.py`.
 
 The following slack environment variables need to be set:
 - `SLACK_LOGS_CHANNEL`: channel where scheduled job notifications will be posted

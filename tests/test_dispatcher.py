@@ -6,9 +6,9 @@ from unittest.mock import Mock, patch
 import httpretty
 import pytest
 
-from ebmbot import scheduler, settings
-from ebmbot.dispatcher import JobDispatcher, MessageChecker, run_once
-from ebmbot.slack import slack_web_client
+from bennettbot import scheduler, settings
+from bennettbot.dispatcher import JobDispatcher, MessageChecker, run_once
+from bennettbot.slack import slack_web_client
 
 from .assertions import assert_call_counts, assert_slack_client_sends_messages
 from .job_configs import config
@@ -161,7 +161,7 @@ def test_job_success_with_no_report():
         assert f.read() == ""
 
 
-@patch("ebmbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 0)
+@patch("bennettbot.dispatcher.settings.MAX_SLACK_NOTIFY_RETRIES", 0)
 def test_job_success_with_slack_exception():
     # Test that the job still succeeds even if notifying slack errors
     # We mock the MAX_SLACK_NOTIFY_RETRIES so that this test doesn't do the
@@ -261,7 +261,7 @@ def test_job_failure_when_command_not_found():
         assert f.read() == "/bin/sh: 1: dog: not found\n"
 
 
-@patch("ebmbot.settings.HOST_LOGS_DIR", "/host/logs/")
+@patch("bennettbot.settings.HOST_LOGS_DIR", "/host/logs/")
 def test_job_failure_with_host_log_dirs_setting():
     log_dir = build_log_dir("test_bad_job")
 

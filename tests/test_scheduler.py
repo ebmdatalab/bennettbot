@@ -1,6 +1,6 @@
 import pytest
 
-from ebmbot import scheduler
+from bennettbot import scheduler
 
 from .assertions import (
     assert_job_matches,
