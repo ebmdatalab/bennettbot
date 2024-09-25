@@ -105,8 +105,15 @@ def test_cancel_job(mock_app):
     assert not scheduler.get_jobs_of_type("test_good_job")
 
 
-def test_schedule_suppression(mock_app):
-    handle_message(mock_app, "<@U1234> test suppress job from 11:20 to 11:30")
+@pytest.mark.parametrize(
+    "message_text",
+    [
+        "<@U1234> test suppress job from 11:20 to 11:30",
+        "<@U1234> test suppress job from 1120 to 1130",
+    ],
+)
+def test_schedule_suppression(mock_app, message_text):
+    handle_message(mock_app, message_text)
 
     ss = scheduler.get_suppressions()
     assert len(ss) == 1
@@ -138,7 +145,7 @@ def test_schedule_suppression(mock_app):
 def test_schedule_suppression_with_bad_times(mock_app, message_text):
     handle_message(mock_app, message_text)
     assert_slack_client_sends_messages(
-        messages_kwargs=[{"channel": "channel", "text": "[start_at] and [end_at]"}],
+        messages_kwargs=[{"channel": "channel", "text": "`[start_at]` and `[end_at]`"}],
     )
     assert not scheduler.get_suppressions()
     # info message sent
@@ -147,7 +154,7 @@ def test_schedule_suppression_with_bad_times(mock_app, message_text):
         messages_kwargs=[
             {
                 "channel": "channel",
-                "text": "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]",
+                "text": "Wrong time format - `[start_at]` and `[end_at]` must be HH:MM with `[start_at]` < `[end_at]`",
             }
         ],
     )
