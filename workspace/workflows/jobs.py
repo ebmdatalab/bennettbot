@@ -12,26 +12,10 @@ from workspace.utils.blocks import (
     get_header_block,
     get_text_block,
 )
+from workspace.workflows import config
 
 
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
-
-
-def load_config():
-    path = settings.APPLICATION_ROOT / "workspace" / "workflows" / "config.json"
-    return json.loads(path.read_text())
-
-
-def match_shorthand(org):
-    return load_config()["shorthands"].get(org, org)
-
-
-def get_organisation_repos(org):
-    return load_config()["repos"][org]
-
-
-def alias_status(status):
-    return load_config()["status_aliases"].get(status, status)
 
 
 def report_invalid_org(org):
@@ -52,14 +36,39 @@ def get_api_result_as_json(url: str, params: dict | None = None) -> dict:
     return response.json()
 
 
-class WorkflowReporter:
-    EMOJI = load_config()["emoji"]
+class RepoWorkflowReporter:
+    EMOJI = {
+        "success": ":large_green_circle:",
+        "running": ":large_yellow_circle:",
+        "failure": ":red_circle:",
+        "skipped": ":white_circle:",
+        "cancelled": ":heavy_multiplication_x:",
+        "other": ":grey_question:",
+    }
     EMOJI_KEY = " / ".join([f"{v}={k.title()}" for k, v in EMOJI.items()])
 
     def __init__(self, org_name, repo_name, branch="main"):
+        """
+        Retrieves and reports on the status of workflow runs in a specified repo.
+
+        Creating an instance of this class will automatically call the GitHub API to get a list of workflow IDs and their names.
+        Subsequently calling report() or summarize() will call a different endpoint of the API to get the status and conclusion for the most recent run of each workflow.
+
+        The statuses of workflows are represented by emojis, as defined in the EMOJI class attribute.
+        report() will return a full JSON message with blocks for each workflow;
+        summarize() will return a single block with a summary of all workflows, which can be concatenated with other summaries.
+
+        Parameters:
+            org_name: str
+                The name of the GitHib organisation that owns the repo
+            repo_name: str
+                The name of the repo
+            branch: str
+                The branch to check the status of workflows on.
+                Default is "main" (as there is currently little application for anything other than main).
+        """
         self.org_name = org_name
         self.repo_name = repo_name
-        # Little application for anything other than main, so default to that
         self.branch = branch
 
         self.location = f"{org_name}/{repo_name}"
@@ -68,7 +77,7 @@ class WorkflowReporter:
             f"https://github.com/{self.location}/actions?query=branch%3A{self.branch}"
         )
 
-        self.workflows = self.get_workflows()
+        self.workflows = self.get_workflows()  # Dict of workflow_id: workflow_name
         self.workflow_ids = set(self.workflows.keys())
 
     def _get_json_response(self, path, params=None):
@@ -83,13 +92,13 @@ class WorkflowReporter:
         return workflows
 
     def remove_workflows_skipped_on_main(self, workflows):
-        skipped = load_config()["skipped_workflows_on_main"].get(self.location, [])
+        skipped = config.SKIPPED_WORKFLOWS_ON_MAIN.get(self.location, [])
         for workflow_id in skipped:
             workflows.pop(workflow_id, None)
 
     def get_all_runs(self) -> list:
-        params = {"branch": self.branch} if self.branch else {}
-        return self._get_json_response("actions/runs", params)["workflow_runs"]
+        params = {"branch": self.branch} if self.branch else None
+        return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
     def get_latest_conclusions(self) -> dict:
         all_runs = self.get_all_runs()
@@ -100,8 +109,10 @@ class WorkflowReporter:
 
     @staticmethod
     def get_conclusion_for_run(run) -> str:
+        aliases = {"in_progress": "running"}
         if run["conclusion"] is None:
-            return alias_status(str(run["status"]))
+            status = str(str(run["status"]))
+            return aliases.get(status, status)
         return str(run["conclusion"])
 
     def get_emoji(self, conclusion) -> str:
@@ -150,13 +161,13 @@ class WorkflowReporter:
 
 
 def summarize_org(org, branch):
-    repos = get_organisation_repos(org)
+    repos = config.REPOS[org]
     blocks = [
         get_header_block(f"Workflows for {org}"),
-        get_text_block(WorkflowReporter.EMOJI_KEY),
+        get_text_block(RepoWorkflowReporter.EMOJI_KEY),
     ]
     for repo in repos:
-        blocks.append(WorkflowReporter(org, repo, branch).summarize())
+        blocks.append(RepoWorkflowReporter(org, repo, branch).summarize())
     return json.dumps(blocks)
 
 
@@ -173,19 +184,19 @@ def parse_args():
     target = args.pop("target").split("/")
     if len(target) not in [1, 2]:
         raise ValueError("Argument must be in the format org or org/repo")
-    args["org"] = match_shorthand(target[0])
+    args["org"] = config.SHORTHANDS.get(target[0], target[0])
     args["repo"] = target[1] if len(target) == 2 else None
     return args
 
 
 def main(org, repo, branch):
-    if org not in load_config()["repos"].keys():
+    if org not in config.REPOS.keys():
         return report_invalid_org(org)
     if repo is None:
         # Main usage: Summarise status for multiple repos in an org
         return summarize_org(org, branch)
     # Single repo usage: Report status for all workflows in a specified repo
-    return WorkflowReporter(org, repo, branch).report()
+    return RepoWorkflowReporter(org, repo, branch).report()
 
 
 if __name__ == "__main__":

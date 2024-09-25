@@ -24,16 +24,24 @@ WORKFLOWS = {
 @pytest.fixture
 def mock_airlock_reporter():
     httpretty.enable(allow_net_connect=False)
+    # Workflow IDs and names
     httpretty.register_uri(
         httpretty.GET,
         uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
         match_querystring=True,
         body=Path("tests/workspace/workflows.json").read_text(),
     )
-    reporter = jobs.WorkflowReporter("opensafely-core", "airlock")
+    # Workflow runs
+    for uri_param in ["branch=main&", ""]:
+        httpretty.register_uri(
+            httpretty.GET,
+            f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}format=json",
+            body=Path("tests/workspace/runs.json").read_text(),
+            match_querystring=True,
+        )
+    yield jobs.RepoWorkflowReporter("opensafely-core", "airlock")
     httpretty.disable()
     httpretty.reset()
-    return reporter
 
 
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
@@ -65,49 +73,37 @@ def test_invalid_target(args):
     [("main", 5, WORKFLOWS_MAIN), (None, 6, WORKFLOWS)],
 )
 def test_get_workflows(branch, num_workflows, workflows):
+    # get_workflows is called in __init__, so create the instance here
     httpretty.register_uri(
         httpretty.GET,
         uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
         match_querystring=True,
         body=Path("tests/workspace/workflows.json").read_text(),
     )
-    reporter = jobs.WorkflowReporter("opensafely-core", "airlock", branch=branch)
+    reporter = jobs.RepoWorkflowReporter("opensafely-core", "airlock", branch=branch)
     assert len(reporter.workflows) == num_workflows
     assert reporter.workflows == workflows
 
 
-@httpretty.activate(allow_net_connect=False)
 @pytest.mark.parametrize(
-    "branch, uri_param",
-    [("main", "branch=main&"), (None, "")],
+    "branch, params_str",
+    [("main", "branch=main&format=json"), (None, "format=json")],
 )
-def test_get_all_runs(mock_airlock_reporter, branch, uri_param):
+def test_get_all_runs(mock_airlock_reporter, branch, params_str):
     mock_airlock_reporter.branch = branch  # Overwrite branch to test branch=None
-    httpretty.register_uri(
-        httpretty.GET,
-        f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}format=json",
-        body=Path("tests/workspace/runs.json").read_text(),
-        match_querystring=True,
-    )
     all_runs = mock_airlock_reporter.get_all_runs()
+    assert httpretty.latest_requests()[-1].path.split("?")[1] == params_str
     assert len(all_runs) == 6
 
 
-@patch("workspace.workflows.jobs.WorkflowReporter.get_all_runs")
-def test_get_latest_conclusions(mock_all_runs, mock_airlock_reporter):
-    all_runs_json = json.loads(Path("tests/workspace/runs.json").read_text())
-    mock_all_runs.return_value = all_runs_json["workflow_runs"]
-
+def test_get_latest_conclusions(mock_airlock_reporter):
     conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
 
 
-@patch("workspace.workflows.jobs.WorkflowReporter.get_all_runs")
-def test_warn_about_missing_ids(mock_all_runs, mock_airlock_reporter):
+def test_warn_about_missing_workflows(mock_airlock_reporter):
     mock_airlock_reporter.workflows[1234] = "Some Workflow"
     mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
-    all_runs_json = json.loads(Path("tests/workspace/runs.json").read_text())
-    mock_all_runs.return_value = all_runs_json["workflow_runs"]
     assert len(mock_airlock_reporter.workflow_ids) == 6
     with pytest.warns(UserWarning):
         mock_airlock_reporter.get_latest_conclusions()
@@ -124,7 +120,7 @@ def test_warn_about_missing_ids(mock_all_runs, mock_airlock_reporter):
     ],
 )
 def test_get_conclusion_for_run(run, conclusion):
-    assert jobs.WorkflowReporter.get_conclusion_for_run(run) == conclusion
+    assert jobs.RepoWorkflowReporter.get_conclusion_for_run(run) == conclusion
 
 
 @pytest.mark.parametrize(
@@ -135,7 +131,7 @@ def test_get_conclusion_for_run(run, conclusion):
         ("", ":grey_question:"),
     ],
 )
-@patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
 def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emoji):
     mock_conclusions.return_value = {
         key: conclusion for key in sorted(WORKFLOWS_MAIN.keys())
@@ -161,8 +157,9 @@ def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emo
         ("", "", ":grey_question:"),
     ],
 )
-@patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
 def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
+    # Call main with a valid org name and a valid repo name
     httpretty.register_uri(
         httpretty.GET,
         uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
@@ -199,11 +196,11 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
     ]
 
 
-@patch("workspace.workflows.jobs.WorkflowReporter.get_latest_conclusions")
-@patch("workspace.workflows.jobs.WorkflowReporter.get_workflows")
-@patch("workspace.workflows.jobs.load_config")
-def test_main_for_organisation(mock_config, mock_workflows, mock_conclusions):
-    mock_config.return_value = {"repos": {"opensafely-core": ["airlock"]}}
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
+@patch("workspace.workflows.config.REPOS", {"opensafely-core": ["airlock"]})
+def test_main_for_organisation(mock_workflows, mock_conclusions):
+    # Call main with a valid org and repo=None
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
@@ -234,7 +231,8 @@ def test_main_for_organisation(mock_config, mock_workflows, mock_conclusions):
     ]
 
 
-def test_invalid_org():
+def test_main_for_invalid_org():
+    # Call main with an invalid org
     blocks = json.loads(jobs.main("invalid-org", repo=None, branch="main"))
     assert blocks == [
         {
