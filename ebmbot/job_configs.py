@@ -299,6 +299,30 @@ raw_config = {
             },
         ]
     },
+    "workflows": {
+        "description": "Report GitHub Actions workflow runs",
+        "jobs": {
+            "show": {
+                "run_args_template": "python jobs.py --target {target}",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "show_actions": {
+                "run_args_template": "python jobs.py --target {repo} --detailed",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "show [target]",
+                # There is a line break in this help message because it's too long and this is the only action in the workspace so it doesn't look ugly anyway.
+                "help": "Summarise GitHub Actions workflow runs for a given `target` organisation or repo, provided in the form of `org` or `org/repo`. \n`org` is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)`, `ebm (ebmdatalab)`.",
+                "action": "schedule_job",
+                "job_type": "show",
+            },
+        ]
+    },
     "techsupport": {
         "restricted": True,
         "description": "Tech Support out of office and rota",

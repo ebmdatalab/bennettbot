@@ -1,0 +1,77 @@
+{
+  "total_count": 6,
+  "workflows": [
+    {
+      "id": 94331150,
+      "node_id": "W_kwDOLGGIhs4Fn2EO",
+      "name": "Trigger a deploy of opensafely documentation site",
+      "path": ".github/workflows/deploy-documentation.yml",
+      "state": "active",
+      "created_at": "2024-04-18T12:56:48.000Z",
+      "updated_at": "2024-04-18T12:56:48.000Z",
+      "url": "https://api.github.com/repos/opensafely-core/airlock/actions/workflows/94331150",
+      "html_url": "https://github.com/opensafely-core/airlock/blob/main/.github/workflows/deploy-documentation.yml",
+      "badge_url": "https://github.com/opensafely-core/airlock/workflows/Trigger%20a%20deploy%20of%20opensafely%20documentation%20site/badge.svg"
+    },
+    {
+      "id": 113602598,
+      "node_id": "W_kwDOLGGIhs4GxXAm",
+      "name": "Local job-server setup CI",
+      "path": ".github/workflows/job-server.yml",
+      "state": "active",
+      "created_at": "2024-08-22T10:45:54.000Z",
+      "updated_at": "2024-08-29T13:04:12.000Z",
+      "url": "https://api.github.com/repos/opensafely-core/airlock/actions/workflows/113602598",
+      "html_url": "https://github.com/opensafely-core/airlock/blob/main/.github/workflows/job-server.yml",
+      "badge_url": "https://github.com/opensafely-core/airlock/workflows/Local%20job-server%20setup%20CI/badge.svg"
+    },
+    {
+      "id": 82728346,
+      "node_id": "W_kwDOLGGIhs4E7lWa",
+      "name": "CI",
+      "path": ".github/workflows/main.yml",
+      "state": "active",
+      "created_at": "2024-01-17T17:16:21.000Z",
+      "updated_at": "2024-02-01T11:43:59.000Z",
+      "url": "https://api.github.com/repos/opensafely-core/airlock/actions/workflows/82728346",
+      "html_url": "https://github.com/opensafely-core/airlock/blob/main/.github/workflows/main.yml",
+      "badge_url": "https://github.com/opensafely-core/airlock/workflows/CI/badge.svg"
+    },
+    {
+      "id": 94122733,
+      "node_id": "W_kwDOLGGIhs4FnDLt",
+      "name": "Docs",
+      "path": ".github/workflows/pages-deployment.yml",
+      "state": "active",
+      "created_at": "2024-04-17T08:34:06.000Z",
+      "updated_at": "2024-04-25T15:06:12.000Z",
+      "url": "https://api.github.com/repos/opensafely-core/airlock/actions/workflows/94122733",
+      "html_url": "https://github.com/opensafely-core/airlock/blob/main/.github/workflows/pages-deployment.yml",
+      "badge_url": "https://github.com/opensafely-core/airlock/workflows/Docs/badge.svg"
+    },
+    {
+      "id": 108457763,
+      "node_id": "W_kwDOLGGIhs4Gdu8j",
+      "name": "Dependabot Updates",
+      "path": "dynamic/dependabot/dependabot-updates",
+      "state": "active",
+      "created_at": "2024-07-22T02:17:19.000Z",
+      "updated_at": "2024-07-22T02:17:19.000Z",
+      "url": "https://api.github.com/repos/opensafely-core/airlock/actions/workflows/108457763",
+      "html_url": "https://github.com/opensafely-core/airlock/actions/workflows/dependabot/dependabot-updates",
+      "badge_url": "https://github.com/opensafely-core/airlock/actions/workflows/dependabot/dependabot-updates/badge.svg"
+    },
+    {
+      "id": 88048829,
+      "node_id": "W_kwDOLGGIhs4FP4S9",
+      "name": "CodeQL",
+      "path": "dynamic/github-code-scanning/codeql",
+      "state": "active",
+      "created_at": "2024-03-01T14:29:55.000Z",
+      "updated_at": "2024-03-01T14:29:55.000Z",
+      "url": "https://api.github.com/repos/opensafely-core/airlock/actions/workflows/88048829",
+      "html_url": "https://github.com/opensafely-core/airlock/actions/workflows/github-code-scanning/codeql",
+      "badge_url": "https://github.com/opensafely-core/airlock/actions/workflows/github-code-scanning/codeql/badge.svg"
+    }
+  ]
+}

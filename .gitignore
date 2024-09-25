@@ -37,9 +37,12 @@ Thumbs.db
 Desktop.ini
 Icon?
 .coverage
+/.coverage*
 htmlcov
 .idea/
 .cache/
+/.pytest-cache/
+/__pycache__
 venv/
 .venv/
 tmp
