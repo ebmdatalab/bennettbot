@@ -159,13 +159,24 @@ class RepoWorkflowReporter:
         warnings.warn(message=message, category=UserWarning)
 
 
-def summarize_org(org, branch):
-    repos = config.REPOS[org]
+def summarize_all(branch):
     blocks = [
-        get_header_block(f"Workflows for {org}"),
+        get_header_block("Workflows for key repos"),
         get_text_block(RepoWorkflowReporter.EMOJI_KEY),
     ]
-    for repo in repos:
+    # Double for loop necessary since "org" and "repo" will both vary
+    for org, repos in config.REPOS.items():
+        for repo in repos:
+            blocks.append(RepoWorkflowReporter(org, repo, branch).summarize())
+    return json.dumps(blocks)
+
+
+def summarize_org(org, branch):
+    blocks = [
+        get_header_block(f"Workflows for {org} repos"),
+        get_text_block(RepoWorkflowReporter.EMOJI_KEY),
+    ]
+    for repo in config.REPOS[org]:
         blocks.append(RepoWorkflowReporter(org, repo, branch).summarize())
     return json.dumps(blocks)
 
@@ -189,13 +200,17 @@ def parse_args():
 
 
 def main(org, repo, branch):
-    if org not in config.REPOS.keys():
+    if org == "all":
+        # Summarise status for all repos in all orgs
+        return summarize_all(branch)
+    elif org in config.REPOS.keys():  # Valid organisation
+        if repo is None:
+            # Summarise status for multiple repos in an org
+            return summarize_org(org, branch)
+        # Single repo usage: Report status for all workflows in a specified repo
+        return RepoWorkflowReporter(org, repo, branch).report()
+    else:
         return report_invalid_org(org)
-    if repo is None:
-        # Main usage: Summarise status for multiple repos in an org
-        return summarize_org(org, branch)
-    # Single repo usage: Report status for all workflows in a specified repo
-    return RepoWorkflowReporter(org, repo, branch).report()
 
 
 if __name__ == "__main__":

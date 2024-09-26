@@ -211,7 +211,7 @@ def test_main_for_organisation(mock_workflows, mock_conclusions):
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "Workflows for opensafely-core",
+                "text": "Workflows for opensafely-core repos",
             },
         },
         {
@@ -226,6 +226,55 @@ def test_main_for_organisation(mock_workflows, mock_conclusions):
             "text": {
                 "type": "mrkdwn",
                 "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+            },
+        },
+    ]
+
+
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
+@patch(
+    "workspace.workflows.config.REPOS",
+    {
+        "opensafely-core": ["airlock"],
+        "opensafely": ["documentation"],
+    },
+)
+def test_main_for_all_orgs(mock_workflows, mock_conclusions):
+    # Call main with org="all" and repo=None
+    # Use same workflows and conclusions for convenience
+    mock_workflows.return_value = WORKFLOWS_MAIN
+    conclusion = "success"
+    emoji = ":large_green_circle:"
+    mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
+    blocks = json.loads(jobs.main("all", repo=None, branch="main"))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for key repos",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :grey_question:=Other",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"opensafely/documentation: {emoji*5} (<https://github.com/opensafely/documentation/actions?query=branch%3Amain|link>)",
             },
         },
     ]
