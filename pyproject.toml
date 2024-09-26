@@ -41,7 +41,6 @@ env = [
     "SLACK_APP_TOKEN=xapp-token",
     "SLACK_APP_USERNAME=test_username",
     "GITHUB_WEBHOOK_SECRET=github_webhook_secret",
-    "BENNETTBOT_WEBHOOK_SECRET=bennettbot_webhook_secret",
     "WEBHOOK_ORIGIN=http://localhost:9999",
     "GCP_CREDENTIALS_PATH=",
     "DATA_TEAM_GITHUB_API_TOKEN=dummy-token"
