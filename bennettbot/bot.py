@@ -602,12 +602,9 @@ def handle_help(message, say, config, include_apology):
 
 
 def _get_datetime(hhmm):
-    match = re.match(r"^(\d\d):(\d\d)$", hhmm)
+    match = re.match(r"^(\d\d):?(\d\d)$", hhmm)
     if not match:
-        # Maybe they just missed the colon?
-        match = re.match(r"^(\d\d)(\d\d)$", hhmm)
-        if not match:
-            return
+        return
 
     h = int(match.groups()[0])
     if not 0 <= h < 24:
