@@ -116,20 +116,20 @@ And if all looks OK:
 just apply dokku3 --tags bennettbot
 ```
 
-This will create the ebmbot user on dokku3 and chown any mounted volumes.
+This will create the bennettbot user on dokku3 and chown any mounted volumes.
 
 
-### Create ssh key and mount ebmbot user's home directory
+### Create ssh key and mount bennettbot user's home directory
 
-Create an ssh key for the ebmbot user, in the usual $HOME/.ssh/ location.
+Create an ssh key for the bennettbot user, in the usual $HOME/.ssh/ location.
 
 Mount the user's home directory into the app.
 
 ```sh
-$ dokku storage:mount bennettbot /home/ebmbot/:/home/ebmbot
+$ dokku storage:mount bennettbot /home/bennettbot/:/home/bennettbot
 ```
 
-Add the ebmbot user's key to any servers that it requires access to
+Add the bennettbot user's key to any servers that it requires access to
 (i.e. any jobs that run `fab` commands).
 
 ### Configure app environment variables
