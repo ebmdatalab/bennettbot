@@ -129,7 +129,7 @@ ARG USERID=10004
 ARG GROUPID=10004
 
 # Add the user by name, required for ssh
-RUN useradd -u ${USERID} ebmbot
+RUN useradd -u ${USERID} bennettbot
 
 USER ${USERID}:${GROUPID}
 
@@ -155,5 +155,5 @@ ENTRYPOINT ["/app/docker/entrypoints/dev.sh"]
 # Run as non root user. Required when building image.
 ARG USERID
 ARG GROUPID
-RUN useradd -u ${USERID} ebmbot
+RUN useradd -u ${USERID} bennettbot
 USER ${USERID}:${GROUPID}
