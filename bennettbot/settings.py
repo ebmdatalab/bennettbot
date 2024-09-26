@@ -12,7 +12,7 @@ APPLICATION_ROOT = Path(__file__).resolve().parent.parent
 # that is mounted into the dokku app and is owned by the non-root docker user
 WRITEABLE_DIR = env.path("WRITEABLE_DIR", default=APPLICATION_ROOT)
 
-DB_PATH = env.path("DB_PATH", default=WRITEABLE_DIR / "ebmbot.db")
+DB_PATH = env.path("DB_PATH", default=WRITEABLE_DIR / "bennettbot.db")
 
 # location of job workspaces that live in this repo
 WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace")
@@ -56,11 +56,6 @@ GITHUB_WEBHOOK_SECRET = env.str("GITHUB_WEBHOOK_SECRET").encode("ascii")
 # Path to credentials of gdrive@ebmdatalab.iam.gserviceaccount.com GCP service account
 GCP_CREDENTIALS_PATH = env.path("GCP_CREDENTIALS_PATH")
 
-# A secret that we generate ourselves
-EBMBOT_WEBHOOK_SECRET = env.str("EBMBOT_WEBHOOK_SECRET").encode("ascii")
-
-# TTL in seconds for webhook token
-EBMBOT_WEBHOOK_TOKEN_TTL = 60 * 60
 
 # Number of times to retry sending messages to slack
 MAX_SLACK_NOTIFY_RETRIES = env.int("MAX_SLACK_NOTIFY_RETRIES", default=2)

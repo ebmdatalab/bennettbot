@@ -623,5 +623,5 @@ def _now():
 
 
 if __name__ == "__main__":
-    logger.info("running ebmbot.bot")
+    logger.info("running bennettbot.bot")
     run()

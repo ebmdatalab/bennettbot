@@ -1,10 +1,10 @@
 from urllib.parse import urlparse
 
-from ebmbot import settings
-from ebmbot.logger import logger
+from bennettbot import settings
+from bennettbot.logger import logger
 
 
-logger.info("running ebmbot.webserver")
+logger.info("running bennettbot.webserver")
 port = urlparse(settings.WEBHOOK_ORIGIN).port
 
 bind = f"0.0.0.0:{port}"

@@ -50,19 +50,19 @@ services:
     extends:
       service: dev
     container_name: bennettbot-bot
-    command: python -m ebmbot.bot
+    command: python -m bennettbot.bot
 
   dev_dispatcher:
     extends:
       service: dev
     container_name: bennettbot-dispatcher
-    command: python -m ebmbot.dispatcher
+    command: python -m bennettbot.dispatcher
 
   dev_webserver:
     extends:
       service: dev
     container_name: bennettbot-webserver
-    command: gunicorn --config /app/gunicorn/conf.py ebmbot.webserver:app
+    command: gunicorn --config /app/gunicorn/conf.py bennettbot.webserver:app
     # host:container ports: container port should match the port in WEBHOOK_ORIGIN
     ports:
       - "1234:1234"

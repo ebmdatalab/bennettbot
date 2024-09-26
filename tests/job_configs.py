@@ -1,4 +1,4 @@
-from ebmbot.job_configs import build_config
+from bennettbot.job_configs import build_config
 
 
 # fmt: off

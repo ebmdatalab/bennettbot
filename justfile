@@ -128,4 +128,4 @@ fix: devenv
 
 # Run the dev project
 run SERVICE: devenv
-    $BIN/python -m ebmbot.{{ SERVICE }}
+    $BIN/python -m bennettbot.{{ SERVICE }}

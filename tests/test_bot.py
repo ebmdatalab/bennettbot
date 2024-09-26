@@ -10,7 +10,7 @@ from slack_bolt.request import BoltRequest
 from slack_sdk.errors import SlackApiError
 from slack_sdk.signature import SignatureVerifier
 
-from ebmbot import bot, scheduler
+from bennettbot import bot, scheduler
 
 from .assertions import (
     assert_call_counts,
@@ -65,7 +65,7 @@ def test_schedule_job(mock_app):
 
 
 def test_schedule_job_with_job_already_running(mock_app):
-    with patch("ebmbot.scheduler.schedule_job", return_value=True):
+    with patch("bennettbot.scheduler.schedule_job", return_value=True):
         handle_message(mock_app, "<@U1234> test do job 1")
         assert_slack_client_sends_messages(
             messages_kwargs=[{"channel": "channel", "text": "already started"}],
@@ -461,7 +461,7 @@ def test_tech_support_edited_message(mock_app):
     assert_tech_support_paths_called()
 
 
-@patch("ebmbot.bot.get_tech_support_dates")
+@patch("bennettbot.bot.get_tech_support_dates")
 def test_tech_support_out_of_office_listener(tech_support_dates, mock_app):
     start = (datetime.today() - timedelta(1)).date()
     end = (datetime.today() + timedelta(1)).date()
@@ -508,7 +508,7 @@ def test_tech_support_out_of_office_listener(tech_support_dates, mock_app):
         (-2, 10, True),  # ooo currently on
     ],
 )
-@patch("ebmbot.bot.get_tech_support_dates")
+@patch("bennettbot.bot.get_tech_support_dates")
 def test_tech_support_out_of_office_dates(
     tech_support_dates,
     mock_app,
@@ -591,7 +591,7 @@ def test_no_listener_found(mock_app):
 
 def test_unexpected_error(mock_app):
     # Unexpected errors post a X reaction and respond with the error
-    with patch("ebmbot.bot.handle_namespace_help", side_effect=Exception):
+    with patch("bennettbot.bot.handle_namespace_help", side_effect=Exception):
         handle_message(
             mock_app,
             "<@U1234> test help",
@@ -612,7 +612,7 @@ def test_already_reacted_to_tech_support_error(mock_app):
     # mock an error from a method that's called during the tech-support
     # handling to return an "already reacted" SlackApiError
     with patch(
-        "ebmbot.bot.tech_support_out_of_office",
+        "bennettbot.bot.tech_support_out_of_office",
         side_effect=SlackApiError(
             message="Error", response=Mock(data={"error": "already_reacted"})
         ),
@@ -634,7 +634,7 @@ def test_already_reacted_to_non_tech_support_error(mock_app):
     # another sort of message that raises this error gets
     # reported back to slack
     with patch(
-        "ebmbot.bot.handle_namespace_help",
+        "bennettbot.bot.handle_namespace_help",
         side_effect=SlackApiError(
             message="Error", response=Mock(data={"error": "already_reacted"})
         ),

@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from ebmbot import settings
-from ebmbot.job_configs import build_config
+from bennettbot import settings
+from bennettbot.job_configs import build_config
 
 
 def test_build_config():
