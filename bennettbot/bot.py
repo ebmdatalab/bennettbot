@@ -522,7 +522,7 @@ def handle_schedule_suppression(message, say, slack_config, _is_im):
 
     if start_at is None or end_at is None or start_at >= end_at:
         say(
-            "[start_at] and [end_at] must be HH:MM with [start_at] < [end_at]",
+            "Wrong time format - `[start_at]` and `[end_at]` must be HH:MM with `[start_at]` < `[end_at]`",
             thread_ts=message.get("thread_ts"),
         )
         return
@@ -602,7 +602,7 @@ def handle_help(message, say, config, include_apology):
 
 
 def _get_datetime(hhmm):
-    match = re.match(r"^(\d\d):(\d\d)$", hhmm)
+    match = re.match(r"^(\d\d):?(\d\d)$", hhmm)
     if not match:
         return
 
