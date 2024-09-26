@@ -2,11 +2,14 @@ import argparse
 import json
 import os
 import warnings
+from functools import wraps
+from time import time
 from urllib.parse import urljoin
 
 import requests
 
 from bennettbot import settings
+from bennettbot.logger import logger
 from workspace.utils.blocks import (
     get_basic_header_and_text_blocks,
     get_header_block,
@@ -16,6 +19,18 @@ from workspace.workflows import config
 
 
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
+
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        start = time()
+        result = f(*args, **kwargs)
+        end = time()
+        logger.info("func:%r took: %2.4f sec", f.__name__, end - start)
+        return result
+
+    return wrap
 
 
 def report_invalid_org(org):
@@ -75,7 +90,6 @@ class RepoWorkflowReporter:
         self.github_actions_link = (
             f"https://github.com/{self.location}/actions?query=branch%3A{self.branch}"
         )
-
         self.workflows = self.get_workflows()  # Dict of workflow_id: workflow_name
         self.workflow_ids = set(self.workflows.keys())
 
@@ -83,6 +97,7 @@ class RepoWorkflowReporter:
         url = urljoin(self.base_api_url, path)
         return get_api_result_as_json(url, params)
 
+    @timing
     def get_workflows(self) -> dict:
         results = self._get_json_response("actions/workflows")["workflows"]
         workflows = {wf["id"]: wf["name"] for wf in results}
@@ -95,12 +110,13 @@ class RepoWorkflowReporter:
         for workflow_id in skipped:
             workflows.pop(workflow_id, None)
 
+    @timing
     def get_all_runs(self) -> list:
-        params = {"branch": self.branch} if self.branch else None
+        params = {"branch": self.branch, "per_page": 10} if self.branch else None
         return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
-    def get_latest_conclusions(self) -> dict:
-        all_runs = self.get_all_runs()
+    @timing
+    def get_latest_conclusions(self, all_runs) -> dict:
         latest_runs = self.filter_for_latest_of_each_workflow(all_runs)
         return {
             run["workflow_id"]: self.get_conclusion_for_run(run) for run in latest_runs
@@ -133,11 +149,13 @@ class RepoWorkflowReporter:
         return json.dumps(blocks)
 
     def summarize(self) -> str:
-        conclusions = self.get_latest_conclusions()
+        all_runs = self.get_all_runs()
+        conclusions = self.get_latest_conclusions(all_runs)
         emojis = "".join([self.get_emoji(c) for c in conclusions.values()])
         link = f"<{self.github_actions_link}|link>"
         return get_text_block(f"{self.location}: {emojis} ({link})")
 
+    @timing
     def filter_for_latest_of_each_workflow(self, all_runs) -> list:
         latest_runs = []
         found_ids = set()
