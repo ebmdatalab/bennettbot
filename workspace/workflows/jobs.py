@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import warnings
 from urllib.parse import urljoin
 
 import requests
@@ -42,6 +41,7 @@ class RepoWorkflowReporter:
         "failure": ":red_circle:",
         "skipped": ":white_circle:",
         "cancelled": ":heavy_multiplication_x:",
+        "missing": ":ghost:",
         "other": ":grey_question:",
     }
     EMOJI_KEY = " / ".join([f"{v}={k.title()}" for k, v in EMOJI.items()])
@@ -96,15 +96,19 @@ class RepoWorkflowReporter:
             workflows.pop(workflow_id, None)
 
     def get_all_runs(self) -> list:
-        params = {"branch": self.branch} if self.branch else None
+        params = {"branch": self.branch} if self.branch else {}
+        params["per_page"] = 100
         return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
     def get_latest_conclusions(self) -> dict:
         all_runs = self.get_all_runs()
-        latest_runs = self.filter_for_latest_of_each_workflow(all_runs)
-        return {
+        latest_runs, missing_ids = self.find_latest_for_each_workflow(all_runs)
+        conclusions = {
             run["workflow_id"]: self.get_conclusion_for_run(run) for run in latest_runs
         }
+        missing = {workflow_id: "missing" for workflow_id in missing_ids}
+        conclusions.update(missing)
+        return conclusions
 
     @staticmethod
     def get_conclusion_for_run(run) -> str:
@@ -138,7 +142,7 @@ class RepoWorkflowReporter:
         link = f"<{self.github_actions_link}|link>"
         return get_text_block(f"{self.location}: {emojis} ({link})")
 
-    def filter_for_latest_of_each_workflow(self, all_runs) -> list:
+    def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
         found_ids = set()
         for run in all_runs:
@@ -147,16 +151,10 @@ class RepoWorkflowReporter:
             latest_runs.append(run)
             found_ids.add(run["workflow_id"])
             if found_ids == self.workflow_ids:
-                return latest_runs
+                return latest_runs, set()
         # Some workflows were not found in the last ~1000 runs on this branch
-        self.warn_about_missing_workflows(found_ids)
-        return latest_runs
-
-    def warn_about_missing_workflows(self, found_ids):
         missing_ids = self.workflow_ids - found_ids
-        missing = "\n".join([f"{i}={self.workflows[i]}" for i in missing_ids])
-        message = f"Missing IDs for {self.location}: \n{missing}."
-        warnings.warn(message=message, category=UserWarning)
+        return latest_runs, missing_ids
 
 
 def summarise_all(branch):
