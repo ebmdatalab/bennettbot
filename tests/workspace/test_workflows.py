@@ -35,7 +35,7 @@ def mock_airlock_reporter():
     for uri_param in ["branch=main&", ""]:
         httpretty.register_uri(
             httpretty.GET,
-            f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}per_page=100&format=json",
+            f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}per_page=50&format=json",
             body=Path("tests/workspace/runs.json").read_text(),
             match_querystring=True,
         )
@@ -88,8 +88,8 @@ def test_get_workflows(branch, num_workflows, workflows):
 @pytest.mark.parametrize(
     "branch, querystring",
     [
-        ("main", {"branch": ["main"], "per_page": ["100"], "format": ["json"]}),
-        (None, {"per_page": ["100"], "format": ["json"]}),
+        ("main", {"branch": ["main"], "per_page": ["50"], "format": ["json"]}),
+        (None, {"per_page": ["50"], "format": ["json"]}),
     ],
 )
 def test_get_all_runs(mock_airlock_reporter, branch, querystring):

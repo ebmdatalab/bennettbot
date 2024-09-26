@@ -97,7 +97,7 @@ class RepoWorkflowReporter:
 
     def get_all_runs(self) -> list:
         params = {"branch": self.branch} if self.branch else {}
-        params["per_page"] = 100
+        params["per_page"] = 50
         return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
     def get_latest_conclusions(self) -> dict:
