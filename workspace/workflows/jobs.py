@@ -152,7 +152,7 @@ class RepoWorkflowReporter:
             found_ids.add(run["workflow_id"])
             if found_ids == self.workflow_ids:
                 return latest_runs, set()
-        # Some workflows were not found in the last ~1000 runs on this branch
+        # Some workflows were not found in the last ~50 runs on this branch
         missing_ids = self.workflow_ids - found_ids
         return latest_runs, missing_ids
 
