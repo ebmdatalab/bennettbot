@@ -132,12 +132,12 @@ def test_get_conclusion_for_run(run, conclusion):
     ],
 )
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
-def test_summarize_repo(mock_conclusions, mock_airlock_reporter, conclusion, emoji):
+def test_summarise_repo(mock_conclusions, mock_airlock_reporter, conclusion, emoji):
     mock_conclusions.return_value = {
         key: conclusion for key in sorted(WORKFLOWS_MAIN.keys())
     }
 
-    block = mock_airlock_reporter.summarize()
+    block = mock_airlock_reporter.summarise()
     assert block == {
         "type": "section",
         "text": {

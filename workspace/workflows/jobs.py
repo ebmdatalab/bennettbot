@@ -51,11 +51,11 @@ class RepoWorkflowReporter:
         Retrieves and reports on the status of workflow runs in a specified repo.
 
         Creating an instance of this class will automatically call the GitHub API to get a list of workflow IDs and their names.
-        Subsequently calling report() or summarize() will call a different endpoint of the API to get the status and conclusion for the most recent run of each workflow.
+        Subsequently calling report() or summarise() will call a different endpoint of the API to get the status and conclusion for the most recent run of each workflow.
 
         The statuses of workflows are represented by emojis, as defined in the EMOJI class attribute.
         report() will return a full JSON message with blocks for each workflow;
-        summarize() will return a single block with a summary of all workflows, which can be concatenated with other summaries.
+        summarise() will return a single block with a summary of all workflows, which can be concatenated with other summaries.
 
         Parameters:
             org_name: str
@@ -132,7 +132,7 @@ class RepoWorkflowReporter:
         ]
         return json.dumps(blocks)
 
-    def summarize(self) -> str:
+    def summarise(self) -> str:
         conclusions = self.get_latest_conclusions()
         emojis = "".join([self.get_emoji(c) for c in conclusions.values()])
         link = f"<{self.github_actions_link}|link>"
@@ -159,7 +159,7 @@ class RepoWorkflowReporter:
         warnings.warn(message=message, category=UserWarning)
 
 
-def summarize_all(branch):
+def summarise_all(branch):
     blocks = [
         get_header_block("Workflows for key repos"),
         get_text_block(RepoWorkflowReporter.EMOJI_KEY),
@@ -167,17 +167,17 @@ def summarize_all(branch):
     # Double for loop necessary since "org" and "repo" will both vary
     for org, repos in config.REPOS.items():
         for repo in repos:
-            blocks.append(RepoWorkflowReporter(org, repo, branch).summarize())
+            blocks.append(RepoWorkflowReporter(org, repo, branch).summarise())
     return json.dumps(blocks)
 
 
-def summarize_org(org, branch):
+def summarise_org(org, branch):
     blocks = [
         get_header_block(f"Workflows for {org} repos"),
         get_text_block(RepoWorkflowReporter.EMOJI_KEY),
     ]
     for repo in config.REPOS[org]:
-        blocks.append(RepoWorkflowReporter(org, repo, branch).summarize())
+        blocks.append(RepoWorkflowReporter(org, repo, branch).summarise())
     return json.dumps(blocks)
 
 
@@ -202,11 +202,11 @@ def parse_args():
 def main(org, repo, branch):
     if org == "all":
         # Summarise status for all repos in all orgs
-        return summarize_all(branch)
+        return summarise_all(branch)
     elif org in config.REPOS.keys():  # Valid organisation
         if repo is None:
             # Summarise status for multiple repos in an org
-            return summarize_org(org, branch)
+            return summarise_org(org, branch)
         # Single repo usage: Report status for all workflows in a specified repo
         return RepoWorkflowReporter(org, repo, branch).report()
     else:
