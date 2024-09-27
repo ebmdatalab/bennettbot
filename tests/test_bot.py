@@ -88,8 +88,16 @@ def test_schedule_python_job(mock_app):
     assert_job_matches(jj[0], "test_good_python_job", {}, "channel", T(0), None)
 
 
-def test_url_formatting_removed(mock_app):
-    handle_message(mock_app, "<@U1234> test do url <http://www.foo.com>")
+@pytest.mark.parametrize(
+    "message",
+    [
+        "<@U1234> test do url <http://www.foo.com>",
+        "<@U1234> test do url <http://www.foo.com|foo>",
+        "<@U1234> test do url <http://www.foo.com|http://www.foo.com>",
+    ],
+)
+def test_url_formatting_removed(mock_app, message):
+    handle_message(mock_app, message)
     jj = scheduler.get_jobs_of_type("test_job_with_url")
     assert len(jj) == 1
     assert_job_matches(
