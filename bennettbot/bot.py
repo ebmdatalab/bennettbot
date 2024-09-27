@@ -473,12 +473,12 @@ def handle_command(app, message, say, slack_config, is_im):
 
 
 def _remove_url_formatting(arg):
-    """Slack adds `<...>` around URLs. We want to pass them on without the
-    formatting.
+    """Slack formats URLs with angle brackets like <http://foo.com> or <http://foo.com|foo> (link text).
+    We want to pass URLs on without the formatting, and drop the text as the job will most likely only involve the URL.
 
     """
     if arg.startswith("<http") and arg.endswith(">"):
-        arg = arg[1:-1]
+        return arg[1:-1].split("|")[0]
     return arg
 
 
