@@ -1,11 +1,14 @@
 import argparse
 import json
 import os
+from functools import wraps
+from time import time
 from urllib.parse import urljoin
 
 import requests
 
 from bennettbot import settings
+from bennettbot.logger import logger
 from workspace.utils.blocks import (
     get_basic_header_and_text_blocks,
     get_header_block,
@@ -15,6 +18,18 @@ from workspace.workflows import config
 
 
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
+
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        start = time()
+        result = f(*args, **kwargs)
+        end = time()
+        logger.info("func:%r took: %2.4f sec", f.__name__, end - start)
+        return result
+
+    return wrap
 
 
 def report_invalid_org(org):
@@ -95,11 +110,13 @@ class RepoWorkflowReporter:
         for workflow_id in skipped:
             workflows.pop(workflow_id, None)
 
+    @timing
     def get_all_runs(self) -> list:
         params = {"branch": self.branch} if self.branch else {}
         params["per_page"] = 100
         return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
+    @timing
     def get_latest_conclusions(self) -> dict:
         all_runs = self.get_all_runs()
         latest_runs, missing_ids = self.find_latest_for_each_workflow(all_runs)
@@ -142,6 +159,7 @@ class RepoWorkflowReporter:
         link = f"<{self.github_actions_link}|link>"
         return get_text_block(f"{self.location}: {emojis} ({link})")
 
+    @timing
     def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
         found_ids = set()
