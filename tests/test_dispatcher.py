@@ -566,7 +566,7 @@ def test_message_checker_run():
         ["bennett-admins", settings.SLACK_BENNETT_ADMINS_CHANNEL, "flamingo"],
     ),
 )
-def test_message_checker_tech_support_messages(keyword, support_channel, reaction):
+def test_message_checker_matched_messages(keyword, support_channel, reaction):
     httpretty_register(
         {
             "search.messages": [
@@ -577,12 +577,22 @@ def test_message_checker_tech_support_messages(keyword, support_channel, reactio
                             {
                                 "text": f"Calling {keyword}",
                                 "channel": {"id": "C4444"},
-                                "ts": "1709460000.0",
+                                "ts": "100.0",
                             },
                             {
                                 "text": "This is a forwarded message",
                                 "channel": {"id": "C4444"},
-                                "ts": "1709000000.0",
+                                "ts": "100.1",
+                            },
+                            {
+                                "text": f"Ignore message with url matches only <https://calling/{keyword}/test>",
+                                "channel": {"id": "C4444"},
+                                "ts": "100.2",
+                            },
+                            {
+                                "text": f"But respond if {keyword} is also in the text <https://calling/{keyword}/test>",
+                                "channel": {"id": "C4444"},
+                                "ts": "100.3",
                             },
                         ],
                     },
@@ -596,9 +606,9 @@ def test_message_checker_tech_support_messages(keyword, support_channel, reactio
 
     checker.check_messages(keyword, "2024-03-04", "2024-03-02")
     # search.messages is called once
-    # other endpoints called once each for one matched message requiring
+    # other 3 endpoints called once each for 2 matched messages requiring
     # reaction and reposting.
-    assert len(httpretty.latest_requests()) == 4
+    assert len(httpretty.latest_requests()) == 7
 
     requests_by_path = get_mock_received_requests()
     assert requests_by_path["/api/search.messages"] == [
@@ -614,11 +624,19 @@ def test_message_checker_tech_support_messages(keyword, support_channel, reactio
     assert requests_by_path["/api/chat.getPermalink"] == [
         {
             "channel": ["C4444"],
-            "message_ts": ["1709460000.0"],
-        }
+            "message_ts": ["100.0"],
+        },
+        {
+            "channel": ["C4444"],
+            "message_ts": ["100.3"],
+        },
     ]
     # reposted to correct channel
     assert requests_by_path["/api/chat.postMessage"][0] == {
+        "channel": support_channel,
+        "text": "http://example.com",
+    }
+    assert requests_by_path["/api/chat.postMessage"][1] == {
         "channel": support_channel,
         "text": "http://example.com",
     }
@@ -628,6 +646,11 @@ def test_message_checker_tech_support_messages(keyword, support_channel, reactio
         {
             "channel": ["C4444"],
             "name": [reaction],
-            "timestamp": ["1709460000.0"],
-        }
+            "timestamp": ["100.0"],
+        },
+        {
+            "channel": ["C4444"],
+            "name": [reaction],
+            "timestamp": ["100.3"],
+        },
     ]
