@@ -35,7 +35,7 @@ def mock_airlock_reporter():
     for uri_param in ["branch=main&", ""]:
         httpretty.register_uri(
             httpretty.GET,
-            f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}format=json",
+            f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}per_page=100&format=json",
             body=Path("tests/workspace/runs.json").read_text(),
             match_querystring=True,
         )
@@ -87,7 +87,10 @@ def test_get_workflows(branch, num_workflows, workflows):
 
 @pytest.mark.parametrize(
     "branch, querystring",
-    [("main", {"branch": ["main"], "format": ["json"]}), (None, {"format": ["json"]})],
+    [
+        ("main", {"branch": ["main"], "per_page": ["100"], "format": ["json"]}),
+        (None, {"per_page": ["100"], "format": ["json"]}),
+    ],
 )
 def test_get_all_runs(mock_airlock_reporter, branch, querystring):
     mock_airlock_reporter.branch = branch  # Overwrite branch to test branch=None
@@ -101,12 +104,15 @@ def test_get_latest_conclusions(mock_airlock_reporter):
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
 
 
-def test_warn_about_missing_workflows(mock_airlock_reporter):
+def test_reporting_missing_workflows(mock_airlock_reporter):
     mock_airlock_reporter.workflows[1234] = "Some Workflow"
     mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
+    conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert len(mock_airlock_reporter.workflow_ids) == 6
-    with pytest.warns(UserWarning):
-        mock_airlock_reporter.get_latest_conclusions()
+    assert conclusions == {
+        **{key: "success" for key in WORKFLOWS_MAIN.keys()},
+        1234: "missing",
+    }
 
 
 @pytest.mark.parametrize(
@@ -218,7 +224,7 @@ def test_main_for_organisation(mock_workflows, mock_conclusions):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :grey_question:=Other",
+                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :ghost:=Missing / :grey_question:=Other",
             },
         },
         {
@@ -260,7 +266,7 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :grey_question:=Other",
+                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :ghost:=Missing / :grey_question:=Other",
             },
         },
         {
