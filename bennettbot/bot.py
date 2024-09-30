@@ -161,11 +161,40 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     def _listener(event, say, is_im=False):
         # Remove the reminder prefix
         text = event["text"].replace("Reminder: ", "")
-        # Remove the bot mention; this sometimes includes the bot's name as well as
-        # id. In reminders, the bot mention is in the form <@AB1234|bot_name>; in user
-        # messages that @ the bot, it is just in the form <@AB1234>. We need to match both.
-        text = re.sub(rf"<@{bot_user_id}(|.+)?>", "", text)
 
+        # Find the text that follows the bot mention, which can be in the form of
+        # <@AB1234|bot_name> or <@AB1234>
+        # We don't require the bot mention to be first in the message.
+        # We allow for users ending the command with a ., but we don't allow
+        # any additional text to follow the command.
+        # (we probably could do this, but the various regexes for commands take many
+        # formats, and it could be error prone to try partially matching them. Some are
+        # subsets of others, for example.)
+        # We allow for random whitespace in/before/after the command
+        # We also allow commands on their own with no bot mention (matched in DMs with the bot)
+
+        # we should match any of there
+        # - "Reminder: <@bot|bot_name> do the thing"
+        # - "<@bot> do the thing"
+        # - "<@bot>do the thing"
+        # - "<@bot>  do the thing "
+        # - "<@bot> do the thing."
+        # - "hello, <@bot> do the thing"
+        # - "do the thing"
+        # - " do the  thing "
+        # But not:
+        # - "<@bot> do the thing please"
+        if bot_user_id in event["text"]:
+            text_match = re.match(
+                rf".*(<@{bot_user_id}(|.+)?>)\s*(?P<text_match>.+)",
+                event["text"],
+                flags=re.X,
+            )
+        else:
+            text_match = re.match(r"\s+(?P<text_match>.+)", event["text"], flags=re.X)
+
+        if text_match:
+            text = text_match.group("text_match")
         # handle extra whitespace and punctuation
         text = " ".join(text.strip().rstrip(".").split())
         event["text"] = text
