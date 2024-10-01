@@ -1,11 +1,18 @@
 import functools
 import inspect
+import logging
+import os
 
 import structlog
 
 
 # Configure structlog to write to stdout without timstamps.
-structlog.configure(processors=[structlog.dev.ConsoleRenderer()])
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(
+        os.environ.get("LOG_LEVEL", logging.INFO)
+    ),
+    processors=[structlog.dev.ConsoleRenderer()],
+)
 logger = structlog.get_logger()
 
 

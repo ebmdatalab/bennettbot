@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -261,9 +262,12 @@ class MessageChecker:
             )
         )["messages"]["matches"]
         for message in messages:
-            if keyword not in message["text"]:
-                # Skip this message as it doesn't itself contain the magic keyword.
-                # It's likely to be a forwarded message or a copy/pasted link.
+            # remove any URLs from the message text; we don't want to match these
+            text = re.sub(r"<http.+>", "", message["text"])
+            if keyword not in text:
+                # Either the message contained the keyword in a URL only (and we've
+                # just removed it), or it didn't contain the keyword at all.
+                # The latter happens if it's a forwarded message or a copy/pasted link.
                 # The re-posted text appears in a search, but we only want to
                 # react to original messages.
                 continue
