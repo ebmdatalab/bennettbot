@@ -15,7 +15,7 @@ from workspace.utils.blocks import (
 from workspace.workflows import config
 
 
-CACHE_PATH = settings.APPLICATION_ROOT / "workspace" / "workflows" / "cache.json"
+CACHE_PATH = settings.WRITEABLE_DIR / "workflows_cache.json"
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
 
 
@@ -154,10 +154,10 @@ class RepoWorkflowReporter:
         return
 
     def update_cache_file(self):
-        master_cache = load_cache()
-        master_cache[self.location] = self.cache
+        cache_file_contents = load_cache()
+        cache_file_contents[self.location] = self.cache
         with open(CACHE_PATH, "w") as f:
-            f.write(json.dumps(master_cache))
+            f.write(json.dumps(cache_file_contents))
 
     @staticmethod
     def get_conclusion_for_run(run) -> str:

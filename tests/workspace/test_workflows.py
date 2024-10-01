@@ -203,12 +203,14 @@ def test_get_conclusion_for_run(run, conclusion):
     ],
 )
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
-def test_summarise_repo(mock_conclusions, mock_airlock_reporter, conclusion, emoji):
+def test_summarise_repo(
+    mock_conclusions, mock_airlock_reporter, conclusion, emoji, cache_path
+):
     mock_conclusions.return_value = {
         key: conclusion for key in sorted(WORKFLOWS_MAIN.keys())
     }
-
-    block = mock_airlock_reporter.summarise()
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        block = mock_airlock_reporter.summarise()
     assert block == {
         "type": "section",
         "text": {
@@ -229,7 +231,7 @@ def test_summarise_repo(mock_conclusions, mock_airlock_reporter, conclusion, emo
     ],
 )
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
-def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
+def test_main_for_repo(mock_conclusions, conclusion, reported, emoji, cache_path):
     # Call main with a valid org name and a valid repo name
     httpretty.register_uri(
         httpretty.GET,
@@ -241,7 +243,8 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
         key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
     }
     status = f"{emoji} {reported}"
-    blocks = json.loads(jobs.main("opensafely-core", "airlock", branch="main"))
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        blocks = json.loads(jobs.main("opensafely-core", "airlock", branch="main"))
     assert blocks == [
         {
             "type": "header",
@@ -270,13 +273,14 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
 @patch("workspace.workflows.config.REPOS", {"opensafely-core": ["airlock"]})
-def test_main_for_organisation(mock_workflows, mock_conclusions):
+def test_main_for_organisation(mock_workflows, mock_conclusions, cache_path):
     # Call main with a valid org and repo=None
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
     mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
-    blocks = json.loads(jobs.main("opensafely-core", repo=None, branch="main"))
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        blocks = json.loads(jobs.main("opensafely-core", repo=None, branch="main"))
     assert blocks == [
         {
             "type": "header",
@@ -311,14 +315,15 @@ def test_main_for_organisation(mock_workflows, mock_conclusions):
         "opensafely": ["documentation"],
     },
 )
-def test_main_for_all_orgs(mock_workflows, mock_conclusions):
+def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
     # Call main with org="all" and repo=None
     # Use same workflows and conclusions for convenience
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
     mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
-    blocks = json.loads(jobs.main("all", repo=None, branch="main"))
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        blocks = json.loads(jobs.main("all", repo=None, branch="main"))
     assert blocks == [
         {
             "type": "header",

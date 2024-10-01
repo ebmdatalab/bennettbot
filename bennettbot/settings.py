@@ -17,7 +17,7 @@ DB_PATH = env.path("DB_PATH", default=WRITEABLE_DIR / "bennettbot.db")
 # location of job workspaces that live in this repo
 WORKSPACE_DIR = env.path("WORKSPACE_DIR", default=APPLICATION_ROOT / "workspace")
 
-# location of a writeable workspace directory for jobs that need to  create their
+# location of a writeable workspace directory for jobs that need to create their
 # namespace folder. This applies to fabric jobs (which fetch a fabfile from GitHub)
 # and to jobs that don't depend on any existing files.
 # In production, we want this to be a location in a
