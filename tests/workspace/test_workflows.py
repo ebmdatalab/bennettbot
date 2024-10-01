@@ -290,7 +290,7 @@ def test_summarise_repo(
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+            "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
         },
     }
 
@@ -368,7 +368,7 @@ def test_main_for_organisation(mock_workflows, mock_conclusions, cache_path):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
             },
         },
     ]
@@ -404,14 +404,14 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
             },
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"opensafely/documentation: {emoji*5} (<https://github.com/opensafely/documentation/actions?query=branch%3Amain|link>)",
+                "text": f"<https://github.com/opensafely/documentation/actions?query=branch%3Amain|opensafely/documentation>: {emoji*5}",
             },
         },
     ]

@@ -189,8 +189,7 @@ class RepoWorkflowReporter:
         conclusions = self.get_latest_conclusions()
         self.update_cache_file()
         emojis = "".join([self.get_emoji(c) for c in conclusions.values()])
-        link = f"<{self.github_actions_link}|link>"
-        return get_text_block(f"{self.location}: {emojis} ({link})")
+        return get_text_block(f"<{self.github_actions_link}|{self.location}>: {emojis}")
 
     def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
