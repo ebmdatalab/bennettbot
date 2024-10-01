@@ -1,14 +1,12 @@
 import argparse
 import json
 import os
-from functools import wraps
-from time import time
+from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
 
 from bennettbot import settings
-from bennettbot.logger import logger
 from workspace.utils.blocks import (
     get_basic_header_and_text_blocks,
     get_header_block,
@@ -17,19 +15,8 @@ from workspace.utils.blocks import (
 from workspace.workflows import config
 
 
+CACHE_PATH = settings.APPLICATION_ROOT / "workspace" / "workflows" / "cache.json"
 TOKEN = os.environ["DATA_TEAM_GITHUB_API_TOKEN"]  # requires "read:project" and "repo"
-
-
-def timing(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        start = time()
-        result = f(*args, **kwargs)
-        end = time()
-        logger.info("func:%r took: %2.4f sec", f.__name__, end - start)
-        return result
-
-    return wrap
 
 
 def report_invalid_org(org):
@@ -47,6 +34,12 @@ def get_api_result_as_json(url: str, params: dict | None = None) -> dict:
     response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()
     return response.json()
+
+
+def load_cache() -> dict:
+    if not CACHE_PATH.exists():
+        return {}
+    return json.loads(CACHE_PATH.read_text())
 
 
 class RepoWorkflowReporter:
@@ -94,6 +87,16 @@ class RepoWorkflowReporter:
         self.workflows = self.get_workflows()  # Dict of workflow_id: workflow_name
         self.workflow_ids = set(self.workflows.keys())
 
+        self.cache = self._load_cache_for_repo()
+
+    def _load_cache_for_repo(self) -> dict:
+        return load_cache().get(self.location, {})
+
+    @property
+    def last_retrieval_timestamp(self):
+        # Do not declare in __init__ to update this when self.cache is updated
+        return self.cache.get("timestamp", None)
+
     def _get_json_response(self, path, params=None):
         url = urljoin(self.base_api_url, path)
         return get_api_result_as_json(url, params)
@@ -110,22 +113,51 @@ class RepoWorkflowReporter:
         for workflow_id in skipped:
             workflows.pop(workflow_id, None)
 
-    @timing
-    def get_all_runs(self) -> list:
+    def get_runs_since_last_retrieval(self) -> list:
         params = {"branch": self.branch} if self.branch else {}
         params["per_page"] = 100
+        if self.last_retrieval_timestamp:  # If not present do not pass anything at all
+            params["created"] = ">=" + self.last_retrieval_timestamp
         return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
-    @timing
     def get_latest_conclusions(self) -> dict:
-        all_runs = self.get_all_runs()
-        latest_runs, missing_ids = self.find_latest_for_each_workflow(all_runs)
+        """
+        Use the GitHub API to get the conclusion of the most recent run for each workflow.
+        Update the cache with the conclusions and the timestamp of the retrieval.
+        """
+        # Use the moment just before calling the GitHub API as the timestamp
+        timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        new_runs = self.get_runs_since_last_retrieval()
+        latest_runs, missing_ids = self.find_latest_for_each_workflow(new_runs)
         conclusions = {
             run["workflow_id"]: self.get_conclusion_for_run(run) for run in latest_runs
         }
-        missing = {workflow_id: "missing" for workflow_id in missing_ids}
-        conclusions.update(missing)
+        self.fill_in_conclusions_for_missing_ids(conclusions, missing_ids)
+
+        self.cache = {
+            "timestamp": timestamp,
+            # To be consistent with the JSON file which has the IDs as strings
+            "conclusions": {str(k): v for k, v in conclusions.items()},
+        }
         return conclusions
+
+    def fill_in_conclusions_for_missing_ids(self, conclusions, missing_ids):
+        """
+        For workflows that have not run since the last retrieval, use the conclusion from the cache.
+        If no conclusion is found in the cache, mark the workflow as missing.
+        """
+        previous_conclusions = self.cache.get("conclusions", {})
+        for workflow_id in missing_ids:
+            id_str = str(workflow_id)  # In the cache JSON, IDs are stored as strings
+            conclusions[workflow_id] = previous_conclusions.get(id_str, "missing")
+        return
+
+    def update_cache_file(self):
+        master_cache = load_cache()
+        master_cache[self.location] = self.cache
+        with open(CACHE_PATH, "w") as f:
+            f.write(json.dumps(master_cache))
 
     @staticmethod
     def get_conclusion_for_run(run) -> str:
@@ -145,6 +177,7 @@ class RepoWorkflowReporter:
             return f"{name}: {emoji} {conclusion.title().replace('_', ' ')}"
 
         conclusions = self.get_latest_conclusions()
+        self.update_cache_file()
         lines = [format_text(wf, conclusion) for wf, conclusion in conclusions.items()]
         blocks = [
             get_header_block(f"Workflows for {self.location}"),
@@ -155,11 +188,11 @@ class RepoWorkflowReporter:
 
     def summarise(self) -> str:
         conclusions = self.get_latest_conclusions()
+        self.update_cache_file()
         emojis = "".join([self.get_emoji(c) for c in conclusions.values()])
         link = f"<{self.github_actions_link}|link>"
         return get_text_block(f"{self.location}: {emojis} ({link})")
 
-    @timing
     def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
         found_ids = set()
@@ -170,7 +203,6 @@ class RepoWorkflowReporter:
             found_ids.add(run["workflow_id"])
             if found_ids == self.workflow_ids:
                 return latest_runs, set()
-        # Some workflows were not found in the last ~50 runs on this branch
         missing_ids = self.workflow_ids - found_ids
         return latest_runs, missing_ids
 

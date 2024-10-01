@@ -20,6 +20,18 @@ WORKFLOWS = {
     94122733: "Docs",
 }
 
+CACHE = {
+    "opensafely-core/airlock": {
+        "timestamp": "2023-09-30T09:00:08Z",
+        "conclusions": {str(key): "success" for key in WORKFLOWS_MAIN.keys()},
+    }
+}
+
+
+@pytest.fixture
+def cache_path(tmp_path):
+    yield tmp_path / "test_cache.json"
+
 
 @pytest.fixture
 def mock_airlock_reporter():
@@ -32,14 +44,15 @@ def mock_airlock_reporter():
         body=Path("tests/workspace/workflows.json").read_text(),
     )
     # Workflow runs
-    for uri_param in ["branch=main&", ""]:
-        httpretty.register_uri(
-            httpretty.GET,
-            f"https://api.github.com/repos/opensafely-core/airlock/actions/runs?{uri_param}per_page=100&format=json",
-            body=Path("tests/workspace/runs.json").read_text(),
-            match_querystring=True,
-        )
-    yield jobs.RepoWorkflowReporter("opensafely-core", "airlock")
+    httpretty.register_uri(
+        httpretty.GET,
+        "https://api.github.com/repos/opensafely-core/airlock/actions/runs?per_page=100&format=json",
+        body=Path("tests/workspace/runs.json").read_text(),
+        match_querystring=False,  # Test the querystring separately
+    )
+    reporter = jobs.RepoWorkflowReporter("opensafely-core", "airlock")
+    reporter.cache = {}  # Drop the cache and test _load_cache_for_repo separately
+    yield reporter
     httpretty.disable()
     httpretty.reset()
 
@@ -85,34 +98,86 @@ def test_get_workflows(branch, num_workflows, workflows):
     assert reporter.workflows == workflows
 
 
+def test_cache_file_does_not_exist(mock_airlock_reporter, cache_path):
+    assert not cache_path.exists()
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        assert jobs.load_cache() == {}
+        assert mock_airlock_reporter._load_cache_for_repo() == {}
+
+
+def test_repo_not_cached(mock_airlock_reporter, cache_path):
+    # The cache file exists but there is no record for this repo
+    mock_cache = {"opensafely-core/ehrql": CACHE["opensafely-core/airlock"]}
+    with open(cache_path, "w") as f:
+        json.dump(mock_cache, f)
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        assert mock_airlock_reporter._load_cache_for_repo() == {}
+
+
+def test_get_runs_since_last_retrieval(mock_airlock_reporter, cache_path):
+    # Create the cache and test that it is loaded
+    with open(cache_path, "w") as f:
+        json.dump(CACHE, f)
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        mock_airlock_reporter.cache = mock_airlock_reporter._load_cache_for_repo()
+    assert mock_airlock_reporter.cache == CACHE["opensafely-core/airlock"]
+
+    mock_airlock_reporter.get_runs_since_last_retrieval()
+    assert httpretty.last_request().querystring == {
+        "branch": ["main"],
+        "per_page": ["100"],
+        "format": ["json"],
+        "created": [">=2023-09-30T09:00:08Z"],
+    }
+
+
 @pytest.mark.parametrize(
     "branch, querystring",
+    # There is no cache in this scenario
     [
         ("main", {"branch": ["main"], "per_page": ["100"], "format": ["json"]}),
         (None, {"per_page": ["100"], "format": ["json"]}),
     ],
 )
-def test_get_all_runs(mock_airlock_reporter, branch, querystring):
+def test_get_runs_for_branch(mock_airlock_reporter, branch, querystring):
     mock_airlock_reporter.branch = branch  # Overwrite branch to test branch=None
-    all_runs = mock_airlock_reporter.get_all_runs()
+    runs = mock_airlock_reporter.get_runs_since_last_retrieval()
     assert httpretty.last_request().querystring == querystring
-    assert len(all_runs) == 6
+    assert len(runs) == 6
 
 
-def test_get_latest_conclusions(mock_airlock_reporter):
+def test_all_workflows_found(mock_airlock_reporter):
     conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
 
 
-def test_reporting_missing_workflows(mock_airlock_reporter):
-    mock_airlock_reporter.workflows[1234] = "Some Workflow"
+def test_some_workflows_not_found(mock_airlock_reporter):
+    mock_airlock_reporter.workflows[1234] = "Workflow that only exists in the cache"
+    mock_airlock_reporter.cache = {
+        "timestamp": None,
+        "conclusions": {"1234": "running"},
+    }
+
+    mock_airlock_reporter.workflows[5678] = "Workflow that will not be found"
     mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
+
     conclusions = mock_airlock_reporter.get_latest_conclusions()
-    assert len(mock_airlock_reporter.workflow_ids) == 6
+    assert len(mock_airlock_reporter.workflow_ids) == 7
     assert conclusions == {
         **{key: "success" for key in WORKFLOWS_MAIN.keys()},
-        1234: "missing",
+        1234: "running",
+        5678: "missing",
     }
+
+
+def test_update_cache_file(mock_airlock_reporter, freezer, cache_path):
+    assert mock_airlock_reporter.cache == {}
+    freezer.move_to("2023-09-30 09:00:08")
+    mock_airlock_reporter.get_latest_conclusions()
+    assert mock_airlock_reporter.cache == CACHE["opensafely-core/airlock"]
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        mock_airlock_reporter.update_cache_file()
+    assert json.loads(cache_path.read_text()) == CACHE
 
 
 @pytest.mark.parametrize(
