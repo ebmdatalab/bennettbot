@@ -302,6 +302,11 @@ raw_config = {
     "workflows": {
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
+            "display_emoji_key": {
+                "run_args_template": "python jobs.py --key",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
             "show_all": {
                 "run_args_template": "python jobs.py --target all",
                 "report_stdout": True,
@@ -314,6 +319,12 @@ raw_config = {
             },
         },
         "slack": [
+            {
+                "command": "key",
+                "help": "Show the emoji key being used in the workflow summaries.",
+                "action": "schedule_job",
+                "job_type": "display_emoji_key",
+            },
             {
                 "command": "show all",
                 "help": "Summarise GitHub Actions workflow runs for repos in all three organisations.",

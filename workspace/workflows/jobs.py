@@ -52,7 +52,6 @@ class RepoWorkflowReporter:
         "missing": ":ghost:",
         "other": ":grey_question:",
     }
-    EMOJI_KEY = " / ".join([f"{v}={k.title()}" for k, v in EMOJI.items()])
 
     def __init__(self, org_name, repo_name, branch="main"):
         """
@@ -190,8 +189,7 @@ class RepoWorkflowReporter:
         conclusions = self.get_latest_conclusions()
         self.update_cache_file()
         emojis = "".join([self.get_emoji(c) for c in conclusions.values()])
-        link = f"<{self.github_actions_link}|link>"
-        return get_text_block(f"{self.location}: {emojis} ({link})")
+        return get_text_block(f"<{self.github_actions_link}|{self.location}>: {emojis}")
 
     def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
@@ -208,10 +206,7 @@ class RepoWorkflowReporter:
 
 
 def summarise_all(branch):
-    blocks = [
-        get_header_block("Workflows for key repos"),
-        get_text_block(RepoWorkflowReporter.EMOJI_KEY),
-    ]
+    blocks = [get_header_block("Workflows for key repos")]
     # Double for loop necessary since "org" and "repo" will both vary
     for org, repos in config.REPOS.items():
         for repo in repos:
@@ -220,10 +215,7 @@ def summarise_all(branch):
 
 
 def summarise_org(org, branch):
-    blocks = [
-        get_header_block(f"Workflows for {org} repos"),
-        get_text_block(RepoWorkflowReporter.EMOJI_KEY),
-    ]
+    blocks = [get_header_block(f"Workflows for {org} repos")]
     for repo in config.REPOS[org]:
         blocks.append(RepoWorkflowReporter(org, repo, branch).summarise())
     return json.dumps(blocks)
@@ -231,13 +223,20 @@ def summarise_org(org, branch):
 
 def _get_command_line_args():  # pragma: no cover
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target", required=True)
+    parser.add_argument("--target")
     parser.add_argument("--branch", default="main")
+    parser.add_argument("--key", action="store_true", default=False)
     return vars(parser.parse_args())
 
 
 def parse_args():
     args = _get_command_line_args()
+    if args.pop("key", False):
+        return None
+
+    if "target" not in args:
+        raise ValueError("Argument --target is required")
+
     # Parse target, which can either be org or org/repo
     target = args.pop("target").split("/")
     if len(target) not in [1, 2]:
@@ -245,6 +244,14 @@ def parse_args():
     args["org"] = config.SHORTHANDS.get(target[0], target[0])
     args["repo"] = target[1] if len(target) == 2 else None
     return args
+
+
+def get_text_blocks_for_key():
+    blocks = get_basic_header_and_text_blocks(
+        header_text="Workflow status emoji key",
+        texts=[f"{v}={k.title()}" for k, v in RepoWorkflowReporter.EMOJI.items()],
+    )
+    return json.dumps(blocks)
 
 
 def main(org, repo, branch):
@@ -263,4 +270,7 @@ def main(org, repo, branch):
 
 if __name__ == "__main__":
     args = parse_args()
-    print(main(**args))
+    if args is None:
+        print(get_text_blocks_for_key())
+    else:
+        print(main(**args))

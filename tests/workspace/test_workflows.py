@@ -57,10 +57,85 @@ def mock_airlock_reporter():
     httpretty.reset()
 
 
+@patch("workspace.workflows.jobs._get_command_line_args")
+def test_parse_key_argument(args):
+    args.return_value = {"key": True}
+    assert jobs.parse_args() is None
+
+
+def test_print_key():
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflow status emoji key",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":large_green_circle:=Success",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":large_yellow_circle:=Running",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":red_circle:=Failure",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":white_circle:=Skipped",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":heavy_multiplication_x:=Cancelled",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":ghost:=Missing",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ":grey_question:=Other",
+            },
+        },
+    ]
+    assert json.loads(jobs.get_text_blocks_for_key()) == blocks
+
+
+@patch("workspace.workflows.jobs._get_command_line_args")
+def test_no_target(args):
+    args.return_value = {"key": False}
+    with pytest.raises(ValueError):
+        jobs.parse_args()
+
+
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
 @patch("workspace.workflows.jobs._get_command_line_args")
 def test_org_as_target(args, org):
-    args.return_value = {"target": org}
+    args.return_value = {"target": org, "key": False}
     parsed = jobs.parse_args()
     assert parsed == {"org": "opensafely-core", "repo": None}
 
@@ -68,14 +143,14 @@ def test_org_as_target(args, org):
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
 @patch("workspace.workflows.jobs._get_command_line_args")
 def test_repo_as_target(args, org):
-    args.return_value = {"target": f"{org}/airlock"}
+    args.return_value = {"target": f"{org}/airlock", "key": False}
     parsed = jobs.parse_args()
     assert parsed == {"org": "opensafely-core", "repo": "airlock"}
 
 
 @patch("workspace.workflows.jobs._get_command_line_args")
 def test_invalid_target(args):
-    args.return_value = {"target": "some/invalid/input"}
+    args.return_value = {"target": "some/invalid/input", "key": False}
     with pytest.raises(ValueError):
         jobs.parse_args()
 
@@ -215,7 +290,7 @@ def test_summarise_repo(
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+            "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
         },
     }
 
@@ -293,14 +368,7 @@ def test_main_for_organisation(mock_workflows, mock_conclusions, cache_path):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :ghost:=Missing / :grey_question:=Other",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
             },
         },
     ]
@@ -336,21 +404,14 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": ":large_green_circle:=Success / :large_yellow_circle:=Running / :red_circle:=Failure / :white_circle:=Skipped / :heavy_multiplication_x:=Cancelled / :ghost:=Missing / :grey_question:=Other",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
             },
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"opensafely-core/airlock: {emoji*5} (<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|link>)",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"opensafely/documentation: {emoji*5} (<https://github.com/opensafely/documentation/actions?query=branch%3Amain|link>)",
+                "text": f"<https://github.com/opensafely/documentation/actions?query=branch%3Amain|opensafely/documentation>: {emoji*5}",
             },
         },
     ]
