@@ -539,7 +539,8 @@ def test_message_checker_config():
     }
 
 
-def test_message_checker_run():
+def test_message_checker_run(freezer):
+    freezer.move_to("2024-10-08 23:30")
     httpretty_register(
         {
             "search.messages": [
@@ -557,6 +558,9 @@ def test_message_checker_run():
     # search.messages is called twice for each run of the checker
     # no matches, so no reactions or messages reposted.
     assert len(httpretty.latest_requests()) == 4
+    requests_by_path = get_mock_received_requests()
+    last_search_query = requests_by_path["/api/search.messages"][-1]["query"][0]
+    assert "after:2024-10-06" in last_search_query
 
 
 @pytest.mark.parametrize(
@@ -604,7 +608,7 @@ def test_message_checker_matched_messages(keyword, support_channel, reaction):
 
     checker = MessageChecker(slack_web_client("bot"), slack_web_client("user"))
 
-    checker.check_messages(keyword, "2024-03-04", "2024-03-02")
+    checker.check_messages(keyword, "2024-03-02")
     # search.messages is called once
     # other 3 endpoints called once each for 2 matched messages requiring
     # reaction and reposting.
@@ -616,7 +620,7 @@ def test_message_checker_matched_messages(keyword, support_channel, reaction):
             "query": [
                 f'"{keyword}" -has::{reaction}: -in:#{support_channel} '
                 f"-from:@{settings.SLACK_APP_USERNAME} -is:dm "
-                "before:2024-03-04 after:2024-03-02"
+                "after:2024-03-02"
             ]
         }
     ]
