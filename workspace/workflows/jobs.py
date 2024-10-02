@@ -55,8 +55,12 @@ def load_cache() -> dict:
     return json.loads(CACHE_PATH.read_text())
 
 
+def get_github_actions_link(location):
+    return f"https://github.com/{location}/actions?query=branch%3Amain"
+
+
 class RepoWorkflowReporter:
-    def __init__(self, org_name, repo_name):
+    def __init__(self, location):
         """
         Retrieves and reports on the status of workflow runs on the main branch in a specified repo.
         Workflows that are not on the main branch are skipped.
@@ -72,14 +76,8 @@ class RepoWorkflowReporter:
             location: str
                 The location of the repo in the format "org/repo" (e.g. "opensafely/documentation")
         """
-        self.org_name = org_name
-        self.repo_name = repo_name
-
-        self.location = f"{org_name}/{repo_name}"
+        self.location = location
         self.base_api_url = f"https://api.github.com/repos/{self.location}/"
-        self.github_actions_link = (
-            f"https://github.com/{self.location}/actions?query=branch%3Amain"
-        )
 
         self.workflows = self.get_workflows()  # Dict of workflow_id: workflow_name
         self.workflow_ids = set(self.workflows.keys())
@@ -170,19 +168,21 @@ class RepoWorkflowReporter:
 
         conclusions = self.get_latest_conclusions()
         self.update_cache_file()
+        link = get_github_actions_link(self.location)
         lines = [format_text(wf, conclusion) for wf, conclusion in conclusions.items()]
         blocks = [
             get_header_block(f"Workflows for {self.location}"),
             get_text_block("\n".join(lines)),  # Show in one block for compactness
-            get_text_block(f"<{self.github_actions_link}|View Github Actions>"),
+            get_text_block(f"<{link}|View Github Actions>"),
         ]
         return json.dumps(blocks)
 
     def summarise(self) -> str:
         conclusions = self.get_latest_conclusions()
         self.update_cache_file()
+        link = get_github_actions_link(self.location)
         emojis = "".join([get_emoji(c) for c in conclusions.values()])
-        return get_text_block(f"<{self.github_actions_link}|{self.location}>: {emojis}")
+        return get_text_block(f"<{link}|{self.location}>: {emojis}")
 
     def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
@@ -203,14 +203,14 @@ def summarise_all():
     # Double for loop necessary since "org" and "repo" will both vary
     for org, repos in config.REPOS.items():
         for repo in repos:
-            blocks.append(RepoWorkflowReporter(org, repo).summarise())
+            blocks.append(RepoWorkflowReporter(f"{org}/{repo}").summarise())
     return json.dumps(blocks)
 
 
 def summarise_org(org):
     blocks = [get_header_block(f"Workflows for {org} repos")]
     for repo in config.REPOS[org]:
-        blocks.append(RepoWorkflowReporter(org, repo).summarise())
+        blocks.append(RepoWorkflowReporter(f"{org}/{repo}").summarise())
     return json.dumps(blocks)
 
 
@@ -255,7 +255,7 @@ def main(org, repo):
             # Summarise status for multiple repos in an org
             return summarise_org(org)
         # Single repo usage: Report status for all workflows in a specified repo
-        return RepoWorkflowReporter(org, repo).report()
+        return RepoWorkflowReporter(f"{org}/{repo}").report()
     else:
         return report_invalid_org(org)
 

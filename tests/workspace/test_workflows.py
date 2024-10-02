@@ -50,7 +50,7 @@ def mock_airlock_reporter():
         body=Path("tests/workspace/runs.json").read_text(),
         match_querystring=False,  # Test the querystring separately
     )
-    reporter = jobs.RepoWorkflowReporter("opensafely-core", "airlock")
+    reporter = jobs.RepoWorkflowReporter("opensafely-core/airlock")
     reporter.cache = {}  # Drop the cache and test _load_cache_for_repo separately
     yield reporter
     httpretty.disable()
@@ -164,7 +164,7 @@ def test_get_workflows():
         match_querystring=True,
         body=Path("tests/workspace/workflows.json").read_text(),
     )
-    reporter = jobs.RepoWorkflowReporter("opensafely-core", "airlock")
+    reporter = jobs.RepoWorkflowReporter("opensafely-core/airlock")
     assert len(reporter.workflows) == 5
     assert reporter.workflows == WORKFLOWS_MAIN
 
