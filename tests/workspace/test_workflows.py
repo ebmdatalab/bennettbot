@@ -178,7 +178,7 @@ def test_cache_file_does_not_exist(mock_airlock_reporter, cache_path):
 
 def test_repo_not_cached(mock_airlock_reporter, cache_path):
     # The cache file exists but there is no record for this repo
-    mock_cache = {"opensafely-core/ehrql": CACHE["opensafely-core/airlock"]}
+    mock_cache = {"another/repo": CACHE["opensafely-core/airlock"]}
     with open(cache_path, "w") as f:
         json.dump(mock_cache, f)
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
@@ -202,12 +202,13 @@ def test_get_runs_since_last_retrieval(mock_airlock_reporter, cache_path):
     }
 
 
-def test_all_workflows_found(mock_airlock_reporter):
-    conclusions = mock_airlock_reporter.get_latest_conclusions()
+def test_all_workflows_found(mock_airlock_reporter, cache_path):
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
 
 
-def test_some_workflows_not_found(mock_airlock_reporter):
+def test_some_workflows_not_found(mock_airlock_reporter, cache_path):
     mock_airlock_reporter.workflows[1234] = "Workflow that only exists in the cache"
     mock_airlock_reporter.cache = {
         "timestamp": None,
@@ -216,8 +217,8 @@ def test_some_workflows_not_found(mock_airlock_reporter):
 
     mock_airlock_reporter.workflows[5678] = "Workflow that will not be found"
     mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
-
-    conclusions = mock_airlock_reporter.get_latest_conclusions()
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert len(mock_airlock_reporter.workflow_ids) == 7
     assert conclusions == {
         **{key: "success" for key in WORKFLOWS_MAIN.keys()},
@@ -226,13 +227,19 @@ def test_some_workflows_not_found(mock_airlock_reporter):
     }
 
 
-def test_update_cache_file(mock_airlock_reporter, freezer, cache_path):
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.write_cache_to_file")
+def test_cache_creation(mock_write, mock_airlock_reporter, freezer):
+    mock_write.return_value = None  # Disable writing to file and test separately
     assert mock_airlock_reporter.cache == {}
     freezer.move_to("2023-09-30 09:00:08")
-    mock_airlock_reporter.get_latest_conclusions()
+    _ = mock_airlock_reporter.get_latest_conclusions()
     assert mock_airlock_reporter.cache == CACHE["opensafely-core/airlock"]
+
+
+def test_write_to_cache_file(mock_airlock_reporter, cache_path):
+    mock_airlock_reporter.cache = CACHE["opensafely-core/airlock"]
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        mock_airlock_reporter.update_cache_file()
+        mock_airlock_reporter.write_cache_to_file()
     assert json.loads(cache_path.read_text()) == CACHE
 
 
@@ -287,8 +294,9 @@ def test_summarise_repo(
     ],
 )
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
-def test_main_for_repo(mock_conclusions, conclusion, reported, emoji, cache_path):
+def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
     # Call main with a valid org name and a valid repo name
+    # No need to mock CACHE_PATH since get_latest_conclusions is mocked
     httpretty.register_uri(
         httpretty.GET,
         uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
@@ -299,8 +307,7 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji, cache_path
         key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
     }
     status = f"{emoji} {reported}"
-    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(jobs.main("opensafely-core", "airlock"))
+    blocks = json.loads(jobs.main("opensafely-core", "airlock"))
     assert blocks == [
         {
             "type": "header",
@@ -329,14 +336,13 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji, cache_path
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
 @patch("workspace.workflows.config.REPOS", {"opensafely-core": ["airlock"]})
-def test_main_for_organisation(mock_workflows, mock_conclusions, cache_path):
+def test_main_for_organisation(mock_workflows, mock_conclusions):
     # Call main with a valid org and repo=None
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
     mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
-    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(jobs.main("opensafely-core", repo=None))
+    blocks = json.loads(jobs.main("opensafely-core", repo=None))
     assert blocks == [
         {
             "type": "header",

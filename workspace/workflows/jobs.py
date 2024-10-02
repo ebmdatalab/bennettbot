@@ -116,7 +116,7 @@ class RepoWorkflowReporter:
     def get_latest_conclusions(self) -> dict:
         """
         Use the GitHub API to get the conclusion of the most recent run for each workflow.
-        Update the cache with the conclusions and the timestamp of the retrieval.
+        Update the cache file with the conclusions and the timestamp of the retrieval.
         """
         # Use the moment just before calling the GitHub API as the timestamp
         timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -133,6 +133,7 @@ class RepoWorkflowReporter:
             # To be consistent with the JSON file which has the IDs as strings
             "conclusions": {str(k): v for k, v in conclusions.items()},
         }
+        self.write_cache_to_file()
         return conclusions
 
     @staticmethod
@@ -154,7 +155,7 @@ class RepoWorkflowReporter:
             conclusions[workflow_id] = previous_conclusions.get(id_str, "missing")
         return
 
-    def update_cache_file(self):
+    def write_cache_to_file(self):
         cache_file_contents = load_cache()
         cache_file_contents[self.location] = self.cache
         with open(CACHE_PATH, "w") as f:
@@ -167,7 +168,6 @@ class RepoWorkflowReporter:
             return f"{name}: {emoji} {conclusion.title().replace('_', ' ')}"
 
         conclusions = self.get_latest_conclusions()
-        self.update_cache_file()
         link = get_github_actions_link(self.location)
         lines = [format_text(wf, conclusion) for wf, conclusion in conclusions.items()]
         blocks = [
@@ -179,7 +179,6 @@ class RepoWorkflowReporter:
 
     def summarise(self) -> str:
         conclusions = self.get_latest_conclusions()
-        self.update_cache_file()
         link = get_github_actions_link(self.location)
         emojis = "".join([get_emoji(c) for c in conclusions.values()])
         return get_text_block(f"<{link}|{self.location}>: {emojis}")
