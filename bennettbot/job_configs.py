@@ -320,7 +320,7 @@ raw_config = {
         },
         "slack": [
             {
-                "command": "emoji",
+                "command": "key",
                 "help": "Show the emoji key being used in the workflow summaries.",
                 "action": "schedule_job",
                 "job_type": "display_emoji_key",
