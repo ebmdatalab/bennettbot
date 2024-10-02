@@ -66,11 +66,12 @@ class RepoWorkflowReporter:
         Workflows that are not on the main branch are skipped.
 
         Creating an instance of this class will automatically call the GitHub API to get a list of workflow IDs and their names.
-        Subsequently calling report() or summarise() will call a different endpoint of the API to get the status and conclusion for the most recent run of each workflow.
+        Subsequently calling get_latest_conclusions() will call a different endpoint of the API to get the status and conclusion for the most recent run of each workflow.
+        workflows_cache.json is updated with the conclusions and the timestamp of the retrieval, and API calls are only made for new runs since the last retrieval.
 
-        The statuses of workflows are represented by emojis, as defined in the EMOJI dictionary.
-        report() will return a full JSON message with blocks for each workflow;
-        summarise() will return a single block with a summary of all workflows, which can be concatenated with other summaries.
+        report() will return a full JSON message with blocks for each workflow where the statuses of workflows are represented by emojis, as defined in the EMOJI dictionary.
+
+        Functions outside of this class are used to generate summary reports from the conclusions returned from get_latest_conclusions() or loaded from the cache file.
 
         Parameters:
             location: str
@@ -162,6 +163,7 @@ class RepoWorkflowReporter:
             f.write(json.dumps(cache_file_contents))
 
     def report(self) -> str:
+        # This needs to be a class method as it uses self.workflows for names
         def format_text(workflow_id, conclusion) -> str:
             name = self.workflows[workflow_id]
             emoji = get_emoji(conclusion)
@@ -177,12 +179,6 @@ class RepoWorkflowReporter:
         ]
         return json.dumps(blocks)
 
-    def summarise(self) -> str:
-        conclusions = self.get_latest_conclusions()
-        link = get_github_actions_link(self.location)
-        emojis = "".join([get_emoji(c) for c in conclusions.values()])
-        return get_text_block(f"<{link}|{self.location}>: {emojis}")
-
     def find_latest_for_each_workflow(self, all_runs) -> list:
         latest_runs = []
         found_ids = set()
@@ -197,20 +193,45 @@ class RepoWorkflowReporter:
         return latest_runs, missing_ids
 
 
-def summarise_all():
-    blocks = [get_header_block("Workflows for key repos")]
-    # Double for loop necessary since "org" and "repo" will both vary
-    for org, repos in config.REPOS.items():
-        for repo in repos:
-            blocks.append(RepoWorkflowReporter(f"{org}/{repo}").summarise())
+def get_summary_block(location: str, conclusions: list) -> str:
+    link = get_github_actions_link(location)
+    emojis = "".join([get_emoji(c) for c in conclusions])
+    return get_text_block(f"<{link}|{location}>: {emojis}")
+
+
+def get_success_rate(conclusions) -> float:
+    return conclusions.count("success") / len(conclusions)
+
+
+def _summarise(header_text: str, locations: list[str]) -> str:
+    def list_conclusions(location):
+        reporter = RepoWorkflowReporter(location)
+        conclusions = reporter.get_latest_conclusions()
+        return list(conclusions.values())
+
+    unsorted = {loc: list_conclusions(loc) for loc in locations}
+    key = lambda item: get_success_rate(item[1])
+    conclusions = sorted(unsorted.items(), key=key)
+
+    blocks = [
+        get_header_block(header_text),
+        *[get_summary_block(loc, conc) for loc, conc in conclusions],
+    ]
     return json.dumps(blocks)
 
 
-def summarise_org(org):
-    blocks = [get_header_block(f"Workflows for {org} repos")]
-    for repo in config.REPOS[org]:
-        blocks.append(RepoWorkflowReporter(f"{org}/{repo}").summarise())
-    return json.dumps(blocks)
+def summarise_all() -> str:
+    header_text = "Workflows for key repos"
+    locations = [
+        f"{org}/{repo}" for org, repos in config.REPOS.items() for repo in repos
+    ]
+    return _summarise(header_text, locations)
+
+
+def summarise_org(org) -> str:
+    header_text = f"Workflows for {org} repos"
+    locations = [f"{org}/{repo}" for repo in config.REPOS[org]]
+    return _summarise(header_text, locations)
 
 
 def _get_command_line_args():  # pragma: no cover
