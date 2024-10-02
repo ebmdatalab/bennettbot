@@ -236,29 +236,33 @@ class MessageChecker:
         # https://api.slack.com/apis/rate-limits#tier_t2
         # A 10s delay should be safe for our 2 calls per loop
         while run_fn():
+            # check for messages from today and yesterday; sometimes it seems to
+            # take a while for slack to return messages in search results, so
+            # make sure that messages sent late in the day still get picked up
             today = datetime.today()
-            yesterday = (today - timedelta(days=1)).strftime("%Y-%m-%d")
-            tomorrow = (today + timedelta(days=1)).strftime("%Y-%m-%d")
+            check_from = (today - timedelta(days=2)).strftime("%Y-%m-%d")
             for keyword in self.config:
-                self.check_messages(keyword, tomorrow, yesterday)
+                self.check_messages(keyword, check_from)
             time.sleep(delay)
 
-    def check_messages(self, keyword, before, after):
+    def check_messages(self, keyword, after):
         logger.debug("Checking %s messages", keyword)
         reaction = self.config[keyword]["reaction"]
         channel = self.config[keyword]["channel"]
         messages = self.user_slack_client.search_messages(
             query=(
                 # Search for messages with the keyword but without the expected reaction
-                f"{keyword} -has::{reaction}: "
+                # Wrap the keyword in double quotes so we don't return "tech support" as
+                # well as "tech-support"
+                f'"{keyword}" -has::{reaction}: '
                 # exclude messages in the channel itself
                 f"-in:#{channel} "
                 # exclude messages from the bot
                 f"-from:@{settings.SLACK_APP_USERNAME} "
                 # exclude DMs as the auto-responders don't respond to these anyway
                 f"-is:dm "
-                # only include messages from today
-                f"before:{before} after:{after}"
+                # only include messages from today and yesterday
+                f"after:{after}"
             )
         )["messages"]["matches"]
         for message in messages:
