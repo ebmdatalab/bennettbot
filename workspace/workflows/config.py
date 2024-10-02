@@ -45,7 +45,7 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
         26915901,  # [On workflow call] Add software bill of materials to release (reusable)
         26915902,  # [On workflow call] Scan with Grype (reusable)
         25002877,  # [On PR] Dependency review
-        2393224,  #  [On PR] Tests, TODO: Remove this after Simon's merge
+        2393224,  #  [On PR] Tests
     ],
     "opensafely-core/pipeline": [
         77090712,  # [Disabled] Pin pydantic
