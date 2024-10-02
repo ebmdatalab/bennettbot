@@ -614,7 +614,7 @@ def test_message_checker_matched_messages(keyword, support_channel, reaction):
     assert requests_by_path["/api/search.messages"] == [
         {
             "query": [
-                f"{keyword} -has::{reaction}: -in:#{support_channel} "
+                f'"{keyword}" -has::{reaction}: -in:#{support_channel} '
                 f"-from:@{settings.SLACK_APP_USERNAME} -is:dm "
                 "before:2024-03-04 after:2024-03-02"
             ]
