@@ -333,7 +333,8 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
     "workspace.workflows.config.REPOS", {"opensafely-core": ["airlock", "failing-repo"]}
 )
 def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
-    # Call main with a valid org and repo=None
+    # Call main with a valid org and repo=None, with skip_successful=False
+    # The failing repo should appear first
 
     # Mocks
     mock_workflows.return_value = WORKFLOWS_MAIN
@@ -350,7 +351,9 @@ def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
 
     # Test main
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(jobs.main("opensafely-core", repo=None))
+        blocks = json.loads(
+            jobs.main("opensafely-core", repo=None, skip_successful=False)
+        )
     green = ":large_green_circle:"
     red = ":red_circle:"
     assert blocks == [
@@ -388,14 +391,14 @@ def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
     },
 )
 def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
-    # Call main with org="all" and repo=None
+    # Call main with org="all" and repo=None, with skip_successful=False
     # Use same workflows and conclusions for convenience
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
     mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(jobs.main("all", repo=None))
+        blocks = json.loads(jobs.main("all", repo=None, skip_successful=False))
     assert blocks == [
         {
             "type": "header",
@@ -421,9 +424,53 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
     ]
 
 
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_runs_since_last_retrieval")
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
+@patch(
+    "workspace.workflows.config.REPOS",
+    {"opensafely-core": ["airlock"], "opensafely": ["failing-repo"]},
+)
+def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path):
+    # Call main with a valid org and repo=None, with skip_successful=True
+
+    # Mocks
+    mock_workflows.return_value = WORKFLOWS_MAIN
+    mock_runs.return_value = []  # Read from the cache
+    mock_cache = {
+        **CACHE,
+        "opensafely/failing-repo": {
+            "timestamp": "2023-09-29T19:00:08Z",
+            "conclusions": {str(key): "failure" for key in WORKFLOWS_MAIN.keys()},
+        },
+    }
+    with open(cache_path, "w") as f:
+        json.dump(mock_cache, f)
+
+    # Test main
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        blocks = json.loads(jobs.main("all", repo=None, skip_successful=True))
+    red = ":red_circle:"
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for key repos",
+            },
+        },
+        {  # Only the failing repo should appear
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {red*5}",
+            },
+        },
+    ]
+
+
 def test_main_for_invalid_org():
     # Call main with an invalid org
-    blocks = json.loads(jobs.main("invalid-org", repo=None))
+    blocks = json.loads(jobs.main("invalid-org", repo=None, skip_successful=False))
     assert blocks == [
         {
             "type": "header",

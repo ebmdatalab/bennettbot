@@ -203,13 +203,15 @@ def get_success_rate(conclusions) -> float:
     return conclusions.count("success") / len(conclusions)
 
 
-def _summarise(header_text: str, locations: list[str]) -> str:
-    def list_conclusions(location):
-        reporter = RepoWorkflowReporter(location)
-        conclusions = reporter.get_latest_conclusions()
-        return list(conclusions.values())
+def _summarise(header_text: str, locations: list[str], skip_successful: bool) -> str:
+    unsorted = {}
+    for location in locations:
+        wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
+        # Use string comparison rather than success rate to avoid rounding errors
+        if skip_successful and all(c == "success" for c in wf_conclusions.values()):
+            continue
+        unsorted[location] = list(wf_conclusions.values())
 
-    unsorted = {loc: list_conclusions(loc) for loc in locations}
     key = lambda item: get_success_rate(item[1])
     conclusions = sorted(unsorted.items(), key=key)
 
@@ -220,24 +222,25 @@ def _summarise(header_text: str, locations: list[str]) -> str:
     return json.dumps(blocks)
 
 
-def summarise_all() -> str:
+def summarise_all(skip_successful) -> str:
     header_text = "Workflows for key repos"
     locations = [
         f"{org}/{repo}" for org, repos in config.REPOS.items() for repo in repos
     ]
-    return _summarise(header_text, locations)
+    return _summarise(header_text, locations, skip_successful)
 
 
-def summarise_org(org) -> str:
+def summarise_org(org, skip_successful) -> str:
     header_text = f"Workflows for {org} repos"
     locations = [f"{org}/{repo}" for repo in config.REPOS[org]]
-    return _summarise(header_text, locations)
+    return _summarise(header_text, locations, skip_successful)
 
 
 def _get_command_line_args():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument("--target")
     parser.add_argument("--key", action="store_true", default=False)
+    parser.add_argument("--skip-successful", action="store_true", default=False)
     return vars(parser.parse_args())
 
 
@@ -266,14 +269,15 @@ def get_text_blocks_for_key():
     return json.dumps(blocks)
 
 
-def main(org, repo):
+def main(org, repo, skip_successful=False) -> str:
+    # skip_successful skips "successful (i.e. all green)" repos is only used for summary functions
     if org == "all":
         # Summarise status for all repos in all orgs
-        return summarise_all()
+        return summarise_all(skip_successful)
     elif org in config.REPOS.keys():  # Valid organisation
         if repo is None:
             # Summarise status for multiple repos in an org
-            return summarise_org(org)
+            return summarise_org(org, skip_successful)
         # Single repo usage: Report status for all workflows in a specified repo
         return RepoWorkflowReporter(f"{org}/{repo}").report()
     else:

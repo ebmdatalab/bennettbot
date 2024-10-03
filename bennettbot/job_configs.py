@@ -312,6 +312,11 @@ raw_config = {
                 "report_stdout": True,
                 "report_format": "blocks",
             },
+            "show_failed": {
+                "run_args_template": "python jobs.py --target all --skip-successful",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
             "show": {
                 "run_args_template": "python jobs.py --target {target}",
                 "report_stdout": True,
@@ -330,6 +335,12 @@ raw_config = {
                 "help": "Summarise GitHub Actions workflow runs for repos in all three organisations.",
                 "action": "schedule_job",
                 "job_type": "show_all",
+            },
+            {
+                "command": "show-failed",
+                "help": "Summarise GitHub Actions workflow runs for repos in all three organisations, skipping repos whose runs are all successful.",
+                "action": "schedule_job",
+                "job_type": "show_failed",
             },
             {
                 "command": "show [target]",
