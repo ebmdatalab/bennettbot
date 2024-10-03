@@ -221,8 +221,17 @@ def test_help(mock_app):
         )
 
 
-def test_not_understood(mock_app):
-    handle_message(mock_app, "<@U1234> beep boop", reaction_count=0)
+@pytest.mark.parametrize(
+    "message",
+    [
+        "beep boop",  # unknown command with no space after the bot mention
+        " beep boop",  # unknown command
+        "",  # no text, just bot mention
+        ".",  # just punctuation
+    ],
+)
+def test_not_understood(mock_app, message):
+    handle_message(mock_app, f"<@U1234>{message}", reaction_count=0)
     for expected_fragment in ["I'm sorry", "Enter `@test_username [category] help`"]:
         assert_slack_client_sends_messages(
             messages_kwargs=[{"channel": "channel", "text": expected_fragment}],

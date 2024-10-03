@@ -159,9 +159,6 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         _listener(event, say, is_im=True)
 
     def _listener(event, say, is_im=False):
-        # Remove the reminder prefix
-        text = event["text"].replace("Reminder: ", "")
-
         # Find the text that follows the bot mention, which can be in the form of
         # <@AB1234|bot_name> or <@AB1234>
         # We don't require the bot mention to be first in the message.
@@ -184,17 +181,23 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         # - " do the  thing "
         # But not:
         # - "<@bot> do the thing please"
-        if bot_user_id in event["text"]:
+        text = event["text"]
+        if bot_user_id in text:
+            # extract the command text from a bot mention
+            # If the bot isn't mentioned, it's a DM and we expect to receive
+            # a message with just a command (but allowing for spurious whitespace
+            # and punctuation, which we'll deal with later
             text_match = re.match(
-                rf".*(<@{bot_user_id}(|.+)?>)\s*(?P<text_match>.+)",
-                event["text"],
-                flags=re.X,
+                (
+                    rf".*"  # allow anything before the bot mention
+                    rf"(<@{bot_user_id}(|.+)?>)"  # match either <@bot_id> or <"bot_id|bot_name">
+                    rf"(?P<text_match>.*)"  # capture everything else (including nothing) in a named group
+                ),
+                text,
+                flags=re.X,  # ignore whitespace in the regex
             )
-        else:
-            text_match = re.match(r"\s+(?P<text_match>.+)", event["text"], flags=re.X)
-
-        if text_match:
             text = text_match.group("text_match")
+
         # handle extra whitespace and punctuation
         text = " ".join(text.strip().rstrip(".").split())
         event["text"] = text
