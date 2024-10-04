@@ -300,6 +300,7 @@ raw_config = {
         ]
     },
     "workflows": {
+        "restricted": True,
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
             "display_emoji_key": {
@@ -309,6 +310,11 @@ raw_config = {
             },
             "show_all": {
                 "run_args_template": "python jobs.py --target all",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "show_failed": {
+                "run_args_template": "python jobs.py --target all --skip-successful",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
@@ -327,9 +333,15 @@ raw_config = {
             },
             {
                 "command": "show all",
-                "help": "Summarise GitHub Actions workflow runs for repos in all three organisations.",
+                "help": "Summarise GitHub Actions workflow runs for repos in all organisations.",
                 "action": "schedule_job",
                 "job_type": "show_all",
+            },
+            {
+                "command": "show-failed",
+                "help": "Summarise GitHub Actions workflow runs for repos in all organisations, skipping repos whose runs are all successful.",
+                "action": "schedule_job",
+                "job_type": "show_failed",
             },
             {
                 "command": "show [target]",
