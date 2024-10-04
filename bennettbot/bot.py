@@ -159,12 +159,44 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         _listener(event, say, is_im=True)
 
     def _listener(event, say, is_im=False):
-        # Remove the reminder prefix
-        text = event["text"].replace("Reminder: ", "")
-        # Remove the bot mention; this sometimes includes the bot's name as well as
-        # id. In reminders, the bot mention is in the form <@AB1234|bot_name>; in user
-        # messages that @ the bot, it is just in the form <@AB1234>. We need to match both.
-        text = re.sub(rf"<@{bot_user_id}(|.+)?>", "", text)
+        # Find the text that follows the bot mention, which can be in the form of
+        # <@AB1234|bot_name> or <@AB1234>
+        # We don't require the bot mention to be first in the message.
+        # We allow for users ending the command with a ., but we don't allow
+        # any additional text to follow the command.
+        # (we probably could do this, but the various regexes for commands take many
+        # formats, and it could be error prone to try partially matching them. Some are
+        # subsets of others, for example.)
+        # We allow for random whitespace in/before/after the command
+        # We also allow commands on their own with no bot mention (matched in DMs with the bot)
+
+        # we should match any of there
+        # - "Reminder: <@bot|bot_name> do the thing"
+        # - "<@bot> do the thing"
+        # - "<@bot>do the thing"
+        # - "<@bot>  do the thing "
+        # - "<@bot> do the thing."
+        # - "hello, <@bot> do the thing"
+        # - "do the thing"
+        # - " do the  thing "
+        # But not:
+        # - "<@bot> do the thing please"
+        text = event["text"]
+        if bot_user_id in text:
+            # extract the command text from a bot mention
+            # If the bot isn't mentioned, it's a DM and we expect to receive
+            # a message with just a command (but allowing for spurious whitespace
+            # and punctuation, which we'll deal with later
+            text_match = re.match(
+                (
+                    rf".*"  # allow anything before the bot mention
+                    rf"(<@{bot_user_id}(|.+)?>)"  # match either <@bot_id> or <"bot_id|bot_name">
+                    rf"(?P<text_match>.*)"  # capture everything else (including nothing) in a named group
+                ),
+                text,
+                flags=re.X,  # ignore whitespace in the regex
+            )
+            text = text_match.group("text_match")
 
         # handle extra whitespace and punctuation
         text = " ".join(text.strip().rstrip(".").split())

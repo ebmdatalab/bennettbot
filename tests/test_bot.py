@@ -221,8 +221,17 @@ def test_help(mock_app):
         )
 
 
-def test_not_understood(mock_app):
-    handle_message(mock_app, "<@U1234> beep boop", reaction_count=0)
+@pytest.mark.parametrize(
+    "message",
+    [
+        "beep boop",  # unknown command with no space after the bot mention
+        " beep boop",  # unknown command
+        "",  # no text, just bot mention
+        ".",  # just punctuation
+    ],
+)
+def test_not_understood(mock_app, message):
+    handle_message(mock_app, f"<@U1234>{message}", reaction_count=0)
     for expected_fragment in ["I'm sorry", "Enter `@test_username [category] help`"]:
         assert_slack_client_sends_messages(
             messages_kwargs=[{"channel": "channel", "text": expected_fragment}],
@@ -251,9 +260,30 @@ def test_status(mock_app):
     )
 
 
-@pytest.mark.parametrize("message", [" test help", "test help ", "test  help"])
-def test_message_with_spaces(mock_app, message):
-    handle_message(mock_app, f"<@U1234>{message}", reaction_count=0)
+@pytest.mark.parametrize(
+    "pre_message,message",
+    [
+        # handle usual spacing
+        ("", " test help"),
+        # no space after bot mention
+        ("", "test help "),
+        # additional spacing in command
+        (
+            "",
+            "test  help",
+        ),
+        # additional spacing in and after ccommand
+        ("", "test  help "),
+        # full stop after command
+        ("", " test help."),
+        # text before bot mention
+        ("Hey bot ", " test help"),
+        # text before bot mention, no spacing
+        ("Hey bot", "test help"),
+    ],
+)
+def test_message_parsing(mock_app, pre_message, message):
+    handle_message(mock_app, f"{pre_message}<@U1234>{message}", reaction_count=0)
     assert_slack_client_sends_messages(
         messages_kwargs=[
             {"channel": "channel", "text": "`test do job [n]`: do the job"}
@@ -261,9 +291,23 @@ def test_message_with_spaces(mock_app, message):
     )
 
 
-@pytest.mark.parametrize("message", ["test help", "<@U1234> test help"])
+def test_message_with_suffixed_text(mock_app):
+    # The matcher can handle text that precedes the bot mention, but not
+    # text that follows the command
+    handle_message(mock_app, "<@U1234> test help me", reaction_count=0)
+    for expected_fragment in ["I'm sorry", "Enter `@test_username [category] help`"]:
+        assert_slack_client_sends_messages(
+            messages_kwargs=[{"channel": "channel", "text": expected_fragment}],
+        )
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["test help", " test  help. ", "<@U1234> test help", "hey <@U1234> test help"],
+)
 def test_direct_message(mock_app, message):
     # The bot can be DM'd with or without mentioning it
+    # Mentions can include preceding text
     handle_message(
         mock_app,
         message,
@@ -277,6 +321,26 @@ def test_direct_message(mock_app, message):
             {"channel": "IM0001", "text": "`test do job [n]`: do the job"}
         ],
     )
+
+
+@pytest.mark.parametrize("message", ["test help me", "hey test help"])
+def test_direct_message_without_bot_mention_must_contain_command_only(
+    mock_app, message
+):
+    # DMs can handle extra whitespace and following full stop as usual, but
+    # can't handle text preceding or following the command
+    handle_message(
+        mock_app,
+        message,
+        reaction_count=0,
+        channel="IM0001",
+        event_type="message",
+        event_kwargs={"channel_type": "im"},
+    )
+    for expected_fragment in ["I'm sorry", "Enter `[category] help`"]:
+        assert_slack_client_sends_messages(
+            messages_kwargs=[{"channel": "IM0001", "text": expected_fragment}],
+        )
 
 
 def test_build_status():
