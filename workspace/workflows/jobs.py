@@ -79,6 +79,7 @@ class RepoWorkflowReporter:
         """
         self.location = location
         self.base_api_url = f"https://api.github.com/repos/{self.location}/"
+        self.github_actions_link = get_github_actions_link(self.location)
 
         self.workflows = self.get_workflows()  # Dict of workflow_id: workflow_name
         self.workflow_ids = set(self.workflows.keys())
@@ -141,9 +142,9 @@ class RepoWorkflowReporter:
     def get_conclusion_for_run(run) -> str:
         aliases = {"in_progress": "running"}
         if run["conclusion"] is None:
-            status = str(str(run["status"]))
+            status = str(run["status"])
             return aliases.get(status, status)
-        return str(run["conclusion"])
+        return run["conclusion"]
 
     def fill_in_conclusions_for_missing_ids(self, conclusions, missing_ids):
         """
@@ -170,12 +171,11 @@ class RepoWorkflowReporter:
             return f"{name}: {emoji} {conclusion.title().replace('_', ' ')}"
 
         conclusions = self.get_latest_conclusions()
-        link = get_github_actions_link(self.location)
         lines = [format_text(wf, conclusion) for wf, conclusion in conclusions.items()]
         blocks = [
             get_header_block(f"Workflows for {self.location}"),
             get_text_block("\n".join(lines)),  # Show in one block for compactness
-            get_text_block(f"<{link}|View Github Actions>"),
+            get_text_block(f"<{self.github_actions_link}|View Github Actions>"),
         ]
         return json.dumps(blocks)
 
@@ -207,8 +207,7 @@ def _summarise(header_text: str, locations: list[str], skip_successful: bool) ->
     unsorted = {}
     for location in locations:
         wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
-        # Use string comparison rather than success rate to avoid rounding errors
-        if skip_successful and all(c == "success" for c in wf_conclusions.values()):
+        if skip_successful and get_success_rate(list(wf_conclusions.values())) == 1:
             continue
         unsorted[location] = list(wf_conclusions.values())
 

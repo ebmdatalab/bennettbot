@@ -232,7 +232,7 @@ def test_cache_creation(mock_write, mock_airlock_reporter, freezer):
     mock_write.return_value = None  # Disable writing to file and test separately
     assert mock_airlock_reporter.cache == {}
     freezer.move_to("2023-09-30 09:00:08")
-    _ = mock_airlock_reporter.get_latest_conclusions()
+    mock_airlock_reporter.get_latest_conclusions()
     assert mock_airlock_reporter.cache == CACHE["opensafely-core/airlock"]
 
 
@@ -266,7 +266,7 @@ def test_get_conclusion_for_run(run, conclusion):
     ],
 )
 def test_get_summary_block(conclusion, emoji):
-    conclusions = [conclusion for _ in range(5)]
+    conclusions = [conclusion] * 5
     block = jobs.get_summary_block("opensafely-core/airlock", conclusions)
     assert block == {
         "type": "section",

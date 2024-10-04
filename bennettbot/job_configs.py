@@ -332,13 +332,13 @@ raw_config = {
             },
             {
                 "command": "show all",
-                "help": "Summarise GitHub Actions workflow runs for repos in all three organisations.",
+                "help": "Summarise GitHub Actions workflow runs for repos in all organisations.",
                 "action": "schedule_job",
                 "job_type": "show_all",
             },
             {
                 "command": "show-failed",
-                "help": "Summarise GitHub Actions workflow runs for repos in all three organisations, skipping repos whose runs are all successful.",
+                "help": "Summarise GitHub Actions workflow runs for repos in all organisations, skipping repos whose runs are all successful.",
                 "action": "schedule_job",
                 "job_type": "show_failed",
             },
