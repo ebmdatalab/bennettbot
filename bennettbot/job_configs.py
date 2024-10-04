@@ -300,6 +300,7 @@ raw_config = {
         ]
     },
     "workflows": {
+        "restricted": True,
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
             "display_emoji_key": {
