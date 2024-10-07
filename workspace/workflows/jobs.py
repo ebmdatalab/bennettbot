@@ -32,6 +32,16 @@ def get_emoji(conclusion) -> str:
     return EMOJI.get(conclusion, EMOJI["other"])
 
 
+def get_locations_for_team(team: str) -> list[str]:
+    return [
+        f'{v["org"]}/{repo}' for repo, v in config.REPOS.items() if v["team"] == team
+    ]
+
+
+def get_locations_for_org(org: str) -> list[str]:
+    return [f"{org}/{repo}" for repo, v in config.REPOS.items() if v["org"] == org]
+
+
 def report_invalid_org(org) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text=f"{org} was not recognised",
@@ -203,7 +213,7 @@ def get_success_rate(conclusions) -> float:
     return conclusions.count("success") / len(conclusions)
 
 
-def _summarise(header_text: str, locations: list[str], skip_successful: bool) -> str:
+def _summarise(header_text: str, locations: list[str], skip_successful: bool) -> list:
     unsorted = {}
     for location in locations:
         wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
@@ -218,21 +228,30 @@ def _summarise(header_text: str, locations: list[str], skip_successful: bool) ->
         get_header_block(header_text),
         *[get_summary_block(loc, conc) for loc, conc in conclusions],
     ]
-    return json.dumps(blocks)
+    return blocks
 
 
-def summarise_all(skip_successful) -> str:
-    header_text = "Workflows for key repos"
-    locations = [
-        f"{org}/{repo}" for org, repos in config.REPOS.items() for repo in repos
-    ]
-    return _summarise(header_text, locations, skip_successful)
+def summarise_team(team: str, skip_successful: bool) -> list:
+    header = f"Workflows for {team}"
+    locations = get_locations_for_team(team)
+    return _summarise(header, locations, skip_successful)
 
 
-def summarise_org(org, skip_successful) -> str:
+def summarise_all(skip_successful) -> list:
+    # Show in sections by team
+    blocks = []
+    for team in config.TEAMS:
+        team_blocks = summarise_team(team, skip_successful)
+        if len(team_blocks) > 1:
+            blocks.extend(team_blocks)
+    return blocks
+
+
+def summarise_org(org, skip_successful) -> list:
     header_text = f"Workflows for {org} repos"
-    locations = [f"{org}/{repo}" for repo in config.REPOS[org]]
-    return _summarise(header_text, locations, skip_successful)
+    locations = get_locations_for_org(org)
+    blocks = _summarise(header_text, locations, skip_successful)
+    return blocks
 
 
 def _get_command_line_args():  # pragma: no cover
@@ -272,11 +291,11 @@ def main(org, repo, skip_successful=False) -> str:
     # skip_successful skips "successful (i.e. all green)" repos is only used for summary functions
     if org == "all":
         # Summarise status for all repos in all orgs
-        return summarise_all(skip_successful)
-    elif org in config.REPOS.keys():  # Valid organisation
+        return json.dumps(summarise_all(skip_successful))
+    elif org in config.SHORTHANDS.values():  # Valid organisation
         if repo is None:
             # Summarise status for multiple repos in an org
-            return summarise_org(org, skip_successful)
+            return json.dumps(summarise_org(org, skip_successful))
         # Single repo usage: Report status for all workflows in a specified repo
         return RepoWorkflowReporter(f"{org}/{repo}").report()
     else:

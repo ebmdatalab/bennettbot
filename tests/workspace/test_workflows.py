@@ -330,7 +330,11 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_runs_since_last_retrieval")
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
 @patch(
-    "workspace.workflows.config.REPOS", {"opensafely-core": ["airlock", "failing-repo"]}
+    "workspace.workflows.config.REPOS",
+    {
+        "airlock": {"org": "opensafely-core", "team": "Team RAP"},
+        "failing-repo": {"org": "opensafely-core", "team": "Team REX"},
+    },
 )
 def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
     # Call main with a valid org and repo=None, with skip_successful=False
@@ -386,8 +390,8 @@ def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
 @patch(
     "workspace.workflows.config.REPOS",
     {
-        "opensafely-core": ["airlock"],
-        "opensafely": ["documentation"],
+        "airlock": {"org": "opensafely-core", "team": "Team RAP"},
+        "documentation": {"org": "opensafely", "team": "Team REX"},
     },
 )
 def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
@@ -404,14 +408,7 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "Workflows for key repos",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
+                "text": "Workflows for Team REX",
             },
         },
         {
@@ -421,6 +418,20 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
                 "text": f"<https://github.com/opensafely/documentation/actions?query=branch%3Amain|opensafely/documentation>: {emoji*5}",
             },
         },
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for Team RAP",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
+            },
+        },
     ]
 
 
@@ -428,7 +439,10 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
 @patch(
     "workspace.workflows.config.REPOS",
-    {"opensafely-core": ["airlock"], "opensafely": ["failing-repo"]},
+    {
+        "airlock": {"org": "opensafely-core", "team": "Team RAP"},
+        "failing-repo": {"org": "opensafely", "team": "Team REX"},
+    },
 )
 def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path):
     # Call main with a valid org and repo=None, with skip_successful=True
@@ -451,14 +465,14 @@ def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path)
         blocks = json.loads(jobs.main("all", repo=None, skip_successful=True))
     red = ":red_circle:"
     assert blocks == [
-        {
+        {  # Only the Team REX section containing the failing repo should appear
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "Workflows for key repos",
+                "text": "Workflows for Team REX",
             },
         },
-        {  # Only the failing repo should appear
+        {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
