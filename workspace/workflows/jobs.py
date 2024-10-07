@@ -254,41 +254,35 @@ def summarise_org(org, skip_successful) -> list:
     return blocks
 
 
-def _get_command_line_args():  # pragma: no cover
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--target")
-    parser.add_argument("--key", action="store_true", default=False)
-    parser.add_argument("--skip-successful", action="store_true", default=False)
-    return vars(parser.parse_args())
+def main(args) -> str:
+    target = args.target.split("/")
+    if len(target) == 2:
+        org, repo = target
+    elif len(target) == 1:
+        if target[0] in config.REPOS.keys():  # Known repo
+            org, repo = config.REPOS[target[0]]["org"], target[0]
+        else:  # Assume org
+            org, repo = target[0], None
+    else:  # Invalid target format
+        raise ValueError(
+            "Argument must be a known organisation or repo, or a repo given as [org/repo]"
+        )
+
+    # Org may be a shorthand
+    org = config.SHORTHANDS.get(org, org)
+    return _main(org, repo, args.skip_successful)
 
 
-def parse_args():
-    args = _get_command_line_args()
-    if args.pop("key", False):
-        return None
-
-    if "target" not in args:
-        raise ValueError("Argument --target is required")
-
-    # Parse target, which can either be org or org/repo
-    target = args.pop("target").split("/")
-    if len(target) not in [1, 2]:
-        raise ValueError("Argument must be in the format org or org/repo")
-    args["org"] = config.SHORTHANDS.get(target[0], target[0])
-    args["repo"] = target[1] if len(target) == 2 else None
-    return args
-
-
-def get_text_blocks_for_key():
-    blocks = get_basic_header_and_text_blocks(
-        header_text="Workflow status emoji key",
-        texts=[f"{v}={k.title()}" for k, v in EMOJI.items()],
-    )
-    return json.dumps(blocks)
-
-
-def main(org, repo, skip_successful=False) -> str:
-    # skip_successful skips "successful (i.e. all green)" repos is only used for summary functions
+def _main(org, repo, skip_successful=False) -> str:
+    """
+    Main function to report on the status of workflows in a specified repo or org.
+    args:
+        org: str
+            The organisation or shorthand for the organisation to report on. A special value of "all" will report on all orgs.
+        repo: str | None
+            The repo to report on. If None, all repos specified by "org" will be reported on.
+        skip_successful: bool
+            If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions."""
     if org == "all":
         # Summarise status for all repos in all orgs
         return json.dumps(summarise_all(skip_successful))
@@ -302,9 +296,30 @@ def main(org, repo, skip_successful=False) -> str:
         return report_invalid_org(org)
 
 
+def get_text_blocks_for_key(args) -> str:
+    blocks = get_basic_header_and_text_blocks(
+        header_text="Workflow status emoji key",
+        texts=[f"{v}={k.title()}" for k, v in EMOJI.items()],
+    )
+    return json.dumps(blocks)
+
+
+def get_command_line_parser():  # pragma: no cover
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(required=True)
+
+    # Main task: show workflows
+    show_parser = subparsers.add_parser("show")
+    show_parser.add_argument("--target", required=True)
+    show_parser.add_argument("--skip-successful", action="store_true", default=False)
+    show_parser.set_defaults(func=main)
+
+    # Display key
+    key_parser = subparsers.add_parser("key")
+    key_parser.set_defaults(func=get_text_blocks_for_key)
+    return parser
+
+
 if __name__ == "__main__":
-    args = parse_args()
-    if args is None:
-        print(get_text_blocks_for_key())
-    else:
-        print(main(**args))
+    args = get_command_line_parser().parse_args()
+    print(args.func(args))

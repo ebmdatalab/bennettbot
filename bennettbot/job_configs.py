@@ -304,22 +304,22 @@ raw_config = {
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
             "display_emoji_key": {
-                "run_args_template": "python jobs.py --key",
+                "run_args_template": "python jobs.py key",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
             "show_all": {
-                "run_args_template": "python jobs.py --target all",
+                "run_args_template": "python jobs.py show --target all",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
             "show_failed": {
-                "run_args_template": "python jobs.py --target all --skip-successful",
+                "run_args_template": "python jobs.py show --target all --skip-successful",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
             "show": {
-                "run_args_template": "python jobs.py --target {target}",
+                "run_args_template": "python jobs.py show --target {target}",
                 "report_stdout": True,
                 "report_format": "blocks",
             },

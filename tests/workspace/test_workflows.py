@@ -57,12 +57,6 @@ def mock_airlock_reporter():
     httpretty.reset()
 
 
-@patch("workspace.workflows.jobs._get_command_line_args")
-def test_parse_key_argument(args):
-    args.return_value = {"key": True}
-    assert jobs.parse_args() is None
-
-
 def test_print_key():
     blocks = [
         {
@@ -122,37 +116,44 @@ def test_print_key():
             },
         },
     ]
-    assert json.loads(jobs.get_text_blocks_for_key()) == blocks
-
-
-@patch("workspace.workflows.jobs._get_command_line_args")
-def test_no_target(args):
-    args.return_value = {"key": False}
-    with pytest.raises(ValueError):
-        jobs.parse_args()
+    assert json.loads(jobs.get_text_blocks_for_key(None)) == blocks
 
 
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
-@patch("workspace.workflows.jobs._get_command_line_args")
-def test_org_as_target(args, org):
-    args.return_value = {"target": org, "key": False}
-    parsed = jobs.parse_args()
-    assert parsed == {"org": "opensafely-core", "repo": None}
+def test_org_as_target(org):
+    args = jobs.get_command_line_parser().parse_args(f"show --target {org}".split())
+
+    with patch("workspace.workflows.jobs._main") as mock__main:
+        jobs.main(args)
+        mock__main.assert_called_once_with("opensafely-core", None, False)
 
 
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
-@patch("workspace.workflows.jobs._get_command_line_args")
-def test_repo_as_target(args, org):
-    args.return_value = {"target": f"{org}/airlock", "key": False}
-    parsed = jobs.parse_args()
-    assert parsed == {"org": "opensafely-core", "repo": "airlock"}
+def test_org_and_repo_as_target(org):
+    args = jobs.get_command_line_parser().parse_args(
+        f"show --target {org}/airlock".split()
+    )
+
+    with patch("workspace.workflows.jobs._main") as mock__main:
+        jobs.main(args)
+        mock__main.assert_called_once_with("opensafely-core", "airlock", False)
 
 
-@patch("workspace.workflows.jobs._get_command_line_args")
-def test_invalid_target(args):
-    args.return_value = {"target": "some/invalid/input", "key": False}
+def test_repo_only_as_target():
+    args = jobs.get_command_line_parser().parse_args("show --target airlock".split())
+
+    with patch("workspace.workflows.jobs._main") as mock__main:
+        jobs.main(args)
+        mock__main.assert_called_once_with("opensafely-core", "airlock", False)
+
+
+def test_invalid_target():
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target some/invalid/input".split()
+    )
+
     with pytest.raises(ValueError):
-        jobs.parse_args()
+        jobs.main(args)
 
 
 @httpretty.activate(allow_net_connect=False)
@@ -289,7 +290,7 @@ def test_get_summary_block(conclusion, emoji):
 )
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.get_latest_conclusions")
 def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
-    # Call main with a valid org name and a valid repo name
+    # Call main for a single repo (opensafely-core/airlock)
     # No need to mock CACHE_PATH since get_latest_conclusions is mocked
     httpretty.register_uri(
         httpretty.GET,
@@ -301,7 +302,10 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
         key: conclusion for key in sorted(list(WORKFLOWS_MAIN.keys()))
     }
     status = f"{emoji} {reported}"
-    blocks = json.loads(jobs.main("opensafely-core", "airlock"))
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target opensafely-core/airlock".split()
+    )
+    blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
             "type": "header",
@@ -337,7 +341,7 @@ def test_main_for_repo(mock_conclusions, conclusion, reported, emoji):
     },
 )
 def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
-    # Call main with a valid org and repo=None, with skip_successful=False
+    # Call main for an organisation without skipping successful workflows
     # The failing repo should appear first
 
     # Mocks
@@ -354,10 +358,9 @@ def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
         json.dump(mock_cache, f)
 
     # Test main
+    args = jobs.get_command_line_parser().parse_args("show --target osc".split())
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(
-            jobs.main("opensafely-core", repo=None, skip_successful=False)
-        )
+        blocks = json.loads(jobs.main(args))
     green = ":large_green_circle:"
     red = ":red_circle:"
     assert blocks == [
@@ -395,14 +398,15 @@ def test_main_for_organisation(mock_workflows, mock_runs, cache_path):
     },
 )
 def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
-    # Call main with org="all" and repo=None, with skip_successful=False
+    # Call main for all repos without skipping successful workflows
     # Use same workflows and conclusions for convenience
     mock_workflows.return_value = WORKFLOWS_MAIN
     conclusion = "success"
     emoji = ":large_green_circle:"
     mock_conclusions.return_value = {key: conclusion for key in WORKFLOWS_MAIN.keys()}
+    args = jobs.get_command_line_parser().parse_args("show --target all".split())
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(jobs.main("all", repo=None, skip_successful=False))
+        blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
             "type": "header",
@@ -445,7 +449,7 @@ def test_main_for_all_orgs(mock_workflows, mock_conclusions, cache_path):
     },
 )
 def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path):
-    # Call main with a valid org and repo=None, with skip_successful=True
+    # Call main for all repos with skipping successful workflows
 
     # Mocks
     mock_workflows.return_value = WORKFLOWS_MAIN
@@ -461,8 +465,11 @@ def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path)
         json.dump(mock_cache, f)
 
     # Test main
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target all --skip-successful".split()
+    )
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        blocks = json.loads(jobs.main("all", repo=None, skip_successful=True))
+        blocks = json.loads(jobs.main(args))
     red = ":red_circle:"
     assert blocks == [
         {  # Only the Team REX section containing the failing repo should appear
@@ -484,7 +491,10 @@ def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path)
 
 def test_main_for_invalid_org():
     # Call main with an invalid org
-    blocks = json.loads(jobs.main("invalid-org", repo=None, skip_successful=False))
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target invalid-org".split()
+    )
+    blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
             "type": "header",
