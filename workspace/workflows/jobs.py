@@ -32,6 +32,16 @@ def get_emoji(conclusion) -> str:
     return EMOJI.get(conclusion, EMOJI["other"])
 
 
+def get_locations_for_team(team: str) -> list[str]:
+    return [
+        f'{v["org"]}/{repo}' for repo, v in config.REPOS.items() if v["team"] == team
+    ]
+
+
+def get_locations_for_org(org: str) -> list[str]:
+    return [f"{org}/{repo}" for repo, v in config.REPOS.items() if v["org"] == org]
+
+
 def report_invalid_org(org) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text=f"{org} was not recognised",
@@ -203,7 +213,7 @@ def get_success_rate(conclusions) -> float:
     return conclusions.count("success") / len(conclusions)
 
 
-def _summarise(header_text: str, locations: list[str], skip_successful: bool) -> str:
+def _summarise(header_text: str, locations: list[str], skip_successful: bool) -> list:
     unsorted = {}
     for location in locations:
         wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
@@ -218,49 +228,75 @@ def _summarise(header_text: str, locations: list[str], skip_successful: bool) ->
         get_header_block(header_text),
         *[get_summary_block(loc, conc) for loc, conc in conclusions],
     ]
-    return json.dumps(blocks)
+    return blocks
 
 
-def summarise_all(skip_successful) -> str:
-    header_text = "Workflows for key repos"
-    locations = [
-        f"{org}/{repo}" for org, repos in config.REPOS.items() for repo in repos
-    ]
-    return _summarise(header_text, locations, skip_successful)
+def summarise_team(team: str, skip_successful: bool) -> list:
+    header = f"Workflows for {team}"
+    locations = get_locations_for_team(team)
+    return _summarise(header, locations, skip_successful)
 
 
-def summarise_org(org, skip_successful) -> str:
+def summarise_all(skip_successful) -> list:
+    # Show in sections by team
+    blocks = []
+    for team in config.TEAMS:
+        team_blocks = summarise_team(team, skip_successful)
+        if len(team_blocks) > 1:
+            blocks.extend(team_blocks)
+    return blocks
+
+
+def summarise_org(org, skip_successful) -> list:
     header_text = f"Workflows for {org} repos"
-    locations = [f"{org}/{repo}" for repo in config.REPOS[org]]
-    return _summarise(header_text, locations, skip_successful)
+    locations = get_locations_for_org(org)
+    blocks = _summarise(header_text, locations, skip_successful)
+    return blocks
 
 
-def _get_command_line_args():  # pragma: no cover
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--target")
-    parser.add_argument("--key", action="store_true", default=False)
-    parser.add_argument("--skip-successful", action="store_true", default=False)
-    return vars(parser.parse_args())
+def main(args) -> str:
+    target = args.target.split("/")
+    if len(target) == 2:
+        org, repo = target
+    elif len(target) == 1:
+        if target[0] in config.REPOS.keys():  # Known repo
+            org, repo = config.REPOS[target[0]]["org"], target[0]
+        else:  # Assume org
+            org, repo = target[0], None
+    else:  # Invalid target format
+        raise ValueError(
+            "Argument must be a known organisation or repo, or a repo given as [org/repo]"
+        )
+
+    # Org may be a shorthand
+    org = config.SHORTHANDS.get(org, org)
+    return _main(org, repo, args.skip_successful)
 
 
-def parse_args():
-    args = _get_command_line_args()
-    if args.pop("key", False):
-        return None
+def _main(org, repo, skip_successful=False) -> str:
+    """
+    Main function to report on the status of workflows in a specified repo or org.
+    args:
+        org: str
+            The organisation or shorthand for the organisation to report on. A special value of "all" will report on all orgs.
+        repo: str | None
+            The repo to report on. If None, all repos specified by "org" will be reported on.
+        skip_successful: bool
+            If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions."""
+    if org == "all":
+        # Summarise status for all repos in all orgs
+        return json.dumps(summarise_all(skip_successful))
+    elif org in config.SHORTHANDS.values():  # Valid organisation
+        if repo is None:
+            # Summarise status for multiple repos in an org
+            return json.dumps(summarise_org(org, skip_successful))
+        # Single repo usage: Report status for all workflows in a specified repo
+        return RepoWorkflowReporter(f"{org}/{repo}").report()
+    else:
+        return report_invalid_org(org)
 
-    if "target" not in args:
-        raise ValueError("Argument --target is required")
 
-    # Parse target, which can either be org or org/repo
-    target = args.pop("target").split("/")
-    if len(target) not in [1, 2]:
-        raise ValueError("Argument must be in the format org or org/repo")
-    args["org"] = config.SHORTHANDS.get(target[0], target[0])
-    args["repo"] = target[1] if len(target) == 2 else None
-    return args
-
-
-def get_text_blocks_for_key():
+def get_text_blocks_for_key(args) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text="Workflow status emoji key",
         texts=[f"{v}={k.title()}" for k, v in EMOJI.items()],
@@ -268,24 +304,22 @@ def get_text_blocks_for_key():
     return json.dumps(blocks)
 
 
-def main(org, repo, skip_successful=False) -> str:
-    # skip_successful skips "successful (i.e. all green)" repos is only used for summary functions
-    if org == "all":
-        # Summarise status for all repos in all orgs
-        return summarise_all(skip_successful)
-    elif org in config.REPOS.keys():  # Valid organisation
-        if repo is None:
-            # Summarise status for multiple repos in an org
-            return summarise_org(org, skip_successful)
-        # Single repo usage: Report status for all workflows in a specified repo
-        return RepoWorkflowReporter(f"{org}/{repo}").report()
-    else:
-        return report_invalid_org(org)
+def get_command_line_parser():  # pragma: no cover
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(required=True)
+
+    # Main task: show workflows
+    show_parser = subparsers.add_parser("show")
+    show_parser.add_argument("--target", required=True)
+    show_parser.add_argument("--skip-successful", action="store_true", default=False)
+    show_parser.set_defaults(func=main)
+
+    # Display key
+    key_parser = subparsers.add_parser("key")
+    key_parser.set_defaults(func=get_text_blocks_for_key)
+    return parser
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    if args is None:
-        print(get_text_blocks_for_key())
-    else:
-        print(main(**args))
+    args = get_command_line_parser().parse_args()
+    print(args.func(args))

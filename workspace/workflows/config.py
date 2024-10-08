@@ -4,34 +4,101 @@ SHORTHANDS = {
     "ebm": "ebmdatalab",
 }
 
+TEAMS = [
+    "Tech shared",
+    "Team REX",
+    "Team RAP",
+]
+
 REPOS = {
-    "opensafely": [
-        "documentation",
-    ],
-    "opensafely-core": [
-        "job-server",
-        "job-runner",
-        "ehrql",
-        "airlock",
-        "opencodelists",
-        "pipeline",
-        "opensafely-cli",
-        "python-docker",
-        "backend-server",
-        "sqlrunner",
-        "cohort-extractor",
-        "actions-registry",
-        "reports",
-    ],
-    "ebmdatalab": [
-        "openprescribing",
-        "bennett.ox.ac.uk",
-        "opensafely.org",
-        "team-manual",
-        "metrics",
-        "bennettbot",
-        "kissh",
-    ],
+    "actions-registry": {
+        "org": "opensafely-core",
+        "team": "Team REX",
+    },
+    "airlock": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "backend-server": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "bennett.ox.ac.uk": {
+        "org": "ebmdatalab",
+        "team": "Team REX",
+    },
+    "bennettbot": {
+        "org": "ebmdatalab",
+        "team": "Team RAP",
+    },
+    "cohort-extractor": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "documentation": {
+        "org": "opensafely",
+        "team": "Tech shared",
+    },
+    "ehrql": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "job-runner": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "job-server": {
+        "org": "opensafely-core",
+        "team": "Team REX",
+    },
+    "kissh": {
+        "org": "ebmdatalab",
+        "team": "Team RAP",
+    },
+    "metrics": {
+        "org": "ebmdatalab",
+        "team": "Team REX",
+    },
+    "openprescribing": {
+        "org": "ebmdatalab",
+        "team": "Team RAP",
+    },
+    "opensafely-cli": {
+        "org": "opensafely-core",
+        "team": "Team REX",
+    },
+    "opensafely.org": {
+        "org": "ebmdatalab",
+        "team": "Team REX",
+    },
+    "opencodelists": {
+        "org": "opensafely-core",
+        "team": "Team REX",
+    },
+    "pipeline": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "python-docker": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "reports": {
+        "org": "opensafely-core",
+        "team": "Team REX",
+    },
+    "repo-template": {
+        "org": "opensafely-core",
+        "team": "Tech shared",
+    },
+    "sqlrunner": {
+        "org": "opensafely-core",
+        "team": "Team RAP",
+    },
+    "team-manual": {
+        "org": "ebmdatalab",
+        "team": "Team REX",
+    },
 }
 
 SKIPPED_WORKFLOWS_ON_MAIN = {
