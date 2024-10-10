@@ -111,7 +111,11 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     support_config = {
         "tech-support": {
             "keyword": "tech-support",
-            "channel_id": channels[settings.SLACK_TECH_SUPPORT_CHANNEL],
+            # Get the channel ID by channel name. If it doesn't exist, assume the setting is
+            # already the channel ID
+            "channel_id": channels.get(
+                settings.SLACK_TECH_SUPPORT_CHANNEL, settings.SLACK_TECH_SUPPORT_CHANNEL
+            ),
             # Match "tech-support" as a word (treating hyphens as word characters), except if
             # it's preceded by a slash to avoid matching it in URLs
             "regex": re.compile(r".*(^|[^\w\-/])tech-support($|[^\w\-]).*", flags=re.I),
@@ -119,7 +123,12 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         },
         "bennett-admins": {
             "keyword": "bennett-admins",
-            "channel_id": channels[settings.SLACK_BENNETT_ADMINS_CHANNEL],
+            # Get the channel ID by channel name. If it doesn't exist, assume the setting is
+            # already the channel ID
+            "channel_id": channels.get(
+                settings.SLACK_BENNETT_ADMINS_CHANNEL,
+                settings.SLACK_BENNETT_ADMINS_CHANNEL,
+            ),
             # Match "bennett-admins" or "bennet-admins" as a word (treating hyphens as
             # word characters), except if it's preceded by a slash to avoid matching it
             # in URLs
@@ -129,6 +138,12 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
             "reaction": ":flamingo:",
         },
     }
+    # Check that channel settings mapped to valid channel IDs
+    for support in support_config.values():
+        if support["channel_id"] not in channels.values():
+            raise ValueError(
+                f"{support['keyword']} channel id '{support['channel_id']}' not found"
+            )
 
     @app.event(
         "app_mention",
