@@ -145,7 +145,10 @@ class RepoWorkflowReporter:
             # To be consistent with the JSON file which has the IDs as strings
             "conclusions": {str(k): v for k, v in conclusions.items()},
         }
-        self.write_cache_to_file()
+
+        pending = "running" in conclusions.values() or "queued" in conclusions.values()
+        if not pending:  # Only write cache to file if the status is final
+            self.write_cache_to_file()
         return conclusions
 
     @staticmethod

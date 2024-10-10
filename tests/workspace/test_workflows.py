@@ -244,6 +244,17 @@ def test_write_to_cache_file(mock_airlock_reporter, cache_path):
     assert json.loads(cache_path.read_text()) == CACHE
 
 
+@pytest.mark.parametrize("conclusion", ["running", "queued"])
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_conclusion_for_run")
+def test_pending_status_not_written_to_cache_file(
+    mock_get_conclusion_for_run, mock_airlock_reporter, cache_path, conclusion
+):
+    mock_get_conclusion_for_run.return_value = conclusion
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        mock_airlock_reporter.get_latest_conclusions()
+    assert not cache_path.exists()
+
+
 @pytest.mark.parametrize(
     "run, conclusion",
     [
