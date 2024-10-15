@@ -104,6 +104,7 @@ REPOS = {
 SKIPPED_WORKFLOWS_ON_MAIN = {
     "opensafely/documentation": [
         65834242,  # [On workflow dispatch] Check docs with Vale
+        25878886,  # Check links (expected to break, notifications handled elsewhere)
     ],
     "opensafely-core/airlock": [
         94122733,  # [Ignored on main, PR#277] Docs
@@ -129,5 +130,14 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     ],
     "ebmdatalab/bennettbot": [
         32719413,  # Auto merge Dependabot PRs
+    ],
+    "ebmdatalab/bennett.ox.ac.uk": [
+        42498719,  # Check links (expected to break, notifications handled elsewhere)
+    ],
+    "ebmdatalab/opensafely.org": [
+        26433647,  # Check links (expected to break, notifications handled elsewhere)
+    ],
+    "ebmdatalab/team-manual": [
+        31178226,  # Check links (expected to break, notifications handled elsewhere)
     ],
 }
