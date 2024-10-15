@@ -12,6 +12,7 @@ from slack_sdk.errors import SlackApiError
 from workspace.techsupport.jobs import get_dates_from_config as get_tech_support_dates
 
 from . import job_configs, scheduler, settings
+from .config import get_support_config
 from .logger import log_call, logger
 from .slack import notify_slack
 
@@ -108,41 +109,12 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     The listeners are defined inside this function to allow different config to be
     passed in for tests.
     """
-    support_config = {
-        "tech-support": {
-            "keyword": "tech-support",
-            # Get the channel ID by channel name. If it doesn't exist, assume the setting is
-            # already the channel ID
-            "channel_id": channels.get(
-                settings.SLACK_TECH_SUPPORT_CHANNEL, settings.SLACK_TECH_SUPPORT_CHANNEL
-            ),
-            # Match "tech-support" as a word (treating hyphens as word characters), except if
-            # it's preceded by a slash to avoid matching it in URLs
-            "regex": re.compile(r".*(^|[^\w\-/])tech-support($|[^\w\-]).*", flags=re.I),
-            "reaction": ":sos:",
-        },
-        "bennett-admins": {
-            "keyword": "bennett-admins",
-            # Get the channel ID by channel name. If it doesn't exist, assume the setting is
-            # already the channel ID
-            "channel_id": channels.get(
-                settings.SLACK_BENNETT_ADMINS_CHANNEL,
-                settings.SLACK_BENNETT_ADMINS_CHANNEL,
-            ),
-            # Match "bennett-admins" or "bennet-admins" as a word (treating hyphens as
-            # word characters), except if it's preceded by a slash to avoid matching it
-            # in URLs
-            "regex": re.compile(
-                r".*(^|[^\w\-/])bennett?-admins($|[^\w\-]).*", flags=re.I
-            ),
-            "reaction": ":flamingo:",
-        },
-    }
+    support_config = get_support_config(channels)
     # Check that channel settings mapped to valid channel IDs
     for support in support_config.values():
-        if support["channel_id"] not in channels.values():
+        if support["support_channel"] not in channels.values():
             raise ValueError(
-                f"{support['keyword']} channel id '{support['channel_id']}' not found"
+                f"{support['keyword']} channel id '{support['support_channel']}' not found"
             )
 
     @app.event(
@@ -256,12 +228,12 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         include_apology = text != "help"
         handle_help(event, say, config, include_apology)
 
-    def build_matcher(*, regex, channel_id, **kwargs):
+    def build_matcher(*, regex, support_channel, **kwargs):
         """Builds matcher to match messages matching given regex but not posted in given channel."""
 
         def matcher(event):
             # Only match messages posted outside of the channel itself
-            if event["channel"] == channel_id:
+            if event["channel"] == support_channel:
                 return False
             # only match messages that are not posted by a bot, to avoid reposting reminders etc
             # (the event dict will include the key "bot_id")
@@ -298,7 +270,7 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         )
 
     def repost_support_request_to_channel(
-        event, say, ack, *, keyword, reaction, channel_id, **kwargs
+        event, say, ack, *, keyword, reaction, support_channel, **kwargs
     ):
         # acknowledge the messages
         ack()
@@ -335,7 +307,7 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
             message_url = app.client.chat_getPermalink(
                 channel=channel, message_ts=message["ts"]
             )["permalink"]
-            say(message_url, channel=channel_id)
+            say(message_url, channel=support_channel)
         else:
             say(
                 f"Sorry, I can't call {keyword} from this conversation.",

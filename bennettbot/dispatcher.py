@@ -13,6 +13,7 @@ from pathlib import Path
 import requests
 
 from . import job_configs, scheduler, settings
+from .config import get_support_config
 from .logger import logger
 from .slack import notify_slack, slack_web_client
 
@@ -211,16 +212,7 @@ class MessageChecker:
         self.bot_slack_client = bot_slack_client
         self.user_slack_client = user_slack_client
 
-        self.config = {
-            "tech-support": {
-                "reaction": "sos",
-                "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
-            },
-            "bennett-admins": {
-                "reaction": "flamingo",
-                "channel": settings.SLACK_BENNETT_ADMINS_CHANNEL,
-            },
-        }
+        self.config = get_support_config()
 
     def run_check(self):  # pragma: no cover
         """Start running the check in a new subprocess."""
@@ -248,7 +240,7 @@ class MessageChecker:
     def check_messages(self, keyword, after):
         logger.debug("Checking %s messages", keyword)
         reaction = self.config[keyword]["reaction"]
-        channel = self.config[keyword]["channel"]
+        channel = self.config[keyword]["support_channel"]
         messages = self.user_slack_client.search_messages(
             query=(
                 # Search for messages with the keyword but without the expected reaction
