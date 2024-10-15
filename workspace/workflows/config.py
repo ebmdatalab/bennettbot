@@ -108,6 +108,9 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     "opensafely-core/airlock": [
         94122733,  # [Ignored on main, PR#277] Docs
     ],
+    "opensafely-core/cohort-extractor": [
+        13520184,  # [On workflow dispatch] Check Trino version on EMIS and in docker-compose.yml match
+    ],
     "opensafely-core/job-runner": [
         26915901,  # [On workflow call] Add software bill of materials to release (reusable)
         26915902,  # [On workflow call] Scan with Grype (reusable)
@@ -123,9 +126,6 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     ],
     "opensafely-core/sqlrunner": [
         37329087,  # Auto merge Dependabot PRs
-    ],
-    "opensafely-core/cohort-extractor": [
-        13520184,  # [On workflow dispatch] Check Trino version on EMIS and in docker-compose.yml match
     ],
     "ebmdatalab/bennettbot": [
         32719413,  # Auto merge Dependabot PRs
