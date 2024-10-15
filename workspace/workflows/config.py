@@ -130,7 +130,6 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     ],
     "opensafely-core/sqlrunner": [
         108481072,  # Dependabot updates (currently broken and expected to be replaced)
-        37329087,  # Auto merge Dependabot PRs
     ],
     "ebmdatalab/bennettbot": [
         32719413,  # Auto merge Dependabot PRs
