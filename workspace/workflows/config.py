@@ -122,13 +122,13 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     ],
     "opensafely-core/python-docker": [
         6866192,  # [On PR] Run tests
-        21967294,  # Dependabot auto-approve and enable auto-merge
+        21967294,  # [On PR] Dependabot auto-approve and enable auto-merge
     ],
     "opensafely-core/sqlrunner": [
-        37329087,  # Auto merge Dependabot PRs
+        37329087,  # [On PR] Auto merge Dependabot PRs
     ],
     "ebmdatalab/bennettbot": [
-        32719413,  # Auto merge Dependabot PRs
+        32719413,  # [On PR] Auto merge Dependabot PRs
     ],
 }
 
