@@ -107,27 +107,49 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     ],
     "opensafely-core/airlock": [
         94122733,  # [Ignored on main, PR#277] Docs
+        122881950,  # [Awaiting PR approval to use on main] Update python dependencies
+    ],
+    "opensafely-core/cohort-extractor": [
+        13520184,  # [On workflow dispatch] Check Trino version on EMIS and in docker-compose.yml match
     ],
     "opensafely-core/job-runner": [
         26915901,  # [On workflow call] Add software bill of materials to release (reusable)
         26915902,  # [On workflow call] Scan with Grype (reusable)
         25002877,  # [On PR] Dependency review
-        2393224,  #  [On PR] Tests
+        2393224,  # [On PR] Tests
     ],
     "opensafely-core/pipeline": [
         77090712,  # [Disabled] Pin pydantic
     ],
     "opensafely-core/python-docker": [
         6866192,  # [On PR] Run tests
-        21967294,  # Dependabot auto-approve and enable auto-merge
+        21967294,  # [On PR] Dependabot auto-approve and enable auto-merge
     ],
     "opensafely-core/sqlrunner": [
-        37329087,  # Auto merge Dependabot PRs
-    ],
-    "opensafely-core/cohort-extractor": [
-        13520184,  # [On workflow dispatch] Check Trino version on EMIS and in docker-compose.yml match
+        37329087,  # [On PR] Auto merge Dependabot PRs
     ],
     "ebmdatalab/bennettbot": [
-        32719413,  #  Auto merge Dependabot PRs
+        32719413,  # [On PR] Auto merge Dependabot PRs
+    ],
+}
+
+WORKFLOWS_KNOWN_TO_FAIL = {
+    "opensafely/documentation": [
+        25878886,  # Check links (expected to break, notifications handled elsewhere)
+    ],
+    "opensafely-core/repo-template": [
+        108662507,  # Dependabot updates (currently broken and expected to be replaced)
+    ],
+    "opensafely-core/sqlrunner": [
+        108481072,  # Dependabot updates (currently broken and expected to be replaced)
+    ],
+    "ebmdatalab/bennett.ox.ac.uk": [
+        42498719,  # Check links (expected to break, notifications handled elsewhere)
+    ],
+    "ebmdatalab/opensafely.org": [
+        26433647,  # Check links (expected to break, notifications handled elsewhere)
+    ],
+    "ebmdatalab/team-manual": [
+        31178226,  # Check links (expected to break, notifications handled elsewhere)
     ],
 }

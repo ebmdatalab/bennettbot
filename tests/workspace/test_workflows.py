@@ -500,6 +500,69 @@ def test_main_for_all_skipping_successful(mock_workflows, mock_runs, cache_path)
     ]
 
 
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_runs_since_last_retrieval")
+@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_workflows")
+@patch(
+    "workspace.workflows.config.REPOS",
+    {
+        "airlock": {"org": "opensafely-core", "team": "Team RAP"},
+        "failing-repo": {"org": "opensafely", "team": "Team REX"},
+    },
+)
+@patch(
+    "workspace.workflows.config.WORKFLOWS_KNOWN_TO_FAIL",
+    {
+        "opensafely-core/airlock": [108457763],
+        "opensafely/failing-repo": [108457763],
+    },
+)
+def test_main_for_all_skipping_known_failures(mock_workflows, mock_runs, cache_path):
+    # Call main for all repos with skipping successful workflows
+    # Known failures should be skipped
+
+    # Mocks
+    mock_workflows.return_value = WORKFLOWS_MAIN
+    mock_runs.return_value = []  # Read from the cache
+    mock_cache = {
+        **CACHE,
+        "opensafely/failing-repo": {
+            "timestamp": "2023-09-29T19:00:08Z",
+            "conclusions": {str(key): "failure" for key in WORKFLOWS_MAIN.keys()},
+        },
+    }
+    # Known failure fails as expected
+    mock_cache["opensafely-core/airlock"]["conclusions"][str(108457763)] = "failure"
+    # Known failure unexpectedly passes
+    mock_cache["opensafely/failing-repo"]["conclusions"][str(108457763)] = "success"
+    with open(cache_path, "w") as f:
+        json.dump(mock_cache, f)
+
+    # Test main
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target all --skip-successful".split()
+    )
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        blocks = json.loads(jobs.main(args))
+    green = ":large_green_circle:"
+    red = ":red_circle:"
+    assert blocks == [
+        {  # Only the Team REX section should appear and all workflows should be present
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for Team REX",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {green}{red*4}",
+            },
+        },
+    ]
+
+
 def test_main_for_invalid_org():
     # Call main with an invalid org
     args = jobs.get_command_line_parser().parse_args(

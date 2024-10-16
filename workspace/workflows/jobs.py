@@ -220,7 +220,16 @@ def _summarise(header_text: str, locations: list[str], skip_successful: bool) ->
     unsorted = {}
     for location in locations:
         wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
-        if skip_successful and get_success_rate(list(wf_conclusions.values())) == 1:
+
+        # Skip reporting a failure that is already known
+        known_failure_ids = config.WORKFLOWS_KNOWN_TO_FAIL.get(location, [])
+        wf_conclusions = {
+            k: v
+            for k, v in wf_conclusions.items()
+            if v == "success" or k not in known_failure_ids
+        }
+
+        if skip_successful and all(c == "success" for c in wf_conclusions.values()):
             continue
         unsorted[location] = list(wf_conclusions.values())
 
