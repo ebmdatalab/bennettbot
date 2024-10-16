@@ -8,9 +8,9 @@ def get_support_config(channels=None):
     return {
         "tech-support": {
             "keyword": "tech-support",
-            # Use the support setting to get the channel. We use channel ID if it is
-            # available, otherwise we default to using the setting value (on the
-            # assumption that the setting value is the channel name).
+            # Use the support setting (a channel name or channel ID) to get the channel.
+            # We first attempt to retrieve channel ID from the channels dict (if provided),
+            # otherwise we default to using the setting value as is.
             "support_channel": channels.get(
                 settings.SLACK_TECH_SUPPORT_CHANNEL, settings.SLACK_TECH_SUPPORT_CHANNEL
             ),
@@ -21,9 +21,9 @@ def get_support_config(channels=None):
         },
         "bennett-admins": {
             "keyword": "bennett-admins",
-            # Use the support setting to get the channel. We use channel ID if it is
-            # available, otherwise we default to using the setting value (on the
-            # assumption that the setting value is the channel name).
+            # Use the support setting (a channel name or channel ID) to get the channel.
+            # We first attempt to retrieve channel ID from the channels dict (if provided),
+            # otherwise we default to using the setting value as is.
             "support_channel": channels.get(
                 settings.SLACK_BENNETT_ADMINS_CHANNEL,
                 settings.SLACK_BENNETT_ADMINS_CHANNEL,
