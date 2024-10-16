@@ -131,3 +131,5 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
         32719413,  # Auto merge Dependabot PRs
     ],
 }
+
+WORKFLOWS_KNOWN_TO_FAIL = {}
