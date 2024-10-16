@@ -107,6 +107,7 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     ],
     "opensafely-core/airlock": [
         94122733,  # [Ignored on main, PR#277] Docs
+        122881950,  # [Awaiting PR approval to use on main] Update python dependencies
     ],
     "opensafely-core/cohort-extractor": [
         13520184,  # [On workflow dispatch] Check Trino version on EMIS and in docker-compose.yml match
