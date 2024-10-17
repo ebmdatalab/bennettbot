@@ -89,7 +89,11 @@ class JobDispatcher:
             stdout_path=self.stdout_path,
             stderr_path=self.stdout_path,
         )
-
+        env = {**os.environ, "PYTHONPATH": settings.APPLICATION_ROOT}
+        bin_path = os.getenv("ABSOLUTE_BIN")
+        if bin_path and not env["PATH"].startswith(bin_path):  # pragma: no cover
+            # If we have an ABSOLUTE_BIN env variable, ensure that it's set first in the path
+            env["PATH"] = f"{bin_path}:{env['PATH']}"
         with open(self.stdout_path, "w") as stdout, open(
             self.stderr_path, "w"
         ) as stderr:
@@ -99,7 +103,7 @@ class JobDispatcher:
                     cwd=self.cwd,
                     stdout=stdout,
                     stderr=stderr,
-                    env={**os.environ, "PYTHONPATH": settings.APPLICATION_ROOT},
+                    env=env,
                     shell=True,
                 )
                 rc = rv.returncode
