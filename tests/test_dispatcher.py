@@ -524,21 +524,6 @@ def build_log_dir(job_type_with_namespace):
     )
 
 
-def test_message_checker_config():
-    checker = MessageChecker(slack_web_client("bot"), slack_web_client("user"))
-    # channel IDs are retrieved from mock_web_api_server
-    assert checker.config == {
-        "tech-support": {
-            "reaction": "sos",
-            "channel": settings.SLACK_TECH_SUPPORT_CHANNEL,
-        },
-        "bennett-admins": {
-            "reaction": "flamingo",
-            "channel": settings.SLACK_BENNETT_ADMINS_CHANNEL,
-        },
-    }
-
-
 def test_message_checker_run(freezer):
     freezer.move_to("2024-10-08 23:30")
     httpretty_register(

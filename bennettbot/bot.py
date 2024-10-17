@@ -12,6 +12,7 @@ from slack_sdk.errors import SlackApiError
 from workspace.techsupport.jobs import get_dates_from_config as get_tech_support_dates
 
 from . import job_configs, scheduler, settings
+from .config import get_support_config
 from .logger import log_call, logger
 from .slack import notify_slack
 
@@ -108,27 +109,23 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
     The listeners are defined inside this function to allow different config to be
     passed in for tests.
     """
-
-    bennett_admins_channel_id = channels[settings.SLACK_BENNETT_ADMINS_CHANNEL]
-    # Match "bennett-admins" or "bennet-admins" as a word (treating hyphens as
-    # word characters), except if it's preceded by a slash to avoid matching it
-    # in URLs
-    bennett_admins_regex = re.compile(
-        r".*(^|[^\w\-/])bennett?-admins($|[^\w\-]).*", flags=re.I
-    )
-
-    tech_support_channel_id = channels[settings.SLACK_TECH_SUPPORT_CHANNEL]
-    # Match "tech-support" as a word (treating hyphens as word characters), except if
-    # it's preceded by a slash to avoid matching it in URLs
-    tech_support_regex = re.compile(
-        r".*(^|[^\w\-/])tech-support($|[^\w\-]).*", flags=re.I
-    )
+    support_config = get_support_config(channels)
+    # Check that channel settings mapped to valid channel IDs
+    for support in support_config.values():
+        if support["support_channel"] not in channels.values():
+            raise ValueError(
+                f"{support['keyword']} channel id '{support['support_channel']}' not found"
+            )
 
     @app.event(
         "app_mention",
         # Don't match app mentions that include tech support keywords; these will be
         # matched by the tech-support listener
-        matchers=[lambda event: not tech_support_regex.match(event["text"])],
+        matchers=[
+            lambda event: not support_config["tech-support"]["regex"].match(
+                event["text"]
+            )
+        ],
     )
     def job_listener(event, say, ack):
         """Respond to every Slack message that mentions the bot (and is not a
@@ -147,7 +144,7 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         # only match DMs with the bot that are non-tech support messages
         matchers=[
             lambda message: message["channel_type"] == "im"
-            and not tech_support_regex.match(message["text"])
+            and not support_config["tech-support"]["regex"].match(message["text"])
         ],
     )
     def im_job_listener(event, say, ack):
@@ -231,12 +228,12 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
         include_apology = text != "help"
         handle_help(event, say, config, include_apology)
 
-    def build_matcher(regex, channel_id):
+    def build_matcher(*, regex, support_channel, **kwargs):
         """Builds matcher to match messages matching given regex but not posted in given channel."""
 
         def matcher(event):
             # Only match messages posted outside of the channel itself
-            if event["channel"] == channel_id:
+            if event["channel"] == support_channel:
                 return False
             # only match messages that are not posted by a bot, to avoid reposting reminders etc
             # (the event dict will include the key "bot_id")
@@ -256,23 +253,25 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
 
     @app.event(
         {"type": "message"},
-        matchers=[build_matcher(bennett_admins_regex, bennett_admins_channel_id)],
+        matchers=[build_matcher(**support_config["bennett-admins"])],
     )
     def repost_to_bennett_admins(event, say, ack):
         repost_support_request_to_channel(
-            event, say, ack, "bennett-admins", bennett_admins_channel_id
+            event, say, ack, **support_config["bennett-admins"]
         )
 
     @app.event(
         {"type": "message"},
-        matchers=[build_matcher(tech_support_regex, tech_support_channel_id)],
+        matchers=[build_matcher(**support_config["tech-support"])],
     )
     def repost_to_tech_support(event, say, ack):
         repost_support_request_to_channel(
-            event, say, ack, "tech-support", tech_support_channel_id
+            event, say, ack, **support_config["tech-support"]
         )
 
-    def repost_support_request_to_channel(event, say, ack, keyword, channel_id):
+    def repost_support_request_to_channel(
+        event, say, ack, *, keyword, reaction, support_channel, **kwargs
+    ):
         # acknowledge the messages
         ack()
         # Our matcher filters only allows messages with no subtype (i.e. just
@@ -290,7 +289,6 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
             # an exception; if this happens, then the user is editing something
             # other than the keyword in the message, and we don't need to repost
             # it again. We let the default error handler will deal with it.
-            reaction = {"tech-support": "sos", "bennett-admins": "flamingo"}[keyword]
             app.client.reactions_add(
                 channel=channel, timestamp=message["ts"], name=reaction
             )
@@ -309,7 +307,7 @@ def register_listeners(app, config, channels, bot_user_id, internal_user_ids):
             message_url = app.client.chat_getPermalink(
                 channel=channel, message_ts=message["ts"]
             )["permalink"]
-            say(message_url, channel=channel_id)
+            say(message_url, channel=support_channel)
         else:
             say(
                 f"Sorry, I can't call {keyword} from this conversation.",
