@@ -7,6 +7,8 @@ export PIP := BIN + if os_family() == "unix" { "/python -m pip" } else { "/pytho
 
 export DEFAULT_PYTHON := if os_family() == "unix" { "python3.12" } else { "python" }
 
+export ABSOLUTE_BIN := `pwd` + "/" + BIN
+
 set dotenv-load := true
 
 

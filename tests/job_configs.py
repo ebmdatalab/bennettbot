@@ -5,6 +5,9 @@ from bennettbot.job_configs import build_config
 raw_config = {
     "test": {
         "jobs": {
+            "python_version": {
+                "run_args_template": 'python -c "import platform; print(platform.python_version())"',
+            },
             "good_job": {
                 "run_args_template": "cat poem",
             },

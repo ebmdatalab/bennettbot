@@ -1,6 +1,8 @@
 import json
 import os
+import platform
 import shutil
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import httpretty
@@ -643,3 +645,20 @@ def test_message_checker_matched_messages(keyword, support_channel, reaction):
             "timestamp": ["100.3"],
         },
     ]
+
+
+def test_python_version():
+    # check that we are using the same python version in jobs as we are
+    # in this test
+    # this would previously fail in local test runs if the user's system
+    # python version was different from the venv python and they were
+    # running `just test` without manually activating the venv first
+    log_dir = build_log_dir("test_python_version")
+
+    scheduler.schedule_job("test_python_version", {}, "channel", TS, 0)
+    job = scheduler.reserve_job()
+
+    do_job(slack_web_client(), job)
+
+    version_in_job = (Path(log_dir) / "stdout").read_text().strip()
+    assert version_in_job == platform.python_version()
