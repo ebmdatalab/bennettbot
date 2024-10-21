@@ -69,7 +69,7 @@ REPOS = {
     },
     "opensafely.org": {
         "org": "ebmdatalab",
-        "team": "Team REX",
+        "team": "Tech shared",
     },
     "opencodelists": {
         "org": "opensafely-core",
@@ -152,4 +152,16 @@ WORKFLOWS_KNOWN_TO_FAIL = {
     "ebmdatalab/team-manual": [
         31178226,  # Check links (expected to break, notifications handled elsewhere)
     ],
+}
+
+CUSTOM_JOBS = {
+    "check-links": {
+        "header_text": "Link-checking workflows",
+        "workflows": {
+            "opensafely/documentation": [25878886],
+            "ebmdatalab/bennett.ox.ac.uk": [42498719],
+            "ebmdatalab/opensafely.org": [26433647],
+            "ebmdatalab/team-manual": [31178226],
+        },
+    }
 }

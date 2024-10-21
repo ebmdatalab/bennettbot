@@ -685,3 +685,89 @@ def test_main_show_invalid_target():
             },
         },
     ]
+
+
+@patch(
+    "workspace.workflows.config.CUSTOM_JOBS",
+    {
+        "check-links": {
+            "header_text": "Link-checking workflows",
+            "workflows": {
+                "opensafely/documentation": [82728346],
+                "ebmdatalab/bennett.ox.ac.uk": [82728346],
+                "ebmdatalab/opensafely.org": [82728346],
+                "ebmdatalab/team-manual": [82728346],
+            },
+        }
+    },
+)
+@use_mock_results(
+    [
+        {
+            "org": "opensafely",
+            "repo": "documentation",
+            "team": "Tech shared",
+            "conclusions": ["success"] * 5,
+        },
+        {
+            "org": "ebmdatalab",
+            "repo": "team-manual",
+            "team": "Tech shared",
+            "conclusions": ["failure"] * 5,
+        },
+        {
+            "org": "ebmdatalab",
+            "repo": "bennett.ox.ac.uk",
+            "team": "Tech shared",
+            "conclusions": ["success"] * 5,
+        },
+        {
+            "org": "ebmdatalab",
+            "repo": "opensafely.org",
+            "team": "Tech shared",
+            "conclusions": ["failure"] * 5,
+        },
+    ]
+)
+def test_check_links():
+    args = jobs.get_command_line_parser().parse_args(
+        "custom --job-name check-links".split()
+    )
+    blocks = json.loads(jobs.get_blocks_for_custom_workflow_list(args))
+    assert blocks == [
+        {  # Only 1 emoji should appear for each repo
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Link-checking workflows",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://github.com/opensafely/documentation/actions?query=branch%3Amain|opensafely/documentation>: :large_green_circle:",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://github.com/ebmdatalab/bennett.ox.ac.uk/actions?query=branch%3Amain|ebmdatalab/bennett.ox.ac.uk>: :large_green_circle:",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://github.com/ebmdatalab/opensafely.org/actions?query=branch%3Amain|ebmdatalab/opensafely.org>: :red_circle:",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<https://github.com/ebmdatalab/team-manual/actions?query=branch%3Amain|ebmdatalab/team-manual>: :red_circle:",
+            },
+        },
+    ]

@@ -313,6 +313,23 @@ def _main(org, repo, skip_successful=False) -> str:
         return report_invalid_org(org)
 
 
+def get_blocks_for_custom_workflow_list(args):
+    job_config = config.CUSTOM_JOBS[args.job_name]
+    header_text = job_config["header_text"]
+    workflows = job_config["workflows"]
+    conclusions = {}
+    for location, workflow_ids in workflows.items():
+        wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
+        conclusions[location] = [
+            wf_conclusions.get(wf_id, "missing") for wf_id in workflow_ids
+        ]
+    blocks = [
+        get_header_block(header_text),
+        *[get_summary_block(loc, conc) for loc, conc in conclusions.items()],
+    ]
+    return json.dumps(blocks)
+
+
 def get_text_blocks_for_key(args) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text="Workflow status emoji key",
@@ -330,6 +347,11 @@ def get_command_line_parser():  # pragma: no cover
     show_parser.add_argument("--target", required=True)
     show_parser.add_argument("--skip-successful", action="store_true", default=False)
     show_parser.set_defaults(func=main)
+
+    # Custom tasks
+    custom_parser = subparsers.add_parser("custom")
+    custom_parser.add_argument("--job-name", required=True)
+    custom_parser.set_defaults(func=get_blocks_for_custom_workflow_list)
 
     # Display key
     key_parser = subparsers.add_parser("key")
