@@ -256,6 +256,8 @@ def summarise_all(skip_successful) -> list:
         team_blocks = summarise_team(team, skip_successful)
         if len(team_blocks) > 1:
             blocks.extend(team_blocks)
+    if len(blocks) == 0:
+        blocks = [get_header_block("No workflow failures to report!")]
     return blocks
 
 

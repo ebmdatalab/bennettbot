@@ -500,6 +500,40 @@ def test_main_show_all():
         },
         {
             "org": "opensafely",
+            "repo": "documentation",
+            "team": "Team REX",
+            "conclusions": ["success"] * 5,
+        },
+    ]
+)
+def test_main_show_failed_empty():
+    # Call main for all repos with skipping successful workflows
+    # No failed workflows so state so
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target all --skip-successful".split()
+    )
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "No workflow failures to report!",
+            },
+        },
+    ]
+
+
+@use_mock_results(
+    [
+        {
+            "org": "opensafely-core",
+            "repo": "airlock",
+            "team": "Team RAP",
+            "conclusions": ["success"] * 5,
+        },
+        {
+            "org": "opensafely",
             "repo": "failing-repo",
             "team": "Team REX",
             "conclusions": ["failure"] * 5,
