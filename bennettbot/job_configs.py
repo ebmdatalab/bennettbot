@@ -303,6 +303,11 @@ raw_config = {
         "restricted": True,
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
+            "check_links": {
+                "run_args_template": "python jobs.py custom --job-name check-links",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
             "display_emoji_key": {
                 "run_args_template": "python jobs.py key",
                 "report_stdout": True,
@@ -325,6 +330,12 @@ raw_config = {
             },
         },
         "slack": [
+            {
+                "command": "check-links",
+                "help": "Summarise GitHub Actions workflow runs for link-checking workflows in website repos.",
+                "action": "schedule_job",
+                "job_type": "check_links",
+            },
             {
                 "command": "key",
                 "help": "Show the emoji key being used in the workflow summaries.",
@@ -350,6 +361,7 @@ raw_config = {
                 "action": "schedule_job",
                 "job_type": "show",
             },
+
         ]
     },
     "techsupport": {
