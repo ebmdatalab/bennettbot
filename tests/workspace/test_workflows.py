@@ -490,6 +490,51 @@ def test_main_show_all():
     ]
 
 
+@patch(
+    "workspace.workflows.config.WORKFLOWS_KNOWN_TO_FAIL",
+    {
+        "opensafely/failing-repo": [82728346, 88048829, 94331150, 108457763, 113602598],
+    },
+)
+@use_mock_results(
+    [
+        {
+            "org": "opensafely-core",
+            "repo": "airlock",
+            "team": "Team RAP",
+            "conclusions": ["success"] * 5,
+        },
+        {
+            "org": "opensafely",
+            "repo": "failing-repo",
+            "team": "Team REX",
+            "conclusions": ["failure"] * 5,
+        },
+    ]
+)
+def test_main_show_all_skip_failures():
+    # Call main for all repos without skipping successful workflows
+    # Since all workflows in failing-repo are known to fail, it should be skipped entirely
+    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for Team RAP",
+            },
+        },
+        {  # Only the Team RAP section should appear
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {":large_green_circle:"*5}",
+            },
+        },
+    ]
+
+
 @use_mock_results(
     [
         {

@@ -229,7 +229,10 @@ def _summarise(header_text: str, locations: list[str], skip_successful: bool) ->
             if v == "success" or k not in known_failure_ids
         }
 
-        if skip_successful and all(c == "success" for c in wf_conclusions.values()):
+        if len(wf_conclusions) == 0:
+            continue
+
+        if skip_successful and get_success_rate(list(wf_conclusions.values())) == 1:
             continue
         unsorted[location] = list(wf_conclusions.values())
 
