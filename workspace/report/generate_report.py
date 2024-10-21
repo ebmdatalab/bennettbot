@@ -175,6 +175,8 @@ def get_slack_username(github_username):
         "tomodwyer": "U01UQ0T2M7V",
         "remlapmot": "U07L0L0SS6M",
         "alarthast": "U07KX6L3CMA",
+        "eli-miriam": "U07LHEJ9TS4",
+        "rw251": "U07QEMHUUMD",
     }.get(github_username) or github_username
     return f"<@{user_id}>"
 
