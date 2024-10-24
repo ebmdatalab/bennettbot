@@ -136,12 +136,6 @@ WORKFLOWS_KNOWN_TO_FAIL = {
     "opensafely/documentation": [
         25878886,  # Check links (expected to break, notifications handled elsewhere)
     ],
-    "opensafely-core/repo-template": [
-        108662507,  # Dependabot updates (currently broken and expected to be replaced)
-    ],
-    "opensafely-core/sqlrunner": [
-        108481072,  # Dependabot updates (currently broken and expected to be replaced)
-    ],
     "ebmdatalab/bennett.ox.ac.uk": [
         42498719,  # Check links (expected to break, notifications handled elsewhere)
     ],
