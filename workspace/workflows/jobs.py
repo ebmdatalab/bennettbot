@@ -119,9 +119,9 @@ class RepoWorkflowReporter:
         for workflow_id in skipped:
             workflows.pop(workflow_id, None)
 
-    def get_runs_since_last_retrieval(self) -> list:
+    def get_runs(self, since_last_retrieval) -> list:
         params = {"branch": "main", "per_page": 100}
-        if self.last_retrieval_timestamp:  # If not present do not pass anything at all
+        if since_last_retrieval and self.last_retrieval_timestamp is not None:
             params["created"] = ">=" + self.last_retrieval_timestamp
         return self._get_json_response("actions/runs", params=params)["workflow_runs"]
 
@@ -130,10 +130,15 @@ class RepoWorkflowReporter:
         Use the GitHub API to get the conclusion of the most recent run for each workflow.
         Update the cache file with the conclusions and the timestamp of the retrieval.
         """
+        # Detect new runs and status updates for existing non-successful runs
+        since_last_retrieval = (
+            self.cache != {}
+            and get_success_rate(list(self.cache["conclusions"].values())) == 1
+        )
+
         # Use the moment just before calling the GitHub API as the timestamp
         timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        new_runs = self.get_runs_since_last_retrieval()
+        new_runs = self.get_runs(since_last_retrieval)
         latest_runs, missing_ids = self.find_latest_for_each_workflow(new_runs)
         conclusions = {
             run["workflow_id"]: self.get_conclusion_for_run(run) for run in latest_runs
@@ -146,9 +151,7 @@ class RepoWorkflowReporter:
             "conclusions": {str(k): v for k, v in conclusions.items()},
         }
 
-        pending = "running" in conclusions.values() or "queued" in conclusions.values()
-        if not pending:  # Only write cache to file if the status is final
-            self.write_cache_to_file()
+        self.write_cache_to_file()
         return conclusions
 
     @staticmethod

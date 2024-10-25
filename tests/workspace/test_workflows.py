@@ -64,8 +64,8 @@ class MockRepoWorkflowReporter(jobs.RepoWorkflowReporter):
     def get_workflows(self) -> dict:
         return WORKFLOWS_MAIN
 
-    def get_runs_since_last_retrieval(self) -> list:
-        # Have no new runs since the last retrieval so that results are read from a separately patched mock cache
+    def get_runs(self, since_last_retrieval) -> list:
+        # Have no new runs so that results are read from a separately patched mock cache
         return []
 
     def write_cache_to_file(self):
@@ -243,7 +243,7 @@ def test_get_runs_since_last_retrieval(mock_airlock_reporter, cache_path):
         mock_airlock_reporter.cache = mock_airlock_reporter._load_cache_for_repo()
     assert mock_airlock_reporter.cache == CACHE["opensafely-core/airlock"]
 
-    mock_airlock_reporter.get_runs_since_last_retrieval()
+    mock_airlock_reporter.get_runs(since_last_retrieval=True)
     assert httpretty.last_request().querystring == {
         "branch": ["main"],
         "per_page": ["100"],
@@ -256,12 +256,13 @@ def test_all_workflows_found(mock_airlock_reporter, cache_path):
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
         conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
+    assert "created" not in httpretty.last_request().querystring
 
 
 def test_some_workflows_not_found(mock_airlock_reporter, cache_path):
     mock_airlock_reporter.workflows[1234] = "Workflow that only exists in the cache"
     mock_airlock_reporter.cache = {
-        "timestamp": None,
+        "timestamp": "2023-09-30T09:00:08Z",
         "conclusions": {"1234": "running"},
     }
 
@@ -275,6 +276,30 @@ def test_some_workflows_not_found(mock_airlock_reporter, cache_path):
         1234: "running",
         5678: "missing",
     }
+
+
+@pytest.mark.parametrize(
+    "conclusion,created_in_querystring", [("success", True), ("failure", False)]
+)
+def test_get_runs_beyond_last_retrieval_if_not_all_successful(
+    conclusion, created_in_querystring, mock_airlock_reporter, cache_path
+):
+    mock_airlock_reporter.workflows[1234] = "Some failing workflow"
+    mock_airlock_reporter.cache = {
+        "timestamp": "2023-09-30T09:00:08Z",
+        "conclusions": {"1234": conclusion},
+    }
+    mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        conclusions = mock_airlock_reporter.get_latest_conclusions()
+    assert len(mock_airlock_reporter.workflow_ids) == 6
+    assert conclusions == {
+        **{key: "success" for key in WORKFLOWS_MAIN.keys()},
+        1234: conclusion,
+    }
+
+    querystring = httpretty.last_request().querystring
+    assert ("created" in querystring) == created_in_querystring
 
 
 @patch("workspace.workflows.jobs.RepoWorkflowReporter.write_cache_to_file")
@@ -291,17 +316,6 @@ def test_write_to_cache_file(mock_airlock_reporter, cache_path):
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
         mock_airlock_reporter.write_cache_to_file()
     assert json.loads(cache_path.read_text()) == CACHE
-
-
-@pytest.mark.parametrize("conclusion", ["running", "queued"])
-@patch("workspace.workflows.jobs.RepoWorkflowReporter.get_conclusion_for_run")
-def test_pending_status_not_written_to_cache_file(
-    mock_get_conclusion_for_run, mock_airlock_reporter, cache_path, conclusion
-):
-    mock_get_conclusion_for_run.return_value = conclusion
-    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
-        mock_airlock_reporter.get_latest_conclusions()
-    assert not cache_path.exists()
 
 
 @pytest.mark.parametrize(
