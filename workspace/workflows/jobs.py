@@ -338,7 +338,7 @@ def get_text_blocks_for_key(args) -> str:
     return json.dumps(blocks)
 
 
-def get_command_line_parser():  # pragma: no cover
+def get_command_line_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
