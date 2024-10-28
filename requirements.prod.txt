@@ -434,9 +434,9 @@ six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via fab-classic
-slack-bolt==1.21.0 \
-    --hash=sha256:12f99fe26f7b1b762955053ebce303d4e2394cee1e3058e35a270185f2a31e40 \
-    --hash=sha256:438bee336440e78222064416c75e9353ee57e4c0377f2f41bda2212acad2387a
+slack-bolt==1.21.2 \
+    --hash=sha256:05ac2d454adfddfc629fb63c7a3723bd1432a24373119368bc81f2f52b029cbf \
+    --hash=sha256:6860fc8693ca543b653c5d49a09b8b542f5fb7a02638342a7ddd18d8bc6f3ba0
     # via -r requirements.prod.in
 slack-sdk==3.33.1 \
     --hash=sha256:e328bb661d95db5f66b993b1d64288ac7c72201a745b4c7cf8848dafb7b74e40 \
