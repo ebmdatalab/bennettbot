@@ -372,5 +372,14 @@ def get_command_line_parser():
 
 
 if __name__ == "__main__":
-    args = get_command_line_parser().parse_args()
-    print(args.func(args))
+    try:
+        args = get_command_line_parser().parse_args()
+        print(args.func(args))
+    except Exception as e:
+        print(
+            json.dumps(
+                get_basic_header_and_text_blocks(
+                    header_text="An error occurred", texts=str(e)
+                )
+            )
+        )
