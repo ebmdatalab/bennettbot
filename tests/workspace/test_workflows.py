@@ -196,13 +196,55 @@ def test_repo_only_as_target():
         mock__main.assert_called_once_with("opensafely-core", "airlock", False)
 
 
+def test_website_repo_as_target():
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target http://bennett.ox.ac.uk".split()
+    )
+    with patch("workspace.workflows.jobs._main") as mock__main:
+        jobs.main(args)
+        mock__main.assert_called_once_with("ebmdatalab", "bennett.ox.ac.uk", False)
+
+
 def test_invalid_target():
     args = jobs.get_command_line_parser().parse_args(
         "show --target some/invalid/input".split()
     )
+    blocks = json.loads(jobs.main(args))
+    assert blocks[0] == {
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": "some/invalid/input was not recognised",
+        },
+    }
 
-    with pytest.raises(ValueError):
-        jobs.main(args)
+
+def test_catch_unhandled_error():
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target some/invalid/input".split()
+    )
+    with patch(
+        "workspace.workflows.jobs.report_invalid_target",
+        return_value=None,
+        side_effect=Exception("Unknown error"),
+    ):
+        blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "An error occurred reporting workflows for some/invalid/input",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Unknown error",
+            },
+        },
+    ]
 
 
 @httpretty.activate(allow_net_connect=False)
@@ -689,6 +731,13 @@ def test_main_show_invalid_target():
             "text": {
                 "type": "plain_text",
                 "text": "invalid-org was not recognised",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Argument must be a known organisation or repo, or a repo given as [org/repo].",
             },
         },
         {

@@ -42,10 +42,13 @@ def get_locations_for_org(org: str) -> list[str]:
     return [f"{org}/{repo}" for repo, v in config.REPOS.items() if v["org"] == org]
 
 
-def report_invalid_org(org) -> str:
+def report_invalid_target(target) -> str:
     blocks = get_basic_header_and_text_blocks(
-        header_text=f"{org} was not recognised",
-        texts=f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
+        header_text=f"{target} was not recognised",
+        texts=[
+            "Argument must be a known organisation or repo, or a repo given as [org/repo].",
+            f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
+        ],
     )
     return json.dumps(blocks)
 
@@ -275,22 +278,28 @@ def summarise_org(org, skip_successful) -> list:
 
 
 def main(args) -> str:
-    target = args.target.split("/")
-    if len(target) == 2:
-        org, repo = target
-    elif len(target) == 1:
-        if target[0] in config.REPOS.keys():  # Known repo
-            org, repo = config.REPOS[target[0]]["org"], target[0]
-        else:  # Assume org
-            org, repo = target[0], None
-    else:  # Invalid target format
-        raise ValueError(
-            "Argument must be a known organisation or repo, or a repo given as [org/repo]"
-        )
+    try:
+        # # Some repos are names of websites and slack prepends http:// to them
+        target = args.target.replace("http://", "").split("/")
+        if len(target) == 2:
+            org, repo = target
+        elif len(target) == 1:
+            if target[0] in config.REPOS.keys():  # Known repo
+                org, repo = config.REPOS[target[0]]["org"], target[0]
+            else:  # Assume org
+                org, repo = target[0], None
+        else:  # Invalid target format
+            return report_invalid_target(args.target)
 
-    # Org may be a shorthand
-    org = config.SHORTHANDS.get(org, org)
-    return _main(org, repo, args.skip_successful)
+        # Org may be a shorthand
+        org = config.SHORTHANDS.get(org, org)
+        return _main(org, repo, args.skip_successful)
+    except Exception as e:
+        blocks = get_basic_header_and_text_blocks(
+            header_text=f"An error occurred reporting workflows for {args.target}",
+            texts=str(e),
+        )
+        return json.dumps(blocks)
 
 
 def _main(org, repo, skip_successful=False) -> str:
@@ -313,7 +322,7 @@ def _main(org, repo, skip_successful=False) -> str:
         # Single repo usage: Report status for all workflows in a specified repo
         return RepoWorkflowReporter(f"{org}/{repo}").report()
     else:
-        return report_invalid_org(org)
+        return report_invalid_target(org)
 
 
 def get_blocks_for_custom_workflow_list(args):
@@ -363,5 +372,14 @@ def get_command_line_parser():
 
 
 if __name__ == "__main__":
-    args = get_command_line_parser().parse_args()
-    print(args.func(args))
+    try:
+        args = get_command_line_parser().parse_args()
+        print(args.func(args))
+    except Exception as e:
+        print(
+            json.dumps(
+                get_basic_header_and_text_blocks(
+                    header_text="An error occurred", texts=str(e)
+                )
+            )
+        )
