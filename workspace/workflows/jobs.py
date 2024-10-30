@@ -278,20 +278,27 @@ def summarise_org(org, skip_successful) -> list:
 
 
 def main(args) -> str:
-    target = args.target.split("/")
-    if len(target) == 2:
-        org, repo = target
-    elif len(target) == 1:
-        if target[0] in config.REPOS.keys():  # Known repo
-            org, repo = config.REPOS[target[0]]["org"], target[0]
-        else:  # Assume org
-            org, repo = target[0], None
-    else:  # Invalid target format
-        return report_invalid_target(args.target)
+    try:
+        target = args.target.split("/")
+        if len(target) == 2:
+            org, repo = target
+        elif len(target) == 1:
+            if target[0] in config.REPOS.keys():  # Known repo
+                org, repo = config.REPOS[target[0]]["org"], target[0]
+            else:  # Assume org
+                org, repo = target[0], None
+        else:  # Invalid target format
+            return report_invalid_target(args.target)
 
-    # Org may be a shorthand
-    org = config.SHORTHANDS.get(org, org)
-    return _main(org, repo, args.skip_successful)
+        # Org may be a shorthand
+        org = config.SHORTHANDS.get(org, org)
+        return _main(org, repo, args.skip_successful)
+    except Exception as e:
+        blocks = get_basic_header_and_text_blocks(
+            header_text=f"An error occurred reporting workflows for {args.target}",
+            texts=str(e),
+        )
+        return json.dumps(blocks)
 
 
 def _main(org, repo, skip_successful=False) -> str:

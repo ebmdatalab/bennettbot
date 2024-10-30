@@ -210,6 +210,34 @@ def test_invalid_target():
     }
 
 
+def test_catch_unhandled_error():
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target some/invalid/input".split()
+    )
+    with patch(
+        "workspace.workflows.jobs.report_invalid_target",
+        return_value=None,
+        side_effect=Exception("Unknown error"),
+    ):
+        blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "An error occurred reporting workflows for some/invalid/input",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Unknown error",
+            },
+        },
+    ]
+
+
 @httpretty.activate(allow_net_connect=False)
 def test_get_workflows():
     # get_workflows is called in __init__, so create the instance here
