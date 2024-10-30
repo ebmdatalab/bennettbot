@@ -196,6 +196,15 @@ def test_repo_only_as_target():
         mock__main.assert_called_once_with("opensafely-core", "airlock", False)
 
 
+def test_website_repo_as_target():
+    args = jobs.get_command_line_parser().parse_args(
+        "show --target http://bennett.ox.ac.uk".split()
+    )
+    with patch("workspace.workflows.jobs._main") as mock__main:
+        jobs.main(args)
+        mock__main.assert_called_once_with("ebmdatalab", "bennett.ox.ac.uk", False)
+
+
 def test_invalid_target():
     args = jobs.get_command_line_parser().parse_args(
         "show --target some/invalid/input".split()

@@ -279,7 +279,8 @@ def summarise_org(org, skip_successful) -> list:
 
 def main(args) -> str:
     try:
-        target = args.target.split("/")
+        # # Some repos are names of websites and slack prepends http:// to them
+        target = args.target.replace("http://", "").split("/")
         if len(target) == 2:
             org, repo = target
         elif len(target) == 1:
