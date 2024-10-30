@@ -200,9 +200,14 @@ def test_invalid_target():
     args = jobs.get_command_line_parser().parse_args(
         "show --target some/invalid/input".split()
     )
-
-    with pytest.raises(ValueError):
-        jobs.main(args)
+    blocks = json.loads(jobs.main(args))
+    assert blocks[0] == {
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": "some/invalid/input was not recognised",
+        },
+    }
 
 
 @httpretty.activate(allow_net_connect=False)
@@ -689,6 +694,13 @@ def test_main_show_invalid_target():
             "text": {
                 "type": "plain_text",
                 "text": "invalid-org was not recognised",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Argument must be a known organisation or repo, or a repo given as [org/repo].",
             },
         },
         {

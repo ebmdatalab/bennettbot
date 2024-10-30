@@ -42,10 +42,13 @@ def get_locations_for_org(org: str) -> list[str]:
     return [f"{org}/{repo}" for repo, v in config.REPOS.items() if v["org"] == org]
 
 
-def report_invalid_org(org) -> str:
+def report_invalid_target(target) -> str:
     blocks = get_basic_header_and_text_blocks(
-        header_text=f"{org} was not recognised",
-        texts=f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
+        header_text=f"{target} was not recognised",
+        texts=[
+            "Argument must be a known organisation or repo, or a repo given as [org/repo].",
+            f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
+        ],
     )
     return json.dumps(blocks)
 
@@ -284,9 +287,7 @@ def main(args) -> str:
         else:  # Assume org
             org, repo = target[0], None
     else:  # Invalid target format
-        raise ValueError(
-            "Argument must be a known organisation or repo, or a repo given as [org/repo]"
-        )
+        return report_invalid_target(args.target)
 
     # Org may be a shorthand
     org = config.SHORTHANDS.get(org, org)
@@ -313,7 +314,7 @@ def _main(org, repo, skip_successful=False) -> str:
         # Single repo usage: Report status for all workflows in a specified repo
         return RepoWorkflowReporter(f"{org}/{repo}").report()
     else:
-        return report_invalid_org(org)
+        return report_invalid_target(org)
 
 
 def get_blocks_for_custom_workflow_list(args):
