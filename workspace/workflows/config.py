@@ -130,9 +130,6 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     "ebmdatalab/bennettbot": [
         32719413,  # [On PR] Auto merge Dependabot PRs
     ],
-    "ebmdatalab/metrics": [
-        125350201,  # [On PR] Update python dependencies
-    ],
 }
 
 WORKFLOWS_KNOWN_TO_FAIL = {
