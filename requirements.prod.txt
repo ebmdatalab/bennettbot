@@ -243,9 +243,9 @@ django-dotenv==1.4.2 \
     --hash=sha256:3812bb0f4876cf31f902aad140f0645e120e51ee30eb7c40c22050f58a0e4adb \
     --hash=sha256:a9b1b40a70bd321acd231926acedb9bd2c5e873e33a1873b34a7276d196a765e
     # via -r requirements.prod.in
-environs==11.0.0 \
-    --hash=sha256:069727a8f73d8ba8d033d3cd95c0da231d44f38f1da773bf076cef168d312ee8 \
-    --hash=sha256:e0bcfd41c718c07a7db422f9109e490746450da38793fe4ee197f397b9343435
+environs==11.2.0 \
+    --hash=sha256:536fc3572fb32b67896bdf4a9fb77eceeeca85f873123268e3a035804fbff0e3 \
+    --hash=sha256:87c5759dad117ebd36d8d10a24caf13ec1056b6cd42343a758b08ac6b9195be0
     # via -r requirements.prod.in
 fab-classic==1.19.2 \
     --hash=sha256:8edfd97ff58ca616cdd6e77bc42d3f71d27842197f13771c77cf0b553f3b4311 \
