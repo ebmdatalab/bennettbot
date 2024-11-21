@@ -489,7 +489,7 @@ def handle_command(app, message, say, slack_config, is_im):
     Give a thumbs-up to the message, and dispatch to another handler.
     """
     app.client.reactions_add(
-        channel=message["channel"], timestamp=message["ts"], name="crossed_fingers"
+        channel=message["channel"], timestamp=message["ts"], name="kuai-kuai-green"
     )
 
     handler = {
