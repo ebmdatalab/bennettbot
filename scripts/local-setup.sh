@@ -22,7 +22,7 @@ GCP_CREDENTIALS_PATH="$WRITEABLE_DIR/gcp-credentials.json"
 # ensure writeable_dir exists
 mkdir -p "$WRITEABLE_DIR"
 
-# load ensure_values function
+# load ensure_value function
 # shellcheck disable=SC1091
 . "$BASE_DIR/scripts/lib.sh"
 
