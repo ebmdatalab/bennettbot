@@ -1,6 +1,6 @@
 # bennettbot
 
-bennettbot is a service for running jobs in reponse to Slack commands and GitHub webhooks.
+bennettbot is a service for running jobs in response to Slack commands and GitHub webhooks.
 
 A job runs a bash command in a given directory.
 Jobs are organised by namespace, and are defined in `job_configs.py`.
@@ -100,7 +100,7 @@ contents to slack.
 
 Jobs and commands can be parameterised. A slack command uses square brackets
 to indicate an expected parameter, which will be templated into the same named
-paramter in `run_args_template`.
+parameter in `run_args_template`.
 
 ```
 raw_config = {
