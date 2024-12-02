@@ -72,7 +72,7 @@ slack command ("say hello"), which schedules the "hello" job with a
 
 ```
 raw_config = {
-    "example": {
+    "test": {
         "jobs": {
             "hello": {
                 "run_args_template": "echo Hello",
@@ -91,7 +91,7 @@ raw_config = {
     }
 }
 ```
-Call this with `@BennettBot example say hello`; after a 1 second delay, BennettBot
+Call this with `@BennettBot test say hello`; after a 1 second delay, BennettBot
 will run `echo hello`, write the output to its log folder, and report the
 contents to slack.
 
