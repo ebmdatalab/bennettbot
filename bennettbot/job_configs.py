@@ -494,6 +494,25 @@ raw_config = {
             },
         ],
     },
+    "codespaces": {
+        "description": "Codespaces monitoring tools",
+        "jobs": {
+            "at_risk": {
+                "run_args_template": "python codespaces.py",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "at risk",
+                "help": "Shows the Codespaces that are at risk of being deleted",
+                "action": "schedule_job",
+                "job_type": "at_risk",
+                "delay_seconds": 0,
+            },
+        ],
+    },
 }
 # fmt: on
 
