@@ -15,7 +15,7 @@ def test_rota_report_on_monday(get_rota_data_from_sheet, freezer):
         {"text": {"text": "Dependabot rota", "type": "plain_text"}, "type": "header"},
         {
             "text": {
-                "text": "To review dependabot PRs this week (25 Mar-29 Mar): Lucy",
+                "text": "To review dependabot PRs this week (25 Mar-29 Mar): <@Lucy>",
                 "type": "mrkdwn",
             },
             "type": "section",
@@ -79,7 +79,7 @@ def test_rota_report_on_tuesday(get_rota_data_from_sheet, freezer):
         {"text": {"text": "Dependabot rota", "type": "plain_text"}, "type": "header"},
         {
             "text": {
-                "text": "To review dependabot PRs this week (25 Mar-29 Mar): Lucy",
+                "text": "To review dependabot PRs this week (25 Mar-29 Mar): <@Lucy>",
                 "type": "mrkdwn",
             },
             "type": "section",

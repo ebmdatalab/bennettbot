@@ -1,5 +1,6 @@
 from datetime import date
 
+from workspace.utils.people import get_slack_username
 from workspace.utils.rota import RotaReporter
 
 
@@ -10,6 +11,8 @@ class DependabotRotaReporter(RotaReporter):
     def get_rota_text_for_week(self, rota: dict, monday: date, this_or_next: str):
         try:
             checker = rota[str(monday)]
+            if this_or_next == "this":
+                checker = get_slack_username(checker)
             return f"To review dependabot PRs {this_or_next} week ({self.format_week(monday)}): {checker}"
         except KeyError:
             return f"No rota data found for {this_or_next} week"
