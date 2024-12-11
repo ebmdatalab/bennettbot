@@ -95,9 +95,10 @@ class JobDispatcher:
         if bin_path and not env["PATH"].startswith(bin_path):  # pragma: no cover
             # If we have an ABSOLUTE_BIN env variable, ensure that it's set first in the path
             env["PATH"] = f"{bin_path}:{env['PATH']}"
-        with open(self.stdout_path, "w") as stdout, open(
-            self.stderr_path, "w"
-        ) as stderr:
+        with (
+            open(self.stdout_path, "w") as stdout,
+            open(self.stderr_path, "w") as stderr,
+        ):
             try:
                 rv = subprocess.run(
                     self.run_args,
