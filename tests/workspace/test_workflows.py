@@ -93,11 +93,13 @@ def use_mock_results(patch_settings):
                 for r in patch_settings
             }
             # Patch the config and use results from the mock cache
-            with patch("workspace.workflows.config.REPOS", mock_repos_config), patch(
-                "workspace.workflows.jobs.load_cache", return_value=mock_cache
-            ), patch(
-                "workspace.workflows.jobs.RepoWorkflowReporter",
-                MockRepoWorkflowReporter,
+            with (
+                patch("workspace.workflows.config.REPOS", mock_repos_config),
+                patch("workspace.workflows.jobs.load_cache", return_value=mock_cache),
+                patch(
+                    "workspace.workflows.jobs.RepoWorkflowReporter",
+                    MockRepoWorkflowReporter,
+                ),
             ):
                 return func(*args, **kwargs)
 
