@@ -57,8 +57,8 @@ def get_codespace(record):
     last_used_days_ago = (now - last_used_at).days
     owner = record["owner"]["login"]
     name = record["name"]
-    has_unpushed = record["git_status"]["has_unpushed_changes"] == "true"
-    has_uncommitted = record["git_status"]["has_uncommitted_changes"] == "true"
+    has_unpushed = record["git_status"]["has_unpushed_changes"]
+    has_uncommitted = record["git_status"]["has_uncommitted_changes"]
     return Codespace(last_used_days_ago, owner, name, has_unpushed, has_uncommitted)
 
 
