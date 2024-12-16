@@ -36,9 +36,8 @@ def weekly_rota(args):
     header = "Team Rex stand ups this week"
     days = "\n".join(
         [
-            f"Monday: {pairs['monday'][primary]} (backup: {pairs['monday'][secondary]})",
-            f"Wednesday: {pairs['wednesday'][primary]} (backup: {pairs['wednesday'][secondary]})",
-            f"Friday: {pairs['friday'][primary]} (backup: {pairs['friday'][secondary]})",
+            f"{day_of_week.title()}: {pairs[day_of_week][primary]} (backup: {pairs[day_of_week][secondary]})"
+            for day_of_week in pairs.keys()
         ]
     )
 
