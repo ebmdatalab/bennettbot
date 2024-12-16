@@ -1,12 +1,19 @@
 import json
 from datetime import datetime
 
-from workspace.standup.jobs import daily_rota, get_weekday_date, weekly_rota
+from workspace.standup.jobs import (
+    daily_rota,
+    get_command_line_parser,
+    get_weekday_date,
+    weekly_rota,
+)
 
 
 def test_weekly_rota_odd_week(freezer):
     freezer.move_to("2024-12-05")
-    assert json.loads(weekly_rota()) == [
+    args = get_command_line_parser().parse_args(["weekly"])
+
+    assert json.loads(weekly_rota(args)) == [
         {
             "text": {"text": "Team Rex stand ups this week", "type": "plain_text"},
             "type": "header",
@@ -23,7 +30,9 @@ def test_weekly_rota_odd_week(freezer):
 
 def test_weekly_rota_even_week(freezer):
     freezer.move_to("2024-12-09")
-    assert json.loads(weekly_rota()) == [
+    args = get_command_line_parser().parse_args(["weekly"])
+
+    assert json.loads(weekly_rota(args)) == [
         {
             "text": {"text": "Team Rex stand ups this week", "type": "plain_text"},
             "type": "header",
@@ -40,7 +49,9 @@ def test_weekly_rota_even_week(freezer):
 
 def test_daily_rota_odd_week(freezer):
     freezer.move_to("2024-12-16")
-    assert json.loads(daily_rota("monday")) == [
+    args = get_command_line_parser().parse_args(["daily", "monday"])
+
+    assert json.loads(daily_rota(args)) == [
         {
             "text": {"text": "Team Rex stand up", "type": "plain_text"},
             "type": "header",
@@ -57,7 +68,9 @@ def test_daily_rota_odd_week(freezer):
 
 def test_daily_rota_even_week(freezer):
     freezer.move_to("2024-12-09")
-    assert json.loads(daily_rota("wednesday")) == [
+    args = get_command_line_parser().parse_args(["daily", "wednesday"])
+
+    assert json.loads(daily_rota(args)) == [
         {
             "text": {"text": "Team Rex stand up", "type": "plain_text"},
             "type": "header",
