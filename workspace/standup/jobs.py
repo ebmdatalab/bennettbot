@@ -12,13 +12,15 @@ pairs = {
 }
 
 
-def get_weekday_date(day_of_week):
-    weekday = 0  # default to Monday
-    if day_of_week == "wednesday":
-        weekday = 2
-    elif day_of_week == "friday":
-        weekday = 4
+WEEKDAY_INTS = {
+    "monday": 0,
+    "wednesday": 2,
+    "friday": 4,
+}
 
+
+def get_weekday_date(day_of_week):
+    weekday = WEEKDAY_INTS[day_of_week]
     offset_days = (weekday - date.weekday(datetime.today())) % 7
     rota_date = datetime.today() + timedelta(offset_days)
     return rota_date.date()
