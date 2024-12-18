@@ -4,7 +4,7 @@ from datetime import datetime
 from workspace.standup.jobs import (
     daily_rota,
     get_command_line_parser,
-    get_weekday_date,
+    get_next_rota_date,
     weekly_rota,
 )
 
@@ -87,16 +87,16 @@ def test_daily_rota_even_week(freezer):
 
 def test_get_weekday_date(freezer):
     freezer.move_to("2024-12-10")  # Tuesday
-    assert get_weekday_date("monday") == datetime(2024, 12, 16).date()
-    assert get_weekday_date("wednesday") == datetime(2024, 12, 11).date()
-    assert get_weekday_date("friday") == datetime(2024, 12, 13).date()
+    assert get_next_rota_date("monday") == datetime(2024, 12, 16).date()
+    assert get_next_rota_date("wednesday") == datetime(2024, 12, 11).date()
+    assert get_next_rota_date("friday") == datetime(2024, 12, 13).date()
 
     freezer.move_to("2024-12-12")  # Thursday
-    assert get_weekday_date("monday") == datetime(2024, 12, 16).date()
-    assert get_weekday_date("wednesday") == datetime(2024, 12, 18).date()
-    assert get_weekday_date("friday") == datetime(2024, 12, 13).date()
+    assert get_next_rota_date("monday") == datetime(2024, 12, 16).date()
+    assert get_next_rota_date("wednesday") == datetime(2024, 12, 18).date()
+    assert get_next_rota_date("friday") == datetime(2024, 12, 13).date()
 
     freezer.move_to("2024-12-15")  # Sunday
-    assert get_weekday_date("monday") == datetime(2024, 12, 16).date()
-    assert get_weekday_date("wednesday") == datetime(2024, 12, 18).date()
-    assert get_weekday_date("friday") == datetime(2024, 12, 20).date()
+    assert get_next_rota_date("monday") == datetime(2024, 12, 16).date()
+    assert get_next_rota_date("wednesday") == datetime(2024, 12, 18).date()
+    assert get_next_rota_date("friday") == datetime(2024, 12, 20).date()

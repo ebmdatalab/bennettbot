@@ -19,7 +19,7 @@ WEEKDAY_INTS = {
 }
 
 
-def get_weekday_date(day_of_week):
+def get_next_rota_date(day_of_week):
     weekday = WEEKDAY_INTS[day_of_week]
     offset_days = (weekday - date.weekday(datetime.today())) % 7
     rota_date = datetime.today() + timedelta(offset_days)
@@ -48,7 +48,7 @@ def weekly_rota(args):
 
 def daily_rota(args):
     day_of_week = args.day_of_week
-    rota_date = get_weekday_date(day_of_week)
+    rota_date = get_next_rota_date(day_of_week)
 
     primary = is_even_week(rota_date)
     secondary = 0 if primary else 1
