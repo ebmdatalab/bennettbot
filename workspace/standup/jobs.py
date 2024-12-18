@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from workspace.utils import blocks
 
 
-pairs = {
+PAIRS = {
     "monday": ["Mike", "Jon"],
     "wednesday": ["Mary", "Steve"],
     "friday": ["Thomas", "Katie"],
@@ -38,8 +38,8 @@ def weekly_rota(args):
     header = "Team Rex stand ups this week"
     days = "\n".join(
         [
-            f"{day_of_week.title()}: {pairs[day_of_week][primary]} (backup: {pairs[day_of_week][secondary]})"
-            for day_of_week in pairs.keys()
+            f"{day_of_week.title()}: {PAIRS[day_of_week][primary]} (backup: {PAIRS[day_of_week][secondary]})"
+            for day_of_week in PAIRS.keys()
         ]
     )
 
@@ -53,7 +53,7 @@ def daily_rota(args):
     primary = is_even_week(rota_date)
     secondary = 0 if primary else 1
     header = "Team Rex stand up"
-    body = f"{day_of_week.title()}: {pairs[day_of_week][primary]} (backup: {pairs[day_of_week][secondary]})"
+    body = f"{day_of_week.title()}: {PAIRS[day_of_week][primary]} (backup: {PAIRS[day_of_week][secondary]})"
 
     return json.dumps(blocks.get_basic_header_and_text_blocks(header, body))
 
