@@ -513,6 +513,37 @@ raw_config = {
             },
         ],
     },
+    "standup": {
+        "description": "Show the standup rota for Team REX",
+        "jobs": {
+            "weekly": {
+                "run_args_template": "python jobs.py weekly",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "daily": {
+                "run_args_template": "python jobs.py daily",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "weekly",
+                "help": "Show the weekly standup rota for Team REX",
+                "action": "schedule_job",
+                "job_type": "weekly",
+                "delay_seconds": 0,
+            },
+            {
+                "command": "daily [day_of_week]",
+                "help": "Show the daily standup rota for Team REX",
+                "action": "schedule_job",
+                "job_type": "daily",
+                "delay_seconds": 0,
+            },
+        ],
+    },
 }
 # fmt: on
 
