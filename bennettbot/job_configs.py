@@ -522,7 +522,7 @@ raw_config = {
                 "report_format": "blocks",
             },
             "daily": {
-                "run_args_template": "python jobs.py daily",
+                "run_args_template": "python jobs.py daily {day_of_week}",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
