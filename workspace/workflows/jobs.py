@@ -53,6 +53,16 @@ def report_invalid_target(target) -> str:
     return json.dumps(blocks)
 
 
+def report_invalid_list_of_targets() -> str:
+    blocks = get_basic_header_and_text_blocks(
+        header_text="Invalid list of targets",
+        texts=[
+            "List items must all be orgs or all be repos.",
+        ],
+    )
+    return json.dumps(blocks)
+
+
 def get_api_result_as_json(url: str, params: dict | None = None) -> dict:
     params = params or {}
     params["format"] = "json"
@@ -313,22 +323,21 @@ def main(args) -> str:
             return json.dumps(
                 summarise_workflows_group(args.group, args.skip_successful)
             )
-        # Some repos are names of websites and slack prepends http:// to them
-        return _main(args.target.replace("http://", ""), args.skip_successful)
+        return _main(args.target, args.skip_successful)
     except Exception as e:
         blocks = get_basic_header_and_text_blocks(
-            header_text=f"An error occurred reporting workflows for {args.group or args.target}",
+            header_text=f"An error occurred reporting workflows for {args.group or ' '.join(args.target)}",
             texts=str(e),
         )
         return json.dumps(blocks)
 
 
-def _main(target: str, skip_successful: bool) -> str:
+def _main(targets: list[str], skip_successful: bool) -> str:
     """
     Main function to report on the status of workflows in a specified target.
     args:
-        target:
-            May be one of the following:
+        targets: list[str]
+            List elements may be one of the following:
             - "all": Summarise all repos, sectioned by team
             - A known organisation to summarise
             - A known repo (the org/ prefix is optional)
@@ -336,27 +345,49 @@ def _main(target: str, skip_successful: bool) -> str:
         skip_successful: bool
             If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions.
     """
-    if target == "all":
+
+    if "all" in targets:
         return json.dumps(summarise_all(skip_successful))
 
-    if target.count("/") > 1:
-        return report_invalid_target(target)
+    # Validation
+    orgs = []
+    locations = []
+    for target in targets:
+        # Some repos are names of websites and slack prepends http:// to them
+        target = target.replace("http://", "")
+        if target.count("/") > 1:
+            return report_invalid_target(target)
 
-    if "/" in target:  # Single repo in org/repo format
-        org, repo = target.split("/")
-    elif target in config.REPOS:  # Known repo
-        org, repo = config.REPOS[target]["org"], target
-    else:  # Assume target is an org
-        org, repo = target, None
+        if "/" in target:  # Single repo in org/repo format
+            org, repo = target.split("/")
+        elif target in config.REPOS:  # Known repo
+            org, repo = config.REPOS[target]["org"], target
+        else:  # Assume target is an org
+            org, repo = target, None
 
-    org = config.SHORTHANDS.get(org, org)
-    if org not in config.SHORTHANDS.values():
-        return report_invalid_target(target)
-    if repo:
+        org = config.SHORTHANDS.get(org, org)
+        if org not in config.SHORTHANDS.values():
+            return report_invalid_target(target)
+        if repo:
+            locations.append(f"{org}/{repo}")
+        else:
+            orgs.append(org)
+
+    if orgs and not locations:  # Summarise the org(s)
+        blocks = []
+        for org in orgs:
+            blocks.extend(summarise_org(org, skip_successful))
+        return json.dumps(blocks)
+
+    elif len(locations) != len(targets):
+        return report_invalid_list_of_targets()
+
+    elif len(locations) == 1:
         # Single repo usage: Report status for all workflows in a specified repo
-        return RepoWorkflowReporter(f"{org}/{repo}").report()
-    # Summarise status for multiple repos in an org
-    return json.dumps(summarise_org(org, skip_successful))
+        return RepoWorkflowReporter(locations[0]).report()
+
+    else:  # Summarise the list of repos requested
+        return json.dumps(_summarise("Workflows summary", locations, skip_successful))
 
 
 def get_text_blocks_for_key(args) -> str:
@@ -368,12 +399,17 @@ def get_text_blocks_for_key(args) -> str:
 
 
 def get_command_line_parser():
+    class SplitString(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            # Split space-separated strings into individual list items
+            setattr(namespace, self.dest, " ".join(values).split(" "))
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
     # Main task: show workflows
     show_parser = subparsers.add_parser("show")
-    show_parser.add_argument("--target", default="all")
+    show_parser.add_argument("--target", nargs="+", default=["all"], action=SplitString)
     show_parser.add_argument("--group", required=False)
     show_parser.add_argument("--skip-successful", action="store_true", default=False)
     show_parser.set_defaults(func=main)

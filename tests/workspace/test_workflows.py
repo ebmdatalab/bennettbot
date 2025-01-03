@@ -230,16 +230,60 @@ def test_website_repo_as_target():
         MockReporter.assert_called_once_with("ebmdatalab/bennett.ox.ac.uk")
 
 
-def test_invalid_target():
+def test_list_of_orgs_as_target():
+    args = jobs.get_command_line_parser().parse_args(["show", "--target", "osc ebm"])
+    with patch("workspace.workflows.jobs.summarise_org") as mock_summarise_org:
+        jobs.main(args)
+        mock_summarise_org.assert_any_call("opensafely-core", False)
+        mock_summarise_org.assert_called_with("ebmdatalab", False)
+        assert mock_summarise_org.call_count == 2
+
+
+def test_list_of_repos_as_target():
     args = jobs.get_command_line_parser().parse_args(
-        "show --target some/invalid/input".split()
+        ["show", "--target", "airlock bennett.ox.ac.uk"]
     )
+    with patch("workspace.workflows.jobs._summarise") as mock__summarise:
+        jobs.main(args)
+        mock__summarise.assert_called_once_with(
+            "Workflows summary",
+            [
+                "opensafely-core/airlock",
+                "ebmdatalab/bennett.ox.ac.uk",
+            ],
+            False,
+        )
+
+
+@pytest.mark.parametrize(
+    "cli_args",
+    [
+        ["show", "--target", "some/invalid/input"],
+        ["show", "--target", "osc some/invalid/input"],
+    ],
+)
+def test_invalid_target(cli_args):
+    args = jobs.get_command_line_parser().parse_args(cli_args)
     blocks = json.loads(jobs.main(args))
     assert blocks[0] == {
         "type": "header",
         "text": {
             "type": "plain_text",
             "text": "some/invalid/input was not recognised",
+        },
+    }
+
+
+def test_mixed_list_as_target():
+    args = jobs.get_command_line_parser().parse_args(
+        ["show", "--target", "osc airlock"]
+    )
+    blocks = json.loads(jobs.main(args))
+    assert blocks[0] == {
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": "Invalid list of targets",
         },
     }
 
@@ -502,6 +546,83 @@ def test_main_show_org():
             "text": {
                 "type": "mrkdwn",
                 "text": f"<https://github.com/opensafely-core/failing-repo/actions?query=branch%3Amain|opensafely-core/failing-repo>: {':red_circle:' * 5}",
+            },
+        },
+        RESULT_BLOCK,
+    ]
+
+
+@use_mock_results(
+    [
+        RESULT_PATCH_SETTINGS,
+        {
+            "org": "opensafely",
+            "repo": "failing-repo",
+            "team": "Team RAP",
+            "conclusions": ["failure"] * 5,
+        },
+    ]
+)
+def test_main_show_list_of_orgs():
+    args = jobs.get_command_line_parser().parse_args(["show", "--target", "os osc"])
+
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for opensafely repos",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {':red_circle:' * 5}",
+            },
+        },
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for opensafely-core repos",
+            },
+        },
+        RESULT_BLOCK,
+    ]
+
+
+@use_mock_results(
+    [
+        RESULT_PATCH_SETTINGS,
+        {
+            "org": "opensafely",
+            "repo": "failing-repo",
+            "team": "Team RAP",
+            "conclusions": ["failure"] * 5,
+        },
+    ]
+)
+def test_main_show_list_of_repos():
+    args = jobs.get_command_line_parser().parse_args(
+        ["show", "--target", "airlock failing-repo"]
+    )
+
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows summary",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {':red_circle:' * 5}",
             },
         },
         RESULT_BLOCK,
