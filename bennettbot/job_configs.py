@@ -303,13 +303,18 @@ raw_config = {
         "restricted": True,
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
-            "check_links": {
-                "run_args_template": "python jobs.py custom --job-name check-links",
+            "show_group": {
+                "run_args_template": "python jobs.py show --group {group}",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
             "display_emoji_key": {
                 "run_args_template": "python jobs.py key",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "show": {
+                "run_args_template": "python jobs.py show --target {target}",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
@@ -323,18 +328,13 @@ raw_config = {
                 "report_stdout": True,
                 "report_format": "blocks",
             },
-            "show": {
-                "run_args_template": "python jobs.py show --target {target}",
-                "report_stdout": True,
-                "report_format": "blocks",
-            },
         },
         "slack": [
             {
-                "command": "check-links",
-                "help": "Summarise GitHub Actions workflow runs for link-checking workflows in website repos.",
+                "command": "show-group",
+                "help": "Summarise GitHub Actions workflow runs for a custom defined group of workflows.",
                 "action": "schedule_job",
-                "job_type": "check_links",
+                "job_type": "show_group",
             },
             {
                 "command": "key",

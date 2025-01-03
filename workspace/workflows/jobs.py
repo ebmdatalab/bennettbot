@@ -277,13 +277,47 @@ def summarise_org(org, skip_successful) -> list:
     return blocks
 
 
+def summarise_workflows_group(group: str, skip_successful: bool) -> list:
+    """
+    Summarise the status of a group of workflows with specified IDs.
+    """
+    try:
+        group_config = config.CUSTOM_WORKFLOWS_GROUPS[group]
+    except KeyError:
+        return get_basic_header_and_text_blocks(
+            header_text=f"Group {group} was not defined",
+            texts=f"Available custom workflow groups are: {', '.join(config.CUSTOM_WORKFLOWS_GROUPS.keys())}",
+        )
+
+    conclusions = {}
+    for location, workflow_ids in group_config["workflows"].items():
+        wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
+        conclusions[location] = [
+            wf_conclusions.get(wf_id, "missing") for wf_id in workflow_ids
+        ]
+    blocks = [
+        get_header_block(group_config["header_text"]),
+        *[
+            get_summary_block(loc, conc)
+            for loc, conc in conclusions.items()
+            if not (skip_successful and get_success_rate(conc) == 1)
+        ],
+    ]
+    return blocks
+
+
 def main(args) -> str:
     try:
+        if args.group:
+            # If a custom workflows group is passed, ignore target and summarise group
+            return json.dumps(
+                summarise_workflows_group(args.group, args.skip_successful)
+            )
         # Some repos are names of websites and slack prepends http:// to them
         return _main(args.target.replace("http://", ""), args.skip_successful)
     except Exception as e:
         blocks = get_basic_header_and_text_blocks(
-            header_text=f"An error occurred reporting workflows for {args.target}",
+            header_text=f"An error occurred reporting workflows for {args.group or args.target}",
             texts=str(e),
         )
         return json.dumps(blocks)
@@ -325,23 +359,6 @@ def _main(target: str, skip_successful: bool) -> str:
     return json.dumps(summarise_org(org, skip_successful))
 
 
-def get_blocks_for_custom_workflow_list(args):
-    job_config = config.CUSTOM_JOBS[args.job_name]
-    header_text = job_config["header_text"]
-    workflows = job_config["workflows"]
-    conclusions = {}
-    for location, workflow_ids in workflows.items():
-        wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
-        conclusions[location] = [
-            wf_conclusions.get(wf_id, "missing") for wf_id in workflow_ids
-        ]
-    blocks = [
-        get_header_block(header_text),
-        *[get_summary_block(loc, conc) for loc, conc in conclusions.items()],
-    ]
-    return json.dumps(blocks)
-
-
 def get_text_blocks_for_key(args) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text="Workflow status emoji key",
@@ -356,14 +373,10 @@ def get_command_line_parser():
 
     # Main task: show workflows
     show_parser = subparsers.add_parser("show")
-    show_parser.add_argument("--target", required=True)
+    show_parser.add_argument("--target", default="all")
+    show_parser.add_argument("--group", required=False)
     show_parser.add_argument("--skip-successful", action="store_true", default=False)
     show_parser.set_defaults(func=main)
-
-    # Custom tasks
-    custom_parser = subparsers.add_parser("custom")
-    custom_parser.add_argument("--job-name", required=True)
-    custom_parser.set_defaults(func=get_blocks_for_custom_workflow_list)
 
     # Display key
     key_parser = subparsers.add_parser("key")

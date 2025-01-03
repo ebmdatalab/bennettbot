@@ -170,8 +170,9 @@ def test_print_key():
     assert json.loads(jobs.get_text_blocks_for_key(None)) == blocks
 
 
-def test_all_as_target():
-    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+@pytest.mark.parametrize("command", ["show", "show --target all"])
+def test_all_as_target(command):
+    args = jobs.get_command_line_parser().parse_args(command.split())
 
     with patch("workspace.workflows.jobs.summarise_all") as mock_summarise_all:
         jobs.main(args)
@@ -523,7 +524,7 @@ def test_main_show_org():
 )
 def test_main_show_all():
     # Call main for all repos without skipping successful workflows
-    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+    args = jobs.get_command_line_parser().parse_args("show".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
@@ -582,7 +583,7 @@ def test_main_show_all():
 def test_main_show_all_skip_failures():
     # Call main for all repos without skipping successful workflows
     # Since all workflows in failing-repo are known to fail, it should be skipped entirely
-    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+    args = jobs.get_command_line_parser().parse_args("show".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
@@ -621,9 +622,7 @@ def test_main_show_all_skip_failures():
 def test_main_show_failed_empty():
     # Call main for all repos with skipping successful workflows
     # No failed workflows so state so
-    args = jobs.get_command_line_parser().parse_args(
-        "show --target all --skip-successful".split()
-    )
+    args = jobs.get_command_line_parser().parse_args("show --skip-successful".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
@@ -655,9 +654,7 @@ def test_main_show_failed_empty():
 def test_main_show_failed_found():
     # Call main for all repos with skipping successful workflows
     # Only the failing repo should appear
-    args = jobs.get_command_line_parser().parse_args(
-        "show --target all --skip-successful".split()
-    )
+    args = jobs.get_command_line_parser().parse_args("show --skip-successful".split())
 
     blocks = json.loads(jobs.main(args))
     assert blocks == [
@@ -707,9 +704,7 @@ def test_main_show_failed_found():
 def test_main_show_failed_skipped():
     # Call main for all repos with skipping successful workflows
     # Skip failures that are already known
-    args = jobs.get_command_line_parser().parse_args(
-        "show --target all --skip-successful".split()
-    )
+    args = jobs.get_command_line_parser().parse_args("show --skip-successful".split())
 
     blocks = json.loads(jobs.main(args))
     assert blocks == [
@@ -762,7 +757,7 @@ def test_main_show_invalid_target():
 
 
 @patch(
-    "workspace.workflows.config.CUSTOM_JOBS",
+    "workspace.workflows.config.CUSTOM_WORKFLOWS_GROUPS",
     {
         "check-links": {
             "header_text": "Link-checking workflows",
@@ -803,11 +798,9 @@ def test_main_show_invalid_target():
         },
     ]
 )
-def test_check_links():
-    args = jobs.get_command_line_parser().parse_args(
-        "custom --job-name check-links".split()
-    )
-    blocks = json.loads(jobs.get_blocks_for_custom_workflow_list(args))
+def test_show_group():
+    args = jobs.get_command_line_parser().parse_args("show --group check-links".split())
+    blocks = json.loads(jobs.main(args))
     assert blocks == [
         {  # Only 1 emoji should appear for each repo
             "type": "header",
@@ -842,6 +835,31 @@ def test_check_links():
             "text": {
                 "type": "mrkdwn",
                 "text": "<https://github.com/ebmdatalab/team-manual/actions?query=branch%3Amain|ebmdatalab/team-manual>: :red_circle:",
+            },
+        },
+    ]
+
+
+@patch(
+    "workspace.workflows.config.CUSTOM_WORKFLOWS_GROUPS",
+    {"check-links": ...},
+)
+def test_show_group_not_found():
+    args = jobs.get_command_line_parser().parse_args("show --group unknown".split())
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Group unknown was not defined",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Available custom workflow groups are: check-links",
             },
         },
     ]
