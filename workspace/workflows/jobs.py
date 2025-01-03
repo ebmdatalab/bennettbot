@@ -279,21 +279,8 @@ def summarise_org(org, skip_successful) -> list:
 
 def main(args) -> str:
     try:
-        # # Some repos are names of websites and slack prepends http:// to them
-        target = args.target.replace("http://", "").split("/")
-        if len(target) == 2:
-            org, repo = target
-        elif len(target) == 1:
-            if target[0] in config.REPOS.keys():  # Known repo
-                org, repo = config.REPOS[target[0]]["org"], target[0]
-            else:  # Assume org
-                org, repo = target[0], None
-        else:  # Invalid target format
-            return report_invalid_target(args.target)
-
-        # Org may be a shorthand
-        org = config.SHORTHANDS.get(org, org)
-        return _main(org, repo, args.skip_successful)
+        # Some repos are names of websites and slack prepends http:// to them
+        return _main(args.target.replace("http://", ""), args.skip_successful)
     except Exception as e:
         blocks = get_basic_header_and_text_blocks(
             header_text=f"An error occurred reporting workflows for {args.target}",
@@ -302,27 +289,40 @@ def main(args) -> str:
         return json.dumps(blocks)
 
 
-def _main(org, repo, skip_successful=False) -> str:
+def _main(target: str, skip_successful: bool) -> str:
     """
-    Main function to report on the status of workflows in a specified repo or org.
+    Main function to report on the status of workflows in a specified target.
     args:
-        org: str
-            The organisation or shorthand for the organisation to report on. A special value of "all" will report on all orgs.
-        repo: str | None
-            The repo to report on. If None, all repos specified by "org" will be reported on.
+        target:
+            May be one of the following:
+            - "all": Summarise all repos, sectioned by team
+            - A known organisation to summarise
+            - A known repo (the org/ prefix is optional)
+            - A repo in the format org/repo (Note that the repo must still belong to a known org)
         skip_successful: bool
-            If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions."""
-    if org == "all":
-        # Summarise status for all repos in all orgs
+            If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions.
+    """
+    if target == "all":
         return json.dumps(summarise_all(skip_successful))
-    elif org in config.SHORTHANDS.values():  # Valid organisation
-        if repo is None:
-            # Summarise status for multiple repos in an org
-            return json.dumps(summarise_org(org, skip_successful))
+
+    if target.count("/") > 1:
+        return report_invalid_target(target)
+
+    if "/" in target:  # Single repo in org/repo format
+        org, repo = target.split("/")
+    elif target in config.REPOS:  # Known repo
+        org, repo = config.REPOS[target]["org"], target
+    else:  # Assume target is an org
+        org, repo = target, None
+
+    org = config.SHORTHANDS.get(org, org)
+    if org not in config.SHORTHANDS.values():
+        return report_invalid_target(target)
+    if repo:
         # Single repo usage: Report status for all workflows in a specified repo
         return RepoWorkflowReporter(f"{org}/{repo}").report()
-    else:
-        return report_invalid_target(org)
+    # Summarise status for multiple repos in an org
+    return json.dumps(summarise_org(org, skip_successful))
 
 
 def get_blocks_for_custom_workflow_list(args):

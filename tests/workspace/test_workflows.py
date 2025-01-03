@@ -170,41 +170,50 @@ def test_print_key():
     assert json.loads(jobs.get_text_blocks_for_key(None)) == blocks
 
 
+def test_all_as_target():
+    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+
+    with patch("workspace.workflows.jobs.summarise_all") as mock_summarise_all:
+        jobs.main(args)
+        mock_summarise_all.assert_called_once_with(False)
+
+
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
 def test_org_as_target(org):
     args = jobs.get_command_line_parser().parse_args(f"show --target {org}".split())
 
-    with patch("workspace.workflows.jobs._main") as mock__main:
+    with patch("workspace.workflows.jobs.summarise_org") as mock_summarise_org:
         jobs.main(args)
-        mock__main.assert_called_once_with("opensafely-core", None, False)
+        mock_summarise_org.assert_called_once_with("opensafely-core", False)
 
 
-@pytest.mark.parametrize("org", ["opensafely-core", "osc"])
-def test_org_and_repo_as_target(org):
-    args = jobs.get_command_line_parser().parse_args(
-        f"show --target {org}/airlock".split()
-    )
+@pytest.mark.parametrize(
+    "repo, parsed",
+    [
+        # Known org, known repo
+        ("opensafely-core/airlock", "opensafely-core/airlock"),
+        ("osc/airlock", "opensafely-core/airlock"),
+        ("airlock", "opensafely-core/airlock"),
+        # Known org, unknown repo
+        ("opensafely/unknown-repo", "opensafely/unknown-repo"),
+        ("os/unknown-repo", "opensafely/unknown-repo"),
+    ],
+)
+def test_repo_as_target(repo, parsed):
+    args = jobs.get_command_line_parser().parse_args(f"show --target {repo}".split())
 
-    with patch("workspace.workflows.jobs._main") as mock__main:
+    with patch("workspace.workflows.jobs.RepoWorkflowReporter") as MockReporter:
         jobs.main(args)
-        mock__main.assert_called_once_with("opensafely-core", "airlock", False)
-
-
-def test_repo_only_as_target():
-    args = jobs.get_command_line_parser().parse_args("show --target airlock".split())
-
-    with patch("workspace.workflows.jobs._main") as mock__main:
-        jobs.main(args)
-        mock__main.assert_called_once_with("opensafely-core", "airlock", False)
+        MockReporter.assert_called_once_with(parsed)
 
 
 def test_website_repo_as_target():
     args = jobs.get_command_line_parser().parse_args(
         "show --target http://bennett.ox.ac.uk".split()
     )
-    with patch("workspace.workflows.jobs._main") as mock__main:
+    with patch("workspace.workflows.jobs.RepoWorkflowReporter") as MockReporter:
         jobs.main(args)
-        mock__main.assert_called_once_with("ebmdatalab", "bennett.ox.ac.uk", False)
+        MockReporter.assert_called_once_with("ebmdatalab/bennett.ox.ac.uk")
 
 
 def test_invalid_target():
