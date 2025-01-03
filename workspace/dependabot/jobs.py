@@ -1,10 +1,10 @@
 from datetime import date
 
 from workspace.utils.people import get_slack_username
-from workspace.utils.rota import RotaReporter
+from workspace.utils.rota import SpreadsheetRotaReporter
 
 
-class DependabotRotaReporter(RotaReporter):
+class DependabotRotaReporter(SpreadsheetRotaReporter):
     def convert_rota_data_to_dictionary(self, rows) -> dict:
         return {row[0]: row[1] for row in rows[1:]}
 

@@ -1,9 +1,9 @@
 from datetime import date
 
-from workspace.utils.rota import RotaReporter
+from workspace.utils.rota import SpreadsheetRotaReporter
 
 
-class OutputCheckingRotaReporter(RotaReporter):
+class OutputCheckingRotaReporter(SpreadsheetRotaReporter):
     def convert_rota_data_to_dictionary(self, rows) -> dict:
         return {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
 

@@ -6,7 +6,7 @@ from workspace.utils.blocks import get_basic_header_and_text_blocks
 from workspace.utils.spreadsheets import get_data_from_sheet
 
 
-class RotaReporter(abc.ABC):
+class SpreadsheetRotaReporter(abc.ABC):
     def __init__(self, title: str, spreadsheet_id: str, sheet_range: str):
         self.title = title
         self.spreadsheet_id = spreadsheet_id
