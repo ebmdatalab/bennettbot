@@ -1,17 +1,6 @@
 version: 2
 
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 20
-    ignore:
-      # Keep httpretty pinned to <1.1.0
-      # See https://github.com/gabrielfalcao/HTTPretty/issues/425
-      - dependency-name: "httpretty"
-        update-types: ["version-update:semver-minor"]
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
