@@ -152,6 +152,4 @@ def main():
 
 
 if __name__ == "__main__":
-    from pprint import pprint
-
-    pprint(json.loads(main()))
+    print(json.loads(main()))
