@@ -27,7 +27,14 @@ HEADERS = {
 
 Codespace = collections.namedtuple(
     "Codespace",
-    ["last_used_days_ago", "owner", "name", "has_unpushed", "has_uncommitted"],
+    [
+        "owner",
+        "name",
+        "retention_expires_at",
+        "remaining_retention_period_days",
+        "has_uncommitted",
+        "has_unpushed",
+    ],
 )
 
 
@@ -52,39 +59,58 @@ def fetch(url, key):
 
 
 def get_codespace(record):
-    now = datetime.datetime.now(datetime.timezone.utc)
-    last_used_at = datetime.datetime.fromisoformat(record["last_used_at"])
+    if record["retention_expires_at"]:
+        retention_expires_at = datetime.datetime.fromisoformat(
+            record["retention_expires_at"]
+        )
+        now = datetime.datetime.now(retention_expires_at.tzinfo)
+        # This "rounds down", eg 10.7 days will be reported as 10 days as it
+        # throws aways the parts smaller than one day. This seems fine.
+        remaining_retention_period_days = (retention_expires_at - now).days
+    else:
+        # Codespaces may not have a retention period if the user has manually
+        # chosen to keep the codespace indefinitely, which we allow. Also very
+        # new codespaces may not have this set by GitHub yet. Don't report.
+        retention_expires_at = None
+        remaining_retention_period_days = None
+
     return Codespace(
-        last_used_days_ago=(now - last_used_at).days,
         owner=record["owner"]["login"],
         name=record["name"],
+        retention_expires_at=retention_expires_at,
+        remaining_retention_period_days=remaining_retention_period_days,
         has_uncommitted=record["git_status"]["has_uncommitted_changes"],
         has_unpushed=record["git_status"]["has_unpushed_changes"],
     )
 
 
 def is_at_risk(codespace, threshold_in_days):
-    is_dormant = codespace.last_used_days_ago >= threshold_in_days
-    return is_dormant and (codespace.has_unpushed or codespace.has_uncommitted)
+    if codespace.remaining_retention_period_days:
+        close_to_expiry = codespace.remaining_retention_period_days <= threshold_in_days
+        return close_to_expiry and (codespace.has_unpushed or codespace.has_uncommitted)
+    else:
+        # The user has manually chosen to keep the codespace indefinitely,
+        # therefore there's no risk of them losing their work.
+        return False
 
 
 def main():
     org = "opensafely"
-    threshold_in_days = 20
+    threshold_in_days = 10
 
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
     codespaces = (get_codespace(rec) for rec in records)
     at_risk_codespaces = sorted(
         (cs for cs in codespaces if is_at_risk(cs, threshold_in_days)),
-        key=lambda cs: cs.last_used_days_ago,
-        reverse=True,
+        key=lambda cs: cs.remaining_retention_period_days,
     )
 
     if at_risk_codespaces:
         items = [
             (
                 f"* `{cs.owner}` | "
-                f"last used {cs.last_used_days_ago} days ago | "
+                f"on {cs.retention_expires_at:%a, %b %d at %H:%M} "
+                f"({cs.remaining_retention_period_days} days) | "
                 f"**id**: `{cs.name}` | "
                 f"**Uncommitted**: {'Yes' if cs.has_uncommitted else 'No'} | "
                 f"**Unpushed**: {'Yes' if cs.has_unpushed else 'No'}\n"
