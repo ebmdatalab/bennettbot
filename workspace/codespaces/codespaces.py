@@ -133,7 +133,7 @@ def main():
             (
                 f"* `{cs.owner}` | "
                 f"on {cs.retention_expires_at:%a, %b %d at %H:%M} "
-                f"({cs.remaining_retention_period_days} days) | "
+                f"({'<1 day' if not cs.remaining_retention_period_days else str(cs.remaining_retention_period_days) + ' days'}) | "
                 f"**repo**: `{cs.repo}` | "
                 f"**id**: `{cs.name}` | "
                 f"**Retention**: {cs.retention_period_days} days | "
