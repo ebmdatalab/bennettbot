@@ -227,12 +227,12 @@ def _summarise(header_text: str, locations: list[str], skip_successful: bool) ->
     for location in locations:
         wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
 
-        # Skip reporting a failure that is already known
+        # Skip reporting missing workflows and failures that are already known
         known_failure_ids = config.WORKFLOWS_KNOWN_TO_FAIL.get(location, [])
         wf_conclusions = {
             k: v
             for k, v in wf_conclusions.items()
-            if v == "success" or k not in known_failure_ids
+            if v == "success" or (k not in known_failure_ids and v != "missing")
         }
 
         if len(wf_conclusions) == 0:
