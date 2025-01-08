@@ -86,10 +86,13 @@ def get_codespace(record):
 
     if record["retention_period_minutes"]:
         minutes_per_day = 60 * 24  # 60m per hour, 24 hours per day.
+        # This could be rounded down to 0 if set to less than a day. Probably
+        # nobody will do this, but if they do they're out of scope, as we have
+        # little chance of warning them usefully.
         retention_period_days = record["retention_period_minutes"] // minutes_per_day
     else:
         # The user has manually chosen to keep the codespace indefinitely.
-        retention_period_days = 0
+        retention_period_days = None
 
     return Codespace(
         owner=record["owner"]["login"],
@@ -104,7 +107,7 @@ def get_codespace(record):
 
 
 def is_at_risk(codespace, threshold_in_days):
-    if codespace.remaining_retention_period_days:
+    if codespace.remaining_retention_period_days is not None:
         close_to_expiry = codespace.remaining_retention_period_days <= threshold_in_days
         return close_to_expiry and (codespace.has_unpushed or codespace.has_uncommitted)
     else:
