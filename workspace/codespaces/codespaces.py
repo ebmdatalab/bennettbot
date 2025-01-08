@@ -1,6 +1,12 @@
 """
 Queries the GitHub REST API "List Codespaces for the organization" endpoint
-and shows the Codespaces that are at risk of being deleted.
+and shows the Codespaces that are "at risk" of being deleted, defined as having
+uncommitted or unpushed changes and the retention period expiry being within
+some threshold.
+
+Refer to the codespaces playbook in the team manual for how this is used.
+As of 2025-01, that's located at:
+https://github.com/ebmdatalab/team-manual/blob/main/docs/tech-group/playbooks/codespaces.md
 """
 
 import collections
@@ -18,6 +24,8 @@ URL_PATTERN = "https://api.github.com/orgs/{org}/codespaces"
 # with "Codespaces" repository permissions set to "read" and "Organization codespaces"
 # organization permissions set to "read". For more information, see:
 # https://docs.github.com/en/rest/codespaces/organizations?apiVersion=2022-11-28#list-codespaces-for-the-organization
+# Someone with admin permissions on the organization needs to do this.
+# For the opensafely org, created PATs should be stored in BitWarden.
 TOKEN = os.environ["CODESPACES_GITHUB_API_TOKEN"]
 HEADERS = {
     "Accept": "application/vnd.github+json",
@@ -27,7 +35,16 @@ HEADERS = {
 
 Codespace = collections.namedtuple(
     "Codespace",
-    ["last_used_days_ago", "owner", "name", "has_unpushed", "has_uncommitted"],
+    [
+        "owner",
+        "name",
+        "repo",
+        "retention_expires_at",
+        "remaining_retention_period_days",
+        "retention_period_days",
+        "has_uncommitted",
+        "has_unpushed",
+    ],
 )
 
 
@@ -52,51 +69,89 @@ def fetch(url, key):
 
 
 def get_codespace(record):
-    now = datetime.datetime.now(datetime.timezone.utc)
-    last_used_at = datetime.datetime.fromisoformat(record["last_used_at"])
-    last_used_days_ago = (now - last_used_at).days
-    owner = record["owner"]["login"]
-    name = record["name"]
-    has_unpushed = record["git_status"]["has_unpushed_changes"]
-    has_uncommitted = record["git_status"]["has_uncommitted_changes"]
-    return Codespace(last_used_days_ago, owner, name, has_unpushed, has_uncommitted)
+    if record["retention_expires_at"]:
+        retention_expires_at = datetime.datetime.fromisoformat(
+            record["retention_expires_at"]
+        )
+        now = datetime.datetime.now(retention_expires_at.tzinfo)
+        # This "rounds down", eg 10.7 days will be reported as 10 days as it
+        # throws aways the parts smaller than one day. This seems fine.
+        remaining_retention_period_days = (retention_expires_at - now).days
+    else:
+        # Codespaces may not have a retention period if the user has manually
+        # chosen to keep the codespace indefinitely, which we allow. Also very
+        # new codespaces may not have this set by GitHub yet. Don't report.
+        retention_expires_at = None
+        remaining_retention_period_days = None
+
+    if record["retention_period_minutes"]:
+        minutes_per_day = 60 * 24  # 60m per hour, 24 hours per day.
+        # This could be rounded down to 0 if set to less than a day. Probably
+        # nobody will do this, but if they do they're out of scope, as we have
+        # little chance of warning them usefully.
+        retention_period_days = record["retention_period_minutes"] // minutes_per_day
+    else:
+        # The user has manually chosen to keep the codespace indefinitely.
+        retention_period_days = None
+
+    return Codespace(
+        owner=record["owner"]["login"],
+        name=record["name"],
+        repo=record["repository"]["name"],
+        retention_expires_at=retention_expires_at,
+        remaining_retention_period_days=remaining_retention_period_days,
+        retention_period_days=retention_period_days,
+        has_uncommitted=record["git_status"]["has_uncommitted_changes"],
+        has_unpushed=record["git_status"]["has_unpushed_changes"],
+    )
 
 
 def is_at_risk(codespace, threshold_in_days):
-    is_dormant = codespace.last_used_days_ago >= threshold_in_days
-    return is_dormant and (codespace.has_unpushed or codespace.has_uncommitted)
+    if codespace.remaining_retention_period_days is not None:
+        close_to_expiry = codespace.remaining_retention_period_days <= threshold_in_days
+        return close_to_expiry and (codespace.has_unpushed or codespace.has_uncommitted)
+    else:
+        # The user has manually chosen to keep the codespace indefinitely,
+        # therefore there's no risk of them losing their work.
+        return False
 
 
 def main():
     org = "opensafely"
-    threshold_in_days = 20
+    # Arbitrary threshold. Gives us a bit more than a week to respond.
+    threshold_in_days = 10
 
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
     codespaces = (get_codespace(rec) for rec in records)
     at_risk_codespaces = sorted(
         (cs for cs in codespaces if is_at_risk(cs, threshold_in_days)),
-        key=lambda cs: cs.last_used_days_ago,
-        reverse=True,
+        key=lambda cs: cs.remaining_retention_period_days,
     )
 
     if at_risk_codespaces:
         items = [
             (
-                f"`{cs.owner}` has a Codespace that they last used {cs.last_used_days_ago} days ago "
-                f"({cs.name}).\n"
-                f"Unpushed changes: {'Yes' if cs.has_unpushed else 'No'} | "
-                f"Uncommitted changes: {'Yes' if cs.has_uncommitted else 'No'}\n\n"
+                f"* `{cs.owner}` | "
+                f"on {cs.retention_expires_at:%a, %b %d at %H:%M} "
+                f"({cs.remaining_retention_period_days} days) | "
+                f"**repo**: `{cs.repo}` | "
+                f"**id**: `{cs.name}` | "
+                f"**Retention**: {cs.retention_period_days} days | "
+                f"**Uncommitted**: {'Yes' if cs.has_uncommitted else 'No'} | "
+                f"**Unpushed**: {'Yes' if cs.has_unpushed else 'No'}\n"
             )
             for cs in at_risk_codespaces
         ]
-        body = f"The following `{org}` Codespaces are at risk of deletion.\n\n"
+        body = f"`{org}` Codespaces with unsaved work at risk (expiring within {threshold_in_days} days):\n\n"
         body += "".join(items)
     else:
-        body = f"No `{org}` Codespaces are at risk of deletion :tada:"
+        body = f"No `{org}` Codespaces with unsaved work at risk (expiring within {threshold_in_days} days) :tada:"
 
-    header = "Codespaces Report"
+    header = "Codespaces at risk report"
     return json.dumps(blocks.get_basic_header_and_text_blocks(header, body))
 
 
 if __name__ == "__main__":
-    print(main())
+    from pprint import pprint
+
+    pprint(json.loads(main()))
