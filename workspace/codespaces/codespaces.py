@@ -142,10 +142,10 @@ def main():
             )
             for cs in at_risk_codespaces
         ]
-        body = f"`{org}` Codespaces at risk of deletion (expire within {threshold_in_days} days):\n\n"
+        body = f"`{org}` Codespaces with unsaved work at risk (expiring within {threshold_in_days} days):\n\n"
         body += "".join(items)
     else:
-        body = f"No `{org}` Codespaces are at risk of deletion (expire within {threshold_in_days} days) :tada:"
+        body = f"No `{org}` Codespaces with unsaved work at risk (expiring within {threshold_in_days} days) :tada:"
 
     header = "Codespaces at risk report"
     return json.dumps(blocks.get_basic_header_and_text_blocks(header, body))
