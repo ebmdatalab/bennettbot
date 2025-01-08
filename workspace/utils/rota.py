@@ -7,15 +7,10 @@ from workspace.utils.spreadsheets import get_data_from_sheet
 
 
 class RotaReporter(abc.ABC):
-    def __init__(self, title: str, spreadsheet_id: str, sheet_range: str):
+    def __init__(self, title: str):
         self.title = title
-        self.spreadsheet_id = spreadsheet_id
-        self.sheet_range = sheet_range
 
-    def get_rota_data_from_sheet(self):  # pragma: no cover
-        return get_data_from_sheet(self.spreadsheet_id, self.sheet_range)
-
-    def report(self):
+    def report(self, *extra_texts):
         rota = self.get_rota()
 
         today = date.today()
@@ -27,10 +22,45 @@ class RotaReporter(abc.ABC):
             texts=[
                 self.get_rota_text_for_week(rota, this_monday, this_or_next="this"),
                 self.get_rota_text_for_week(rota, next_monday, this_or_next="next"),
-                self.get_text_linking_rota_spreadsheet(),
+                *extra_texts,
             ],
         )
         return json.dumps(blocks, indent=2)
+
+    @abc.abstractmethod
+    def get_rota(self) -> dict:
+        """
+        Gets the rota from source
+        """
+
+    @abc.abstractmethod
+    def get_rota_text_for_week(
+        self, rota: dict, monday: date, this_or_next: str
+    ) -> str:
+        """
+        Returns plain text reporting either the rota or a message saying no rota data was found
+        """
+
+    @staticmethod
+    def format_week(monday: date):
+        friday = monday + timedelta(days=4)  # Work week
+        return f"{monday.strftime("%d %b")}-{friday.strftime("%d %b")}"
+
+
+class SpreadsheetRotaReporter(RotaReporter):
+    def __init__(self, title: str, spreadsheet_id: str, sheet_range: str):
+        super().__init__(title)
+        self.spreadsheet_id = spreadsheet_id
+        self.sheet_range = sheet_range
+
+    def get_rota_data_from_sheet(self):  # pragma: no cover
+        return get_data_from_sheet(self.spreadsheet_id, self.sheet_range)
+
+    def report(self, *extra_texts):
+        return RotaReporter.report(
+            self,
+            self.get_text_linking_rota_spreadsheet(),
+        )
 
     def get_rota(self):
         rows = self.get_rota_data_from_sheet()
@@ -38,21 +68,10 @@ class RotaReporter(abc.ABC):
         return rota
 
     @abc.abstractmethod
-    def convert_rota_data_to_dictionary(self) -> dict:
+    def convert_rota_data_to_dictionary(self, rows) -> dict:
         """
         Takes the rows returned from get_rota_data_from_sheet and converts them into a dictionary with dates as keys
         """
 
-    @abc.abstractmethod
-    def get_rota_text_for_week(self, rota: dict, monday: date, this_or_next: str):
-        """
-        Returns plain text reporting either the rota or a message saying no rota data was found
-        """
-
     def get_text_linking_rota_spreadsheet(self):
         return f"<https://docs.google.com/spreadsheets/d/{self.spreadsheet_id}|Open rota spreadsheet>"
-
-    @staticmethod
-    def format_week(monday: date):
-        friday = monday + timedelta(days=4)  # Work week
-        return f"{monday.strftime("%d %b")}-{friday.strftime("%d %b")}"

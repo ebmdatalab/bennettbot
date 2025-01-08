@@ -4,7 +4,7 @@ from datetime import date, datetime
 from os import environ
 from pathlib import Path
 
-from workspace.utils.rota import RotaReporter
+from workspace.utils.rota import SpreadsheetRotaReporter
 
 
 def config_file():
@@ -78,7 +78,7 @@ def out_of_office_status():
         return f"Tech support out of office is currently ON until {end}."
 
 
-class TechSupportRotaReporter(RotaReporter):
+class TechSupportRotaReporter(SpreadsheetRotaReporter):
     @staticmethod
     def convert_rota_data_to_dictionary(rows) -> dict:
         rota = {row[0]: (row[1], row[2]) for row in rows[1:] if len(row) >= 3}
