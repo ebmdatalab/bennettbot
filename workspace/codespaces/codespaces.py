@@ -1,6 +1,12 @@
 """
 Queries the GitHub REST API "List Codespaces for the organization" endpoint
-and shows the Codespaces that are at risk of being deleted.
+and shows the Codespaces that are "at risk" of being deleted, defined as having
+uncommitted or unpushed changes and the retention period expiry being within
+some threshold.
+
+Refer to the codespaces playbook in the team manual for how this is used.
+As of 2025-01, that's located at:
+https://github.com/ebmdatalab/team-manual/blob/main/docs/tech-group/playbooks/codespaces.md
 """
 
 import collections
@@ -18,6 +24,8 @@ URL_PATTERN = "https://api.github.com/orgs/{org}/codespaces"
 # with "Codespaces" repository permissions set to "read" and "Organization codespaces"
 # organization permissions set to "read". For more information, see:
 # https://docs.github.com/en/rest/codespaces/organizations?apiVersion=2022-11-28#list-codespaces-for-the-organization
+# Someone with admin permissions on the organization needs to do this.
+# For the opensafely org, created PATs should be stored in BitWarden.
 TOKEN = os.environ["CODESPACES_GITHUB_API_TOKEN"]
 HEADERS = {
     "Accept": "application/vnd.github+json",
@@ -96,6 +104,7 @@ def is_at_risk(codespace, threshold_in_days):
 
 def main():
     org = "opensafely"
+    # Arbitrary threshold. Gives us a bit more than a week to respond.
     threshold_in_days = 10
 
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
