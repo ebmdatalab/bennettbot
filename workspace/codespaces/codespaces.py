@@ -54,12 +54,13 @@ def fetch(url, key):
 def get_codespace(record):
     now = datetime.datetime.now(datetime.timezone.utc)
     last_used_at = datetime.datetime.fromisoformat(record["last_used_at"])
-    last_used_days_ago = (now - last_used_at).days
-    owner = record["owner"]["login"]
-    name = record["name"]
-    has_unpushed = record["git_status"]["has_unpushed_changes"]
-    has_uncommitted = record["git_status"]["has_uncommitted_changes"]
-    return Codespace(last_used_days_ago, owner, name, has_unpushed, has_uncommitted)
+    return Codespace(
+        last_used_days_ago=(now - last_used_at).days,
+        owner=record["owner"]["login"],
+        name=record["name"],
+        has_uncommitted=record["git_status"]["has_uncommitted_changes"],
+        has_unpushed=record["git_status"]["has_unpushed_changes"],
+    )
 
 
 def is_at_risk(codespace, threshold_in_days):
