@@ -99,4 +99,6 @@ def main():
 
 
 if __name__ == "__main__":
-    print(main())
+    from pprint import pprint
+
+    pprint(json.loads(main()))
