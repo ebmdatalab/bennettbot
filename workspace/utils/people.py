@@ -33,22 +33,23 @@ class People(Enum):
     TOM_W = Person("madwort", "U019R5FJ7G8")
 
 
-TEAM_REX = {
+PEOPLE_BY_GITHUB_USERNAME = {
+    person.value.github_username: person.value for person in People
+}
+
+TEAM_REX = [
     People.JON,
     People.KATIE,
     People.LUCY,
     People.STEVE,
     People.MIKE,
     People.THOMAS,
-}
+]
 
 
-def get_slack_username(github_username: str) -> str:
-    person = (
-        [p.value for p in People if p.value.github_username == github_username]
-        or [Person(github_username=None, slack_username=github_username)]
-    )[0]
-    return get_formatted_slack_username(person)
+def get_person_from_github_username(github_username) -> Person:
+    default = Person(github_username=github_username, slack_username=github_username)
+    return PEOPLE_BY_GITHUB_USERNAME.get(github_username, default)
 
 
 def get_formatted_slack_username(person: Person) -> str:
