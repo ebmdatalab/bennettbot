@@ -82,10 +82,11 @@ def main():
     if at_risk_codespaces:
         items = [
             (
-                f"`{cs.owner}` has a Codespace that they last used {cs.last_used_days_ago} days ago "
-                f"({cs.name}).\n"
-                f"Unpushed changes: {'Yes' if cs.has_unpushed else 'No'} | "
-                f"Uncommitted changes: {'Yes' if cs.has_uncommitted else 'No'}\n\n"
+                f"* `{cs.owner}` | "
+                f"last used {cs.last_used_days_ago} days ago | "
+                f"**id**: `{cs.name}` | "
+                f"**Uncommitted**: {'Yes' if cs.has_uncommitted else 'No'} | "
+                f"**Unpushed**: {'Yes' if cs.has_unpushed else 'No'}\n"
             )
             for cs in at_risk_codespaces
         ]
