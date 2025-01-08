@@ -38,8 +38,10 @@ Codespace = collections.namedtuple(
     [
         "owner",
         "name",
+        "repo",
         "retention_expires_at",
         "remaining_retention_period_days",
+        "retention_period_days",
         "has_uncommitted",
         "has_unpushed",
     ],
@@ -82,11 +84,20 @@ def get_codespace(record):
         retention_expires_at = None
         remaining_retention_period_days = None
 
+    if record["retention_period_minutes"]:
+        minutes_per_day = 60 * 24  # 60m per hour, 24 hours per day.
+        retention_period_days = record["retention_period_minutes"] // minutes_per_day
+    else:
+        # The user has manually chosen to keep the codespace indefinitely.
+        retention_period_days = 0
+
     return Codespace(
         owner=record["owner"]["login"],
         name=record["name"],
+        repo=record["repository"]["name"],
         retention_expires_at=retention_expires_at,
         remaining_retention_period_days=remaining_retention_period_days,
+        retention_period_days=retention_period_days,
         has_uncommitted=record["git_status"]["has_uncommitted_changes"],
         has_unpushed=record["git_status"]["has_unpushed_changes"],
     )
@@ -120,18 +131,20 @@ def main():
                 f"* `{cs.owner}` | "
                 f"on {cs.retention_expires_at:%a, %b %d at %H:%M} "
                 f"({cs.remaining_retention_period_days} days) | "
+                f"**repo**: `{cs.repo}` | "
                 f"**id**: `{cs.name}` | "
+                f"**Retention**: {cs.retention_period_days} days | "
                 f"**Uncommitted**: {'Yes' if cs.has_uncommitted else 'No'} | "
                 f"**Unpushed**: {'Yes' if cs.has_unpushed else 'No'}\n"
             )
             for cs in at_risk_codespaces
         ]
-        body = f"The following `{org}` Codespaces are at risk of deletion.\n\n"
+        body = f"`{org}` Codespaces at risk of deletion (expire within {threshold_in_days} days):\n\n"
         body += "".join(items)
     else:
-        body = f"No `{org}` Codespaces are at risk of deletion :tada:"
+        body = f"No `{org}` Codespaces are at risk of deletion (expire within {threshold_in_days} days) :tada:"
 
-    header = "Codespaces Report"
+    header = "Codespaces at risk report"
     return json.dumps(blocks.get_basic_header_and_text_blocks(header, body))
 
 
