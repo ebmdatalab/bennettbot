@@ -5,8 +5,9 @@ import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import httpretty
 import pytest
+from mocket import Mocket, Mocketizer
+from mocket.mockhttp import Entry
 
 from bennettbot import scheduler, settings
 from bennettbot.dispatcher import JobDispatcher, MessageChecker, run_once
@@ -16,7 +17,7 @@ from .assertions import assert_call_counts, assert_slack_client_sends_messages
 from .job_configs import config
 from .mock_http_request import (
     get_mock_received_requests,
-    httpretty_register,
+    mocket_register,
     register_dispatcher_uris,
 )
 from .time_helpers import T0, TS, T
@@ -33,11 +34,9 @@ def remove_logs_dir():
 
 @pytest.fixture(autouse=True)
 def mock_http():
-    httpretty.enable(allow_net_connect=False)
     register_dispatcher_uris()
-    yield
-    httpretty.disable()
-    httpretty.reset()
+    with Mocketizer(strict_mode=True):
+        yield
 
 
 def test_run_once():
@@ -168,7 +167,11 @@ def test_job_success_with_slack_exception():
     # Test that the job still succeeds even if notifying slack errors
     # We mock the MAX_SLACK_NOTIFY_RETRIES so that this test doesn't do the
     # (time-consuming) retrying in slack.py
-    httpretty_register(
+
+    # reset Mocket so we can override the chat.postMessage set in the
+    # autoused mock_http fixture
+    Mocket.reset()
+    mocket_register(
         {"chat.postMessage": [{"ok": False, "error": "error"}]},
     )
 
@@ -476,7 +479,7 @@ def test_job_with_code_format():
 
 
 def test_job_with_long_code_output_is_uploaded_as_file():
-    httpretty_register(
+    mocket_register(
         {
             "files.getUploadURLExternal": [
                 {
@@ -490,8 +493,8 @@ def test_job_with_long_code_output_is_uploaded_as_file():
             ],
         }
     )
-    httpretty.register_uri(
-        httpretty.POST,
+    Entry.single_register(
+        Entry.POST,
         "https://files.example.com/upload/v1/ABC123",
     )
 
@@ -528,7 +531,7 @@ def build_log_dir(job_type_with_namespace):
 
 def test_message_checker_run(freezer):
     freezer.move_to("2024-10-08 23:30")
-    httpretty_register(
+    mocket_register(
         {
             "search.messages": [
                 {"ok": True, "messages": {"matches": []}},
@@ -544,7 +547,7 @@ def test_message_checker_run(freezer):
 
     # search.messages is called twice for each run of the checker
     # no matches, so no reactions or messages reposted.
-    assert len(httpretty.latest_requests()) == 4
+    assert len(Mocket.request_list()) == 4
     requests_by_path = get_mock_received_requests()
     last_search_query = requests_by_path["/api/search.messages"][-1]["query"][0]
     assert "after:2024-10-06" in last_search_query
@@ -558,7 +561,7 @@ def test_message_checker_run(freezer):
     ),
 )
 def test_message_checker_matched_messages(keyword, support_channel, reaction):
-    httpretty_register(
+    mocket_register(
         {
             "search.messages": [
                 {
@@ -599,7 +602,7 @@ def test_message_checker_matched_messages(keyword, support_channel, reaction):
     # search.messages is called once
     # other 3 endpoints called once each for 2 matched messages requiring
     # reaction and reposting.
-    assert len(httpretty.latest_requests()) == 7
+    assert len(Mocket.request_list()) == 7
 
     requests_by_path = get_mock_received_requests()
     assert requests_by_path["/api/search.messages"] == [

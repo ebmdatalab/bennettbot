@@ -3,8 +3,9 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-import httpretty
 import pytest
+from mocket import Mocket, Mocketizer, mocketize
+from mocket.mockhttp import Entry
 
 from workspace.workflows import jobs
 
@@ -36,26 +37,25 @@ def cache_path(tmp_path):
 
 @pytest.fixture
 def mock_airlock_reporter():
-    httpretty.enable(allow_net_connect=False)
     # Workflow IDs and names
-    httpretty.register_uri(
-        httpretty.GET,
-        uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
-        match_querystring=True,
+    Entry.single_register(
+        Entry.GET,
+        "https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
         body=Path("tests/workspace/workflows.json").read_text(),
+        match_querystring=True,
     )
+
     # Workflow runs
-    httpretty.register_uri(
-        httpretty.GET,
+    Entry.single_register(
+        Entry.GET,
         "https://api.github.com/repos/opensafely-core/airlock/actions/runs?per_page=100&format=json",
         body=Path("tests/workspace/runs.json").read_text(),
         match_querystring=False,  # Test the querystring separately
     )
-    reporter = jobs.RepoWorkflowReporter("opensafely-core/airlock")
-    reporter.cache = {}  # Drop the cache and test _load_cache_for_repo separately
-    yield reporter
-    httpretty.disable()
-    httpretty.reset()
+    with Mocketizer(strict_mode=True):
+        reporter = jobs.RepoWorkflowReporter("opensafely-core/airlock")
+        reporter.cache = {}  # Drop the cache and test _load_cache_for_repo separately
+        yield reporter
 
 
 class MockRepoWorkflowReporter(jobs.RepoWorkflowReporter):
@@ -249,12 +249,12 @@ def test_catch_unhandled_error():
     ]
 
 
-@httpretty.activate(allow_net_connect=False)
+@mocketize(strict_mode=True)
 def test_get_workflows():
     # get_workflows is called in __init__, so create the instance here
-    httpretty.register_uri(
-        httpretty.GET,
-        uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
+    Entry.single_register(
+        Entry.GET,
+        "https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
         match_querystring=True,
         body=Path("tests/workspace/workflows.json").read_text(),
     )
@@ -288,7 +288,7 @@ def test_get_runs_since_last_retrieval(mock_airlock_reporter, cache_path):
     assert mock_airlock_reporter.cache == CACHE["opensafely-core/airlock"]
 
     mock_airlock_reporter.get_runs(since_last_retrieval=True)
-    assert httpretty.last_request().querystring == {
+    assert Mocket.last_request().querystring == {
         "branch": ["main"],
         "per_page": ["100"],
         "format": ["json"],
@@ -300,7 +300,7 @@ def test_all_workflows_found(mock_airlock_reporter, cache_path):
     with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
         conclusions = mock_airlock_reporter.get_latest_conclusions()
     assert conclusions == {key: "success" for key in WORKFLOWS_MAIN.keys()}
-    assert "created" not in httpretty.last_request().querystring
+    assert "created" not in Mocket.last_request().querystring
 
 
 def test_some_workflows_not_found(mock_airlock_reporter, cache_path):
@@ -342,7 +342,7 @@ def test_get_runs_beyond_last_retrieval_if_not_all_successful(
         1234: conclusion,
     }
 
-    querystring = httpretty.last_request().querystring
+    querystring = Mocket.last_request().querystring
     assert ("created" in querystring) == created_in_querystring
 
 
@@ -396,7 +396,7 @@ def test_get_summary_block(conclusion, emoji):
     }
 
 
-@httpretty.activate(allow_net_connect=False)
+@mocketize(strict_mode=True)
 @pytest.mark.parametrize(
     "conclusion, reported, emoji",
     [
@@ -410,9 +410,9 @@ def test_get_summary_block(conclusion, emoji):
 def test_main_show_repo(mock_conclusions, conclusion, reported, emoji):
     # Call main for a single repo (opensafely-core/airlock)
     # No need to mock CACHE_PATH since get_latest_conclusions is mocked
-    httpretty.register_uri(
-        httpretty.GET,
-        uri="https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
+    Entry.single_register(
+        Entry.GET,
+        "https://api.github.com/repos/opensafely-core/airlock/actions/workflows?format=json",
         match_querystring=True,
         body=Path("tests/workspace/workflows.json").read_text(),
     )

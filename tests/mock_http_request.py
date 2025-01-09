@@ -1,6 +1,8 @@
 import json
+from urllib.parse import parse_qs
 
-import httpretty
+from mocket import Mocket
+from mocket.mockhttp import Entry
 
 from .time_helpers import TS
 
@@ -43,7 +45,7 @@ USERS = {
 }
 
 
-def httpretty_register(responses_dict):
+def mocket_register(responses_dict):
     """
     A helper to register slack URIs
     Called with a dict of endpoints and mock response json:
@@ -62,14 +64,11 @@ def httpretty_register(responses_dict):
     a different response each time.
     """
     for endpoint, responses in responses_dict.items():
-        httpretty.register_uri(
-            httpretty.POST,
+        Entry.register(
+            Entry.POST,
             f"https://slack.com/api/{endpoint}",
-            responses=[
-                httpretty.Response(body=json.dumps(response)) for response in responses
-            ],
+            *[json.dumps(response) for response in responses],
         )
-    return httpretty
 
 
 def register_bot_uris():
@@ -81,7 +80,7 @@ def register_bot_uris():
     Tests that need this method will need to register it themselves in order
     to ensure it returns the expected user(s).
     """
-    httpretty_register(
+    mocket_register(
         {
             # authenticate
             "auth.test": [{"ok": True}],
@@ -140,7 +139,7 @@ def register_dispatcher_uris():
     the output or to report success. If a job fails, it will also call
     getPermalink to get the message's URL in order to report to tech-support.
     """
-    httpretty_register(
+    mocket_register(
         {
             "chat.postMessage": [{"ok": True, "ts": TS, "channel": "channel"}],
             "chat.getPermalink": [
@@ -154,7 +153,7 @@ def register_dispatcher_uris():
 def get_mock_received_requests():
     """
     Return a dict of {apipath: body} for each request received by
-    httpretty.
+    mocket.
     Note that the slack_sdk uses params for its api calls for most methods.
     It uses json for calls that use (or can use) blocks. For our purposes, this
     if just the chat.postMessage calls.
@@ -167,9 +166,12 @@ def get_mock_received_requests():
     https://github.com/slackapi/python-slack-sdk/blob/c47ea206491ca3e0be48749169041cf84925acd0/slack_sdk/web/client.py#L2709
     """
     requests_by_path = {}
-    for request in httpretty.latest_requests():
-        body = request.parsed_body
-        if request.path == "/api/chat.postMessage":
-            body = json.loads(body)
+    for request in Mocket.request_list():
+        if request.headers["content-length"] == "0":
+            body = ""
+        elif request.path == "/api/chat.postMessage":
+            body = json.loads(request.body)
+        else:
+            body = parse_qs(request.body)
         requests_by_path.setdefault(request.path, []).append(body)
     return requests_by_path
