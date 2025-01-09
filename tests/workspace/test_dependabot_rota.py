@@ -29,6 +29,13 @@ def test_rota_report_on_monday(freezer, monkeypatch):
             },
             "type": "section",
         },
+        {
+            "text": {
+                "text": "\nReview <https://github.com/opensafely-core/job-server/pulls|job-server>, <https://github.com/opensafely-core/opencodelists/pulls|opencodelists>, <https://github.com/ebmdatalab/metrics/pulls|metrics>, <https://github.com/opensafely-core/reports/pulls|reports>, <https://github.com/opensafely-core/actions-registry/pulls|actions-registry> and <https://github.com/opensafely-core/research-template-docker/pulls|research-template-docker> repos and merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\nReview Thomas' PRs for NPM updates.\n",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
     ]
 
 
@@ -50,6 +57,13 @@ def test_rota_report_on_tuesday(freezer, monkeypatch):
         {
             "text": {
                 "text": "To review dependabot PRs next week (01 Apr-05 Apr): Jon",
+                "type": "mrkdwn",
+            },
+            "type": "section",
+        },
+        {
+            "text": {
+                "text": "\nReview <https://github.com/opensafely-core/job-server/pulls|job-server>, <https://github.com/opensafely-core/opencodelists/pulls|opencodelists>, <https://github.com/ebmdatalab/metrics/pulls|metrics>, <https://github.com/opensafely-core/reports/pulls|reports>, <https://github.com/opensafely-core/actions-registry/pulls|actions-registry> and <https://github.com/opensafely-core/research-template-docker/pulls|research-template-docker> repos and merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\nReview Thomas' PRs for NPM updates.\n",
                 "type": "mrkdwn",
             },
             "type": "section",
