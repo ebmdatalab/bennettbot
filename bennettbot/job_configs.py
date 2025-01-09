@@ -357,7 +357,7 @@ raw_config = {
             {
                 "command": "show [target]",
                 # There is a line break in this help message because it will take two lines anyway and breaking here gives better readability.
-                "help": "Summarise GitHub Actions workflow runs for a given `target` organisation or repo, provided in the form of `org` or `org/repo`. \n(Note: `org` is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)`, `ebm (ebmdatalab)`.)",
+                "help": "Summarise GitHub Actions workflow runs for a given `target` organisation or repo, provided in the form of `org` or `org/repo`. \n(Note: `org` is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)`, `bo (bennettoxford)`, `ebm (ebmdatalab)`.)",
                 "action": "schedule_job",
                 "job_type": "show",
             },
