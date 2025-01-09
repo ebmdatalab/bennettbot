@@ -131,6 +131,7 @@ def main():
     # Arbitrary threshold. Gives us a bit more than a week to respond.
     threshold_in_days = 10
 
+    # Fetch info on org CodeSpaces at risk from GitHub API.
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
     codespaces = (get_codespace(rec) for rec in records)
     at_risk_codespaces = sorted(
@@ -138,6 +139,9 @@ def main():
         key=lambda cs: cs.remaining_retention_period_days,
     )
 
+    # Construct Slack rich text blocks for formatted output.
+    # Blocks reference: https://api.slack.com/reference/block-kit/blocks
+    # API reference: https://tools.slack.dev/python-slack-sdk/api-docs/slack_sdk/models/blocks/index.html
     if at_risk_codespaces:
         intro_block = RichTextSectionElement(
             elements=[
@@ -195,6 +199,7 @@ def main():
         )
         list_items = []
 
+    # JSON stringified representation of the desired output blocks.
     return json.dumps(
         [
             HeaderBlock(text="Codespaces at risk report").to_dict(),
@@ -205,7 +210,7 @@ def main():
                 ]
             ).to_dict(),
         ],
-        indent=2,
+        indent=2,  # For human-readability. Logs are very small.
     )
 
 
