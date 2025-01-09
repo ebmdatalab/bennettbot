@@ -15,8 +15,18 @@ import json
 import os
 
 import requests
+from slack_sdk.models.blocks import (
+    HeaderBlock,
+    RichTextBlock,
+    RichTextElementParts,
+    RichTextListElement,
+    RichTextSectionElement,
+)
 
-from workspace.utils import blocks
+
+CODE = RichTextElementParts.TextStyle(code=True)
+BOLD = RichTextElementParts.TextStyle(bold=True)
+Text = RichTextElementParts.Text
 
 
 URL_PATTERN = "https://api.github.com/orgs/{org}/codespaces"
@@ -129,26 +139,74 @@ def main():
     )
 
     if at_risk_codespaces:
-        items = [
-            (
-                f"* `{cs.owner}` | "
-                f"on {cs.retention_expires_at:%a, %b %d at %H:%M} "
-                f"({'<1 day' if not cs.remaining_retention_period_days else str(cs.remaining_retention_period_days) + ' days'}) | "
-                f"**repo**: `{cs.repo}` | "
-                f"**id**: `{cs.name}` | "
-                f"**Retention**: {cs.retention_period_days} days | "
-                f"**Uncommitted**: {'Yes' if cs.has_uncommitted else 'No'} | "
-                f"**Unpushed**: {'Yes' if cs.has_unpushed else 'No'}\n"
+        intro_block = RichTextSectionElement(
+            elements=[
+                Text(text=org, style=CODE),
+                Text(
+                    text=(
+                        " Codespaces with unsaved work at risk (expiring within "
+                        f"{threshold_in_days} days):"
+                    )
+                ),
+            ]
+        )
+
+        list_items = [
+            RichTextSectionElement(
+                elements=[
+                    Text(text=cs.owner, style=CODE),
+                    Text(text=f" on {cs.retention_expires_at:%A, %b %d at %H:%M}"),
+                    Text(text=f" ({remaining_days_text}) "),
+                    Text(text="repo", style=BOLD),
+                    Text(text=": "),
+                    Text(text=cs.repo, style=CODE),
+                    Text(text=" ID", style=BOLD),
+                    Text(text=": "),
+                    Text(text=cs.name, style=CODE),
+                    Text(text=" Retention", style=BOLD),
+                    Text(text=f": {cs.retention_period_days} days "),
+                    Text(text="Uncommitted", style=BOLD),
+                    Text(text=f": {'Yes' if cs.has_uncommitted else 'No'} "),
+                    Text(text="Unpushed", style=BOLD),
+                    Text(text=f": {'Yes' if cs.has_unpushed else 'No'}"),
+                ]
             )
             for cs in at_risk_codespaces
+            if (
+                remaining_days_text := (
+                    "<1 day"
+                    if not cs.remaining_retention_period_days
+                    else str(cs.remaining_retention_period_days) + " days"
+                )
+            )
         ]
-        body = f"`{org}` Codespaces with unsaved work at risk (expiring within {threshold_in_days} days):\n\n"
-        body += "".join(items)
     else:
-        body = f"No `{org}` Codespaces with unsaved work at risk (expiring within {threshold_in_days} days) :tada:"
+        intro_block = RichTextSectionElement(
+            elements=[
+                Text(text="No "),
+                Text(text=org, style=CODE),
+                Text(
+                    text=(
+                        " Codespaces with unsaved work at risk (expiring within "
+                        f"{threshold_in_days} days) :tada:"
+                    )
+                ),
+            ]
+        )
+        list_items = []
 
-    header = "Codespaces at risk report"
-    return json.dumps(blocks.get_basic_header_and_text_blocks(header, body))
+    return json.dumps(
+        [
+            HeaderBlock(text="Codespaces at risk report").to_dict(),
+            RichTextBlock(
+                elements=[
+                    intro_block,
+                    RichTextListElement(elements=list_items, style="bullet"),
+                ]
+            ).to_dict(),
+        ],
+        indent=2,
+    )
 
 
 if __name__ == "__main__":
