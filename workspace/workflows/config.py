@@ -2,6 +2,7 @@ SHORTHANDS = {
     "os": "opensafely",
     "osc": "opensafely-core",
     "ebm": "ebmdatalab",
+    "bo": "bennettoxford",
 }
 
 TEAMS = [
@@ -52,7 +53,7 @@ REPOS = {
         "team": "Team REX",
     },
     "kissh": {
-        "org": "ebmdatalab",
+        "org": "bennettoxford",
         "team": "Team RAP",
     },
     "metrics": {
