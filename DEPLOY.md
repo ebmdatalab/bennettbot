@@ -213,11 +213,11 @@ To deploy manually:
 just docker/build prod
 
 # tag image and push
-docker tag bennettbot ghcr.io/ebmdatalab/bennettbot:latest
-docker push ghcr.io/ebmdatalab/bennettbot:latest
+docker tag bennettbot ghcr.io/bennettoxford/bennettbot:latest
+docker push ghcr.io/bennettoxford/bennettbot:latest
 
 # get the SHA for the latest image
-SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/ebmdatalab/bennettbot:latest)
+SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/bennettoxford/bennettbot:latest)
 ```
 
 On dokku3:

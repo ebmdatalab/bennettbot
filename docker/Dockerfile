@@ -104,7 +104,7 @@ EXPOSE 9999
 # some basic metadata.
 LABEL org.opencontainers.image.title="bennettbot" \
       org.opencontainers.image.description="bennettbot" \
-      org.opencontainers.image.source="https://github.com/ebmdatalab/bennettbot"
+      org.opencontainers.image.source="https://github.com/bennettoxford/bennettbot"
 
 # copy application code
 COPY . /app

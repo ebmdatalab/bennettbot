@@ -128,7 +128,7 @@ SKIPPED_WORKFLOWS_ON_MAIN = {
     "opensafely-core/sqlrunner": [
         37329087,  # [On PR] Auto merge Dependabot PRs
     ],
-    "ebmdatalab/bennettbot": [
+    "bennettoxford/bennettbot": [
         32719413,  # [On PR] Auto merge Dependabot PRs
     ],
 }
