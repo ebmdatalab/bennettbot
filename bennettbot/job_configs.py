@@ -64,7 +64,7 @@ raw_config = {
         # The file it's fetching is just a standard python file, not a fabfile,
         # but the job will fetch and write it as 'fabfile.py' irrespective of its
         # original name - so we need to run it with `python fabfile.py`
-        "fabfile": "https://raw.githubusercontent.com/ebmdatalab/bennettbot/main/workspace/test/jobs.py",
+        "fabfile": "https://raw.githubusercontent.com/bennettoxford/bennettbot/main/workspace/test/jobs.py",
         "jobs": {
             "hello_world": {
                 "run_args_template": "python fabfile.py",

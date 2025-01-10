@@ -3,7 +3,7 @@ name: CI
 
 env:
   IMAGE_NAME: bennettbot
-  PUBLIC_IMAGE_NAME: ghcr.io/ebmdatalab/bennettbot
+  PUBLIC_IMAGE_NAME: ghcr.io/bennettoxford/bennettbot
   REGISTRY: ghcr.io
   SSH_AUTH_SOCK: /tmp/agent.sock
 
