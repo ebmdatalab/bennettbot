@@ -3,8 +3,8 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
-import httpretty
 import pytest
+from mocket import Mocketizer, mocketize
 from slack_bolt import App
 from slack_bolt.request import BoltRequest
 from slack_sdk.errors import SlackApiError
@@ -21,7 +21,12 @@ from .assertions import (
     assert_suppression_matches,
 )
 from .job_configs import config
-from .mock_http_request import USERS, get_mock_received_requests, register_bot_uris
+from .mock_http_request import (
+    USERS,
+    get_mock_received_requests,
+    mocket_register,
+    register_bot_uris,
+)
 from .time_helpers import T0, TS, T
 
 
@@ -40,12 +45,10 @@ def get_mock_app():
 
 @pytest.fixture
 def mock_app():
-    httpretty.enable(allow_net_connect=False)
     register_bot_uris()
-    mock_app = get_mock_app()
-    yield mock_app
-    httpretty.disable()
-    httpretty.reset()
+    with Mocketizer(strict_mode=True):
+        mock_app = get_mock_app()
+        yield mock_app
 
 
 def test_joined_channels(mock_app):
@@ -56,7 +59,7 @@ def test_joined_channels(mock_app):
     )
 
 
-@httpretty.activate(allow_net_connect=False)
+@mocketize(strict_mode=True)
 @pytest.mark.parametrize(
     "setting,value",
     [
@@ -81,7 +84,7 @@ def test_register_listeners_support_channel_settings(setting, value):
         bot.register_listeners(app, config, channels, bot_user_id, internal_user_ids)
 
 
-@httpretty.activate(allow_net_connect=False)
+@mocketize(strict_mode=True)
 @pytest.mark.parametrize(
     "setting,value",
     [
@@ -840,13 +843,7 @@ def test_remove_non_existent_job(mock_app):
 def test_restricted_jobs_only_scheduled_for_internal_users(
     mock_app, user, command, reaction_count, scheduled_job_count
 ):
-    httpretty.register_uri(
-        httpretty.POST,
-        "https://slack.com/api/users.info",
-        responses=[
-            httpretty.Response(body=json.dumps({"ok": True, "user": USERS[user]}))
-        ],
-    )
+    mocket_register({"users.info": [{"ok": True, "user": USERS[user]}]})
 
     assert not scheduler.get_jobs()
     handle_message(

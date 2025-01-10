@@ -11,5 +11,4 @@ pytest
 pytest-cov
 pytest-env
 pytest-freezer
-# pinning to 1.0.5 pending this issue https://github.com/gabrielfalcao/HTTPretty/issues/425
-httpretty==1.0.5
+mocket
