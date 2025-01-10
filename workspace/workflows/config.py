@@ -29,7 +29,7 @@ REPOS = {
         "team": "Team REX",
     },
     "bennettbot": {
-        "org": "ebmdatalab",
+        "org": "bennettoxford",
         "team": "Team RAP",
     },
     "cohort-extractor": {
