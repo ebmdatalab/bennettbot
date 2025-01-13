@@ -34,7 +34,7 @@ def get_emoji(conclusion) -> str:
 
 def get_locations_for_team(team: str) -> list[str]:
     return [
-        f'{v["org"]}/{repo}' for repo, v in config.REPOS.items() if v["team"] == team
+        f"{v['org']}/{repo}" for repo, v in config.REPOS.items() if v["team"] == team
     ]
 
 

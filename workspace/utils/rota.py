@@ -44,7 +44,7 @@ class RotaReporter(abc.ABC):
     @staticmethod
     def format_week(monday: date):
         friday = monday + timedelta(days=4)  # Work week
-        return f"{monday.strftime("%d %b")}-{friday.strftime("%d %b")}"
+        return f"{monday.strftime('%d %b')}-{friday.strftime('%d %b')}"
 
 
 class SpreadsheetRotaReporter(RotaReporter):
