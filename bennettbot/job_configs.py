@@ -498,15 +498,15 @@ raw_config = {
         "description": "Codespaces monitoring tools",
         "jobs": {
             "at_risk": {
-                "run_args_template": "python codespaces.py",
+                "run_args_template": "python codespaces.py {threshold_in_days}",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
         },
         "slack": [
             {
-                "command": "at risk",
-                "help": "Shows the Codespaces that are at risk of being deleted",
+                "command": "at risk [threshold_in_days]",
+                "help": "Report Codespaces at risk of being deleted",
                 "action": "schedule_job",
                 "job_type": "at_risk",
                 "delay_seconds": 0,
