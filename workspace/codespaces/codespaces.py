@@ -28,6 +28,7 @@ from slack_sdk.models.blocks import (
 CODE = RichTextElementParts.TextStyle(code=True)
 BOLD = RichTextElementParts.TextStyle(bold=True)
 Text = RichTextElementParts.Text
+Emoji = RichTextElementParts.Emoji
 
 
 URL_PATTERN = "https://api.github.com/orgs/{org}/codespaces"
@@ -191,9 +192,10 @@ def main(threshold_in_days):
                 Text(
                     text=(
                         " Codespaces with unsaved work at risk (expiring within "
-                        f"{threshold_in_days} days) :tada:"
+                        f"{threshold_in_days} days) "
                     )
                 ),
+                Emoji(name="tada"),
             ]
         )
         list_items = []
