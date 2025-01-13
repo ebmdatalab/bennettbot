@@ -158,13 +158,19 @@ def main(threshold_in_days):
         list_items = [
             RichTextSectionElement(
                 elements=[
+                    Text(text="User", style=BOLD),
+                    Text(text=": "),
                     Text(text=cs.owner, style=CODE),
-                    Text(text=f" on {cs.retention_expires_at:%A, %b %d at %H:%M}"),
-                    Text(text=f" ({remaining_days_text}) "),
-                    Text(text="repo", style=BOLD),
+                    Text(text=" Repo", style=BOLD),
                     Text(text=": "),
                     Text(text=cs.repo, style=CODE),
-                    Text(text=" ID", style=BOLD),
+                    Text(text=" Deletion", style=BOLD),
+                    Text(text=": "),
+                    Text(
+                        text=f"in {remaining_days_text} "
+                        f"({cs.retention_expires_at:%A, %b %d at %H:%M}) "
+                    ),
+                    Text(text="ID", style=BOLD),
                     Text(text=": "),
                     Text(text=cs.name, style=CODE),
                     Text(text=" Retention", style=BOLD),
