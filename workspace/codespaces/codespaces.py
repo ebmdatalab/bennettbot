@@ -9,6 +9,7 @@ As of 2025-01, that's located at:
 https://github.com/ebmdatalab/team-manual/blob/main/docs/tech-group/playbooks/codespaces.md
 """
 
+import argparse
 import collections
 import datetime
 import json
@@ -126,10 +127,8 @@ def is_at_risk(codespace, threshold_in_days):
         return False
 
 
-def main():
+def main(threshold_in_days):
     org = "opensafely"
-    # Arbitrary threshold. Gives us a bit more than a week to respond.
-    threshold_in_days = 10
 
     # Fetch info on org CodeSpaces at risk from GitHub API.
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
@@ -215,4 +214,14 @@ def main():
 
 
 if __name__ == "__main__":
-    print(main())
+    parser = argparse.ArgumentParser(
+        description="Report Codespaces at risk of being deleted"
+    )
+    parser.add_argument(
+        "threshold_in_days",
+        type=int,
+        help="Threshold in days for Codespaces to be considered 'at risk'",
+    )
+    args = parser.parse_args()
+
+    print(main(args.threshold_in_days))
