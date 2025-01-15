@@ -47,10 +47,10 @@ BOT_CHECK_FILE = env.path(
 )
 
 # Should match "Payload URL" from
-# https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
+# https://github.com/bennettoxford/openprescribing/settings/hooks/85994427
 WEBHOOK_ORIGIN = env.str("WEBHOOK_ORIGIN")
 
-# "Secret" from https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
+# "Secret" from https://github.com/bennettoxford/openprescribing/settings/hooks/85994427
 GITHUB_WEBHOOK_SECRET = env.str("GITHUB_WEBHOOK_SECRET").encode("ascii")
 
 # Path to credentials of gdrive@ebmdatalab.iam.gserviceaccount.com GCP service account

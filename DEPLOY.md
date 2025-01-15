@@ -147,7 +147,7 @@ The following slack environment variables need to be set:
 - `SLACK_APP_USERNAME`: The app's default name (and the name users will refer to the Bot as in Slack); found under Features > App Home
 
 The following webhook environment variables need to be set. These relate to callbacks from
-OpenPrescribing, and are configured at https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427.
+OpenPrescribing, and are configured at https://github.com/bennettoxford/openprescribing/settings/hooks/85994427.
 - `GITHUB_WEBHOOK_SECRET`
 - `WEBHOOK_ORIGIN`
 

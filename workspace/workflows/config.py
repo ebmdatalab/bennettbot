@@ -61,7 +61,7 @@ REPOS = {
         "team": "Team REX",
     },
     "openprescribing": {
-        "org": "ebmdatalab",
+        "org": "bennettoxford",
         "team": "Team RAP",
     },
     "opensafely-cli": {
