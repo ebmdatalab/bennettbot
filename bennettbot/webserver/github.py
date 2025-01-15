@@ -15,7 +15,7 @@ def handle_github_webhook(project):
 
     The webhook is configured at:
 
-        https://github.com/ebmdatalab/openprescribing/settings/hooks/85994427
+        https://github.com/bennettoxford/openprescribing/settings/hooks/85994427
     """
 
     verify_signature(request)
