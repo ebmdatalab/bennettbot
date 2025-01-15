@@ -45,10 +45,7 @@ def get_locations_for_org(org: str) -> list[str]:
 def report_invalid_target(target) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text=f"{target} was not recognised",
-        texts=[
-            "Argument must be a known organisation or repo, or a repo given as [org/repo].",
-            f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
-        ],
+        texts=f"Run `@{settings.SLACK_APP_USERNAME} workflows usage` to see the valid values for `target`.",
     )
     return json.dumps(blocks)
 
@@ -398,6 +395,21 @@ def get_text_blocks_for_key(args) -> str:
     return json.dumps(blocks)
 
 
+def get_usage_text(args) -> str:
+    return "\n".join(
+        [
+            "Usage for `show [target]`. The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful.",
+            "`show [all]`: Summarise all repos, sectioned by team.",
+            "`show [org]`: Summarise all repos for a known organisation, which is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)` or `ebm (ebmdatalab)`.",
+            "`show [repo]`: Report status for all workflows in a known repo (e.g. `show airlock`) or a repo in a known org (e.g. `show os/some-study-repo`).",
+            "To pass multiple targets, separate them by spaces (e.g. `show os osc` or `show airlock ehrql`).",
+            "",
+            "List of known repos:",
+            ", ".join(config.REPOS.keys()),
+        ]
+    )
+
+
 def get_command_line_parser():
     class SplitString(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
@@ -417,6 +429,10 @@ def get_command_line_parser():
     # Display key
     key_parser = subparsers.add_parser("key")
     key_parser.set_defaults(func=get_text_blocks_for_key)
+
+    # Display usage
+    usage_text_parser = subparsers.add_parser("usage")
+    usage_text_parser.set_defaults(func=get_usage_text)
     return parser
 
 

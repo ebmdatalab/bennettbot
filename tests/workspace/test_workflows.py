@@ -183,9 +183,19 @@ def test_print_key():
     assert json.loads(jobs.get_text_blocks_for_key(None)) == blocks
 
 
+def test_print_usage():
+    usage_text = jobs.get_usage_text(None)
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(usage_text)
+    assert usage_text.startswith(
+        "Usage for `show [target]`. The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful."
+    )
+
+
 @pytest.mark.parametrize("command", ["show", "show --target all"])
 def test_all_as_target(command):
     args = jobs.get_command_line_parser().parse_args(command.split())
+    args = jobs.get_command_line_parser().parse_args("show --target all".split())
 
     with patch("workspace.workflows.jobs.summarise_all") as mock_summarise_all:
         jobs.main(args)
@@ -834,14 +844,7 @@ def test_main_show_invalid_target():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Argument must be a known organisation or repo, or a repo given as [org/repo].",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Run `@test_username workflows help` to see the available organisations.",
+                "text": "Run `@test_username workflows usage` to see the valid values for `target`.",
             },
         },
     ]

@@ -303,15 +303,14 @@ raw_config = {
         "restricted": True,
         "description": "Report GitHub Actions workflow runs",
         "jobs": {
-            "show_group": {
-                "run_args_template": "python jobs.py show --group {group}",
-                "report_stdout": True,
-                "report_format": "blocks",
-            },
             "display_emoji_key": {
                 "run_args_template": "python jobs.py key",
                 "report_stdout": True,
                 "report_format": "blocks",
+            },
+            "display_usage": {
+                "run_args_template": "python jobs.py usage",
+                "report_stdout": True,
             },
             "show": {
                 "run_args_template": "python jobs.py show --target {target}",
@@ -319,23 +318,27 @@ raw_config = {
                 "report_format": "blocks",
             },
             "show_all": {
-                "run_args_template": "python jobs.py show --target all",
+                "run_args_template": "python jobs.py show",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
             "show_failed": {
-                "run_args_template": "python jobs.py show --target all --skip-successful",
+                "run_args_template": "python jobs.py show --target {target} --skip-successful",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "show_failed_all": {
+                "run_args_template": "python jobs.py show --skip-successful",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+            "show_group": {
+                "run_args_template": "python jobs.py show --group {group}",
                 "report_stdout": True,
                 "report_format": "blocks",
             },
         },
         "slack": [
-            {
-                "command": "show-group",
-                "help": "Summarise GitHub Actions workflow runs for a custom defined group of workflows.",
-                "action": "schedule_job",
-                "job_type": "show_group",
-            },
             {
                 "command": "key",
                 "help": "Show the emoji key being used in the workflow summaries.",
@@ -343,25 +346,41 @@ raw_config = {
                 "job_type": "display_emoji_key",
             },
             {
-                "command": "show all",
+                "command": "usage",
+                "help": "Show help message for the `show [target]` and `show-failed [target]` commands.",
+                "action": "schedule_job",
+                "job_type": "display_usage",
+            },
+            {
+                "command": "show",
                 "help": "Summarise GitHub Actions workflow runs for repos in all organisations.",
                 "action": "schedule_job",
                 "job_type": "show_all",
             },
             {
                 "command": "show-failed",
-                "help": "Summarise GitHub Actions workflow runs for repos in all organisations, skipping repos whose runs are all successful.",
+                "help": "Summarise unsuccessful GitHub Actions workflow runs for repos in all organisations.",
+                "action": "schedule_job",
+                "job_type": "show_failed_all",
+            },
+            {
+                "command": "show [target]",
+                "help": "Summarise GitHub Actions workflow runs for `target`. See `workflows usage` for valid `target` values.",
+                "action": "schedule_job",
+                "job_type": "show",
+            },
+            {
+                "command": "show-failed [target]",
+                "help": "Same as `show [target]`, but skips summarising repos whose runs are all successful.",
                 "action": "schedule_job",
                 "job_type": "show_failed",
             },
             {
-                "command": "show [target]",
-                # There is a line break in this help message because it will take two lines anyway and breaking here gives better readability.
-                "help": "Summarise GitHub Actions workflow runs for a given `target` organisation or repo, provided in the form of `org` or `org/repo`. \n(Note: `org` is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)`, `bo (bennettoxford)`, `ebm (ebmdatalab)`.)",
+                "command": "show-group",
+                "help": "Summarise GitHub Actions workflow runs for a custom defined group of workflows.",
                 "action": "schedule_job",
-                "job_type": "show",
+                "job_type": "show_group",
             },
-
         ]
     },
     "techsupport": {
