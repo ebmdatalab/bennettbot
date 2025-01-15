@@ -391,7 +391,7 @@ def test_get_summary_block(conclusion, emoji):
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji*5}",
+            "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {emoji * 5}",
         },
     }
 
@@ -483,14 +483,14 @@ def test_main_show_org():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/failing-repo/actions?query=branch%3Amain|opensafely-core/failing-repo>: {":red_circle:"*5}",
+                "text": f"<https://github.com/opensafely-core/failing-repo/actions?query=branch%3Amain|opensafely-core/failing-repo>: {':red_circle:' * 5}",
             },
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {":large_green_circle:"*5}",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
             },
         },
     ]
@@ -528,7 +528,7 @@ def test_main_show_all():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely/documentation/actions?query=branch%3Amain|opensafely/documentation>: {":large_green_circle:"*5}",
+                "text": f"<https://github.com/opensafely/documentation/actions?query=branch%3Amain|opensafely/documentation>: {':large_green_circle:' * 5}",
             },
         },
         {
@@ -542,7 +542,7 @@ def test_main_show_all():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {":large_green_circle:"*5}",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
             },
         },
     ]
@@ -587,7 +587,7 @@ def test_main_show_all_skip_failures():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {":large_green_circle:"*5}",
+                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
             },
         },
     ]
@@ -663,7 +663,7 @@ def test_main_show_failed_found():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {":red_circle:"*5}",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {':red_circle:' * 5}",
             },
         },
     ]
@@ -715,7 +715,7 @@ def test_main_show_failed_skipped():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {":large_green_circle:"}{":red_circle:"*4}",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {':large_green_circle:'}{':red_circle:' * 4}",
             },
         },
     ]

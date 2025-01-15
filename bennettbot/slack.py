@@ -110,6 +110,6 @@ def get_slack_error_blocks(header_text, message_text, error):
             "Slack encountered the error",
             f"```{truncate_text(str(error), max_len=2994)}```",
             "when trying to post the following message:",
-            f"```{truncate_text(message_text,max_len=2994)}```",
+            f"```{truncate_text(message_text, max_len=2994)}```",
         ],
     )
