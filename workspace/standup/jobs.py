@@ -3,12 +3,13 @@ import json
 from datetime import date, datetime, timedelta
 
 from workspace.utils import blocks
+from workspace.utils.people import People
 
 
 PAIRS = {
-    "monday": ["Mike", "Jon"],
-    "wednesday": ["Mary", "Steve"],
-    "friday": ["Thomas", "Katie"],
+    "monday": [People.MIKE, People.JON],
+    "wednesday": [People.MARY, People.STEVE],
+    "friday": [People.THOMAS, People.KATIE],
 }
 
 
@@ -39,8 +40,8 @@ def weekly_rota(args):
     days = "\n".join(
         [
             f"{day_of_week.title()}: "
-            f"{PAIRS[day_of_week][primary]} "
-            f"(backup: {PAIRS[day_of_week][secondary]})"
+            f"{PAIRS[day_of_week][primary].human_readable} "
+            f"(backup: {PAIRS[day_of_week][secondary].human_readable})"
             for day_of_week in PAIRS.keys()
         ]
     )
@@ -56,8 +57,8 @@ def daily_rota(args):
     header = "Team Rex stand up"
     body = (
         f"{day_of_week.title()}: "
-        f"{PAIRS[day_of_week][primary]} "
-        f"(backup: {PAIRS[day_of_week][secondary]})"
+        f"{PAIRS[day_of_week][primary].human_readable} "
+        f"(backup: {PAIRS[day_of_week][secondary].human_readable})"
     )
 
     return json.dumps(blocks.get_basic_header_and_text_blocks(header, body))
