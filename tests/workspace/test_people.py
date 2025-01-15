@@ -14,6 +14,7 @@ def test_get_person_from_github_username():
 def test_get_person_from_github_username_returns_default():
     result = get_person_from_github_username("TestUser")
 
+    assert result.human_readable == "TestUser"
     assert result.github_username == "TestUser"
     assert result.slack_username == "TestUser"
 
