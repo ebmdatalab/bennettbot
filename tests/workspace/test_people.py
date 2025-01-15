@@ -1,6 +1,5 @@
 from workspace.utils.people import (
     People,
-    get_formatted_slack_username,
     get_person_from_github_username,
 )
 
@@ -20,6 +19,6 @@ def test_get_person_from_github_username_returns_default():
 
 
 def test_get_formatted_slack_username_returns_slack_user_id():
-    result = get_formatted_slack_username(People.LUCY.value)
+    result = People.LUCY.value.get_formatted_slack_username()
 
     assert result == "<@U035FT48KEK>"

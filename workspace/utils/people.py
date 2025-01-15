@@ -2,7 +2,11 @@ from collections import namedtuple
 from enum import Enum
 
 
-Person = namedtuple("Person", ["human_readable", "github_username", "slack_username"])
+class Person(
+    namedtuple("Person", ["human_readable", "github_username", "slack_username"])
+):
+    def get_formatted_slack_username(self) -> str:
+        return f"<@{self.slack_username}>"
 
 
 class People(Enum):
@@ -54,7 +58,3 @@ def get_person_from_github_username(github_username) -> Person:
         slack_username=github_username,
     )
     return PEOPLE_BY_GITHUB_USERNAME.get(github_username, default)
-
-
-def get_formatted_slack_username(person: Person) -> str:
-    return f"<@{person.slack_username}>"
