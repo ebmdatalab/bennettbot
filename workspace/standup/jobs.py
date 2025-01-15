@@ -57,7 +57,7 @@ def daily_rota(args):
     header = "Team Rex stand up"
     body = (
         f"{day_of_week.title()}: "
-        f"{PAIRS[day_of_week][primary].human_readable} "
+        f"{PAIRS[day_of_week][primary].formatted_slack_username} "
         f"(backup: {PAIRS[day_of_week][secondary].human_readable})"
     )
 
