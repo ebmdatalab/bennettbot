@@ -4,7 +4,7 @@
 
 ### just
 
-Follow installation instructions from the [Just Programmer's Manual](Follow [installation instructions](https://just.systems/man/en/chapter_4.html) for your OS.
+Follow the installation instructions from the [Just Programmer's Manual](Follow [installation instructions](https://just.systems/man/en/chapter_4.html) for your OS.
 
 #### Add completion for your shell. E.g. for bash:
 ```
