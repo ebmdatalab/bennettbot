@@ -22,7 +22,7 @@ just #  shortcut for just --list
 brew install shellcheck
 
 # Linux
-apt install shellcheck
+sudo apt install shellcheck
 ```
 
 
