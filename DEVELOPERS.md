@@ -28,6 +28,15 @@ sudo apt install shellcheck
 
 ## Local development environment
 
+### Python virtual environment
+
+Set up an environment, or upgrade the packages in an existing environment
+```
+just devenv
+```
+
+### .env file
+
 Set up your local .env file by running
 
 ```
