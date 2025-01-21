@@ -31,7 +31,7 @@ apt install shellcheck
 Set up your local .env file by running
 
 ```
-./scripts/local-setup-sh
+./scripts/local-setup.sh
 ```
 
 This will create a `.env` file by copying `dotenv-sample`, and will use the
@@ -41,7 +41,7 @@ By default, re-running the script will skip updating secrets from Bitwarden
 if they are already populated. To force them to update again:
 
 ```
-./scripts/local-setup-sh -f
+./scripts/local-setup.sh -f
 ```
 
 ### bitwarden CLI
