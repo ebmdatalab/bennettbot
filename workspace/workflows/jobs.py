@@ -45,9 +45,16 @@ def get_locations_for_org(org: str) -> list[str]:
 def report_invalid_target(target) -> str:
     blocks = get_basic_header_and_text_blocks(
         header_text=f"{target} was not recognised",
+        texts=f"Run `@{settings.SLACK_APP_USERNAME} workflows usage` to see the valid values for `target`.",
+    )
+    return json.dumps(blocks)
+
+
+def report_invalid_list_of_targets() -> str:
+    blocks = get_basic_header_and_text_blocks(
+        header_text="Invalid list of targets",
         texts=[
-            "Argument must be a known organisation or repo, or a repo given as [org/repo].",
-            f"Run `@{settings.SLACK_APP_USERNAME} workflows help` to see the available organisations.",
+            "List items must all be orgs or all be repos.",
         ],
     )
     return json.dumps(blocks)
@@ -277,69 +284,107 @@ def summarise_org(org, skip_successful) -> list:
     return blocks
 
 
-def main(args) -> str:
-    try:
-        # # Some repos are names of websites and slack prepends http:// to them
-        target = args.target.replace("http://", "").split("/")
-        if len(target) == 2:
-            org, repo = target
-        elif len(target) == 1:
-            if target[0] in config.REPOS.keys():  # Known repo
-                org, repo = config.REPOS[target[0]]["org"], target[0]
-            else:  # Assume org
-                org, repo = target[0], None
-        else:  # Invalid target format
-            return report_invalid_target(args.target)
-
-        # Org may be a shorthand
-        org = config.SHORTHANDS.get(org, org)
-        return _main(org, repo, args.skip_successful)
-    except Exception as e:
-        blocks = get_basic_header_and_text_blocks(
-            header_text=f"An error occurred reporting workflows for {args.target}",
-            texts=str(e),
-        )
-        return json.dumps(blocks)
-
-
-def _main(org, repo, skip_successful=False) -> str:
+def summarise_workflows_group(group: str, skip_successful: bool) -> list:
     """
-    Main function to report on the status of workflows in a specified repo or org.
-    args:
-        org: str
-            The organisation or shorthand for the organisation to report on. A special value of "all" will report on all orgs.
-        repo: str | None
-            The repo to report on. If None, all repos specified by "org" will be reported on.
-        skip_successful: bool
-            If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions."""
-    if org == "all":
-        # Summarise status for all repos in all orgs
-        return json.dumps(summarise_all(skip_successful))
-    elif org in config.SHORTHANDS.values():  # Valid organisation
-        if repo is None:
-            # Summarise status for multiple repos in an org
-            return json.dumps(summarise_org(org, skip_successful))
-        # Single repo usage: Report status for all workflows in a specified repo
-        return RepoWorkflowReporter(f"{org}/{repo}").report()
-    else:
-        return report_invalid_target(org)
+    Summarise the status of a group of workflows with specified IDs.
+    """
+    try:
+        group_config = config.CUSTOM_WORKFLOWS_GROUPS[group]
+    except KeyError:
+        return get_basic_header_and_text_blocks(
+            header_text=f"Group {group} was not defined",
+            texts=f"Available custom workflow groups are: {', '.join(config.CUSTOM_WORKFLOWS_GROUPS.keys())}",
+        )
 
-
-def get_blocks_for_custom_workflow_list(args):
-    job_config = config.CUSTOM_JOBS[args.job_name]
-    header_text = job_config["header_text"]
-    workflows = job_config["workflows"]
     conclusions = {}
-    for location, workflow_ids in workflows.items():
+    for location, workflow_ids in group_config["workflows"].items():
         wf_conclusions = RepoWorkflowReporter(location).get_latest_conclusions()
         conclusions[location] = [
             wf_conclusions.get(wf_id, "missing") for wf_id in workflow_ids
         ]
     blocks = [
-        get_header_block(header_text),
-        *[get_summary_block(loc, conc) for loc, conc in conclusions.items()],
+        get_header_block(group_config["header_text"]),
+        *[
+            get_summary_block(loc, conc)
+            for loc, conc in conclusions.items()
+            if not (skip_successful and get_success_rate(conc) == 1)
+        ],
     ]
-    return json.dumps(blocks)
+    return blocks
+
+
+def main(args) -> str:
+    try:
+        if args.group:
+            # If a custom workflows group is passed, ignore target and summarise group
+            return json.dumps(
+                summarise_workflows_group(args.group, args.skip_successful)
+            )
+        return _main(args.target, args.skip_successful)
+    except Exception as e:
+        blocks = get_basic_header_and_text_blocks(
+            header_text=f"An error occurred reporting workflows for {args.group or ' '.join(args.target)}",
+            texts=str(e),
+        )
+        return json.dumps(blocks)
+
+
+def _main(targets: list[str], skip_successful: bool) -> str:
+    """
+    Main function to report on the status of workflows in one or more specified targets.
+    args:
+        targets: list[str]
+            List elements may be one of the following:
+            - "all": Summarise all repos, sectioned by team
+            - A known organisation to summarise
+            - A known repo (the org/ prefix is optional)
+            - A repo in the format org/repo (Note that the repo must still belong to a known org)
+        skip_successful: bool
+            If True, repos with all successful (i.e. all green) workflows will be skipped. Only used for summary functions.
+    """
+
+    if "all" in targets:
+        return json.dumps(summarise_all(skip_successful))
+
+    # Validation
+    orgs = []
+    locations = []
+    for target in targets:
+        # Some repos are names of websites and slack prepends http:// to them
+        target = target.replace("http://", "")
+        if target.count("/") > 1:
+            return report_invalid_target(target)
+
+        if "/" in target:  # Single repo in org/repo format
+            org, repo = target.split("/")
+        elif target in config.REPOS:  # Known repo
+            org, repo = config.REPOS[target]["org"], target
+        else:  # Assume target is an org
+            org, repo = target, None
+
+        org = config.SHORTHANDS.get(org, org)
+        if org not in config.SHORTHANDS.values():
+            return report_invalid_target(target)
+        if repo:
+            locations.append(f"{org}/{repo}")
+        else:
+            orgs.append(org)
+
+    if orgs and not locations:  # Summarise the org(s)
+        blocks = []
+        for org in orgs:
+            blocks.extend(summarise_org(org, skip_successful))
+        return json.dumps(blocks)
+
+    elif len(locations) != len(targets):
+        return report_invalid_list_of_targets()
+
+    elif len(locations) == 1:
+        # Single repo usage: Report status for all workflows in a specified repo
+        return RepoWorkflowReporter(locations[0]).report()
+
+    else:  # Summarise the list of repos requested
+        return json.dumps(_summarise("Workflows summary", locations, skip_successful))
 
 
 def get_text_blocks_for_key(args) -> str:
@@ -350,24 +395,49 @@ def get_text_blocks_for_key(args) -> str:
     return json.dumps(blocks)
 
 
+def get_usage_text(args) -> str:
+    orgs = ", ".join([f"`{k} ({v})`" for k, v in config.SHORTHANDS.items()])
+    return "\n".join(
+        [
+            "Usage for `show [target]` (The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful):",
+            "`show [all]`: Summarise all repos, sectioned by team.",
+            f"`show [org]`: Summarise all repos for a known organisation, which is limited to the following shorthands and their full names: {orgs}.",
+            "`show [repo]`: Report status for all workflows in a known repo (e.g. `show airlock`) or a repo in a known org (e.g. `show os/some-study-repo`).",
+            "To pass multiple targets, separate them by spaces (e.g. `show os osc` or `show airlock ehrql`).",
+            "When passing multiple targets, the targets should be of the same type (multiple orgs or multiple repos, but not a combination of both).",
+            "",
+            "List of known repos:",
+            ", ".join(config.REPOS.keys()),
+            "",
+            "Usage for `show-group`:",
+            f"`show-group [group]`: Summarise a custom group of workflows. Available groups are: {', '.join(config.CUSTOM_WORKFLOWS_GROUPS.keys())}.",
+        ]
+    )
+
+
 def get_command_line_parser():
+    class SplitString(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            # Split space-separated strings into individual list items
+            setattr(namespace, self.dest, " ".join(values).split(" "))
+
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
     # Main task: show workflows
     show_parser = subparsers.add_parser("show")
-    show_parser.add_argument("--target", required=True)
+    show_parser.add_argument("--target", nargs="+", default=["all"], action=SplitString)
+    show_parser.add_argument("--group", required=False)
     show_parser.add_argument("--skip-successful", action="store_true", default=False)
     show_parser.set_defaults(func=main)
-
-    # Custom tasks
-    custom_parser = subparsers.add_parser("custom")
-    custom_parser.add_argument("--job-name", required=True)
-    custom_parser.set_defaults(func=get_blocks_for_custom_workflow_list)
 
     # Display key
     key_parser = subparsers.add_parser("key")
     key_parser.set_defaults(func=get_text_blocks_for_key)
+
+    # Display usage
+    usage_text_parser = subparsers.add_parser("usage")
+    usage_text_parser.set_defaults(func=get_usage_text)
     return parser
 
 

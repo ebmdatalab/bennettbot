@@ -148,7 +148,7 @@ WORKFLOWS_KNOWN_TO_FAIL = {
     ],
 }
 
-CUSTOM_JOBS = {
+CUSTOM_WORKFLOWS_GROUPS = {
     "check-links": {
         "header_text": "Link-checking workflows",
         "workflows": {

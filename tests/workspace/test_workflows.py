@@ -28,6 +28,19 @@ CACHE = {
         "conclusions": {str(key): "success" for key in WORKFLOWS_MAIN.keys()},
     }
 }
+RESULT_PATCH_SETTINGS = {
+    "org": "opensafely-core",
+    "repo": "airlock",
+    "team": "Team RAP",
+    "conclusions": ["success"] * 5,
+}
+RESULT_BLOCK = {
+    "type": "section",
+    "text": {
+        "type": "mrkdwn",
+        "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
+    },
+}
 
 
 @pytest.fixture
@@ -170,53 +183,117 @@ def test_print_key():
     assert json.loads(jobs.get_text_blocks_for_key(None)) == blocks
 
 
+def test_print_usage():
+    usage_text = jobs.get_usage_text(None)
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(usage_text)
+    assert usage_text.startswith(
+        "Usage for `show [target]` (The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful):"
+    )
+
+
+@pytest.mark.parametrize("command", ["show", "show --target all"])
+def test_all_as_target(command):
+    args = jobs.get_command_line_parser().parse_args(command.split())
+    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+
+    with patch("workspace.workflows.jobs.summarise_all") as mock_summarise_all:
+        jobs.main(args)
+        mock_summarise_all.assert_called_once_with(False)
+
+
 @pytest.mark.parametrize("org", ["opensafely-core", "osc"])
 def test_org_as_target(org):
     args = jobs.get_command_line_parser().parse_args(f"show --target {org}".split())
 
-    with patch("workspace.workflows.jobs._main") as mock__main:
+    with patch("workspace.workflows.jobs.summarise_org") as mock_summarise_org:
         jobs.main(args)
-        mock__main.assert_called_once_with("opensafely-core", None, False)
+        mock_summarise_org.assert_called_once_with("opensafely-core", False)
 
 
-@pytest.mark.parametrize("org", ["opensafely-core", "osc"])
-def test_org_and_repo_as_target(org):
-    args = jobs.get_command_line_parser().parse_args(
-        f"show --target {org}/airlock".split()
-    )
+@pytest.mark.parametrize(
+    "repo, parsed",
+    [
+        # Known org, known repo
+        ("opensafely-core/airlock", "opensafely-core/airlock"),
+        ("osc/airlock", "opensafely-core/airlock"),
+        ("airlock", "opensafely-core/airlock"),
+        # Known org, unknown repo
+        ("opensafely/unknown-repo", "opensafely/unknown-repo"),
+        ("os/unknown-repo", "opensafely/unknown-repo"),
+    ],
+)
+def test_repo_as_target(repo, parsed):
+    args = jobs.get_command_line_parser().parse_args(f"show --target {repo}".split())
 
-    with patch("workspace.workflows.jobs._main") as mock__main:
+    with patch("workspace.workflows.jobs.RepoWorkflowReporter") as MockReporter:
         jobs.main(args)
-        mock__main.assert_called_once_with("opensafely-core", "airlock", False)
-
-
-def test_repo_only_as_target():
-    args = jobs.get_command_line_parser().parse_args("show --target airlock".split())
-
-    with patch("workspace.workflows.jobs._main") as mock__main:
-        jobs.main(args)
-        mock__main.assert_called_once_with("opensafely-core", "airlock", False)
+        MockReporter.assert_called_once_with(parsed)
 
 
 def test_website_repo_as_target():
     args = jobs.get_command_line_parser().parse_args(
         "show --target http://bennett.ox.ac.uk".split()
     )
-    with patch("workspace.workflows.jobs._main") as mock__main:
+    with patch("workspace.workflows.jobs.RepoWorkflowReporter") as MockReporter:
         jobs.main(args)
-        mock__main.assert_called_once_with("ebmdatalab", "bennett.ox.ac.uk", False)
+        MockReporter.assert_called_once_with("ebmdatalab/bennett.ox.ac.uk")
 
 
-def test_invalid_target():
+def test_list_of_orgs_as_target():
+    args = jobs.get_command_line_parser().parse_args(["show", "--target", "osc ebm"])
+    with patch("workspace.workflows.jobs.summarise_org") as mock_summarise_org:
+        jobs.main(args)
+        mock_summarise_org.assert_any_call("opensafely-core", False)
+        mock_summarise_org.assert_called_with("ebmdatalab", False)
+        assert mock_summarise_org.call_count == 2
+
+
+def test_list_of_repos_as_target():
     args = jobs.get_command_line_parser().parse_args(
-        "show --target some/invalid/input".split()
+        ["show", "--target", "airlock bennett.ox.ac.uk"]
     )
+    with patch("workspace.workflows.jobs._summarise") as mock__summarise:
+        jobs.main(args)
+        mock__summarise.assert_called_once_with(
+            "Workflows summary",
+            [
+                "opensafely-core/airlock",
+                "ebmdatalab/bennett.ox.ac.uk",
+            ],
+            False,
+        )
+
+
+@pytest.mark.parametrize(
+    "cli_args",
+    [
+        ["show", "--target", "some/invalid/input"],
+        ["show", "--target", "osc some/invalid/input"],
+    ],
+)
+def test_invalid_target(cli_args):
+    args = jobs.get_command_line_parser().parse_args(cli_args)
     blocks = json.loads(jobs.main(args))
     assert blocks[0] == {
         "type": "header",
         "text": {
             "type": "plain_text",
             "text": "some/invalid/input was not recognised",
+        },
+    }
+
+
+def test_mixed_list_as_target():
+    args = jobs.get_command_line_parser().parse_args(
+        ["show", "--target", "osc airlock"]
+    )
+    blocks = json.loads(jobs.main(args))
+    assert blocks[0] == {
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": "Invalid list of targets",
         },
     }
 
@@ -451,12 +528,7 @@ def test_main_show_repo(mock_conclusions, conclusion, reported, emoji):
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely-core",
             "repo": "failing-repo",
@@ -486,24 +558,90 @@ def test_main_show_org():
                 "text": f"<https://github.com/opensafely-core/failing-repo/actions?query=branch%3Amain|opensafely-core/failing-repo>: {':red_circle:' * 5}",
             },
         },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
-            },
-        },
+        RESULT_BLOCK,
     ]
 
 
 @use_mock_results(
     [
+        RESULT_PATCH_SETTINGS,
         {
-            "org": "opensafely-core",
-            "repo": "airlock",
+            "org": "opensafely",
+            "repo": "failing-repo",
             "team": "Team RAP",
-            "conclusions": ["success"] * 5,
+            "conclusions": ["failure"] * 5,
         },
+    ]
+)
+def test_main_show_list_of_orgs():
+    args = jobs.get_command_line_parser().parse_args(["show", "--target", "os osc"])
+
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for opensafely repos",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {':red_circle:' * 5}",
+            },
+        },
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows for opensafely-core repos",
+            },
+        },
+        RESULT_BLOCK,
+    ]
+
+
+@use_mock_results(
+    [
+        RESULT_PATCH_SETTINGS,
+        {
+            "org": "opensafely",
+            "repo": "failing-repo",
+            "team": "Team RAP",
+            "conclusions": ["failure"] * 5,
+        },
+    ]
+)
+def test_main_show_list_of_repos():
+    args = jobs.get_command_line_parser().parse_args(
+        ["show", "--target", "airlock failing-repo"]
+    )
+
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Workflows summary",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"<https://github.com/opensafely/failing-repo/actions?query=branch%3Amain|opensafely/failing-repo>: {':red_circle:' * 5}",
+            },
+        },
+        RESULT_BLOCK,
+    ]
+
+
+@use_mock_results(
+    [
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "documentation",
@@ -514,7 +652,7 @@ def test_main_show_org():
 )
 def test_main_show_all():
     # Call main for all repos without skipping successful workflows
-    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+    args = jobs.get_command_line_parser().parse_args("show".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
@@ -538,13 +676,7 @@ def test_main_show_all():
                 "text": "Workflows for Team RAP",
             },
         },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
-            },
-        },
+        RESULT_BLOCK,
     ]
 
 
@@ -556,12 +688,7 @@ def test_main_show_all():
 )
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "failing-repo",
@@ -573,34 +700,23 @@ def test_main_show_all():
 def test_main_show_all_skip_failures():
     # Call main for all repos without skipping successful workflows
     # Since all workflows in failing-repo are known to fail, it should be skipped entirely
-    args = jobs.get_command_line_parser().parse_args("show --target all".split())
+    args = jobs.get_command_line_parser().parse_args("show".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
-        {
+        {  # Only the Team RAP section should appear
             "type": "header",
             "text": {
                 "type": "plain_text",
                 "text": "Workflows for Team RAP",
             },
         },
-        {  # Only the Team RAP section should appear
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
-            },
-        },
+        RESULT_BLOCK,
     ]
 
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "documentation",
@@ -612,9 +728,7 @@ def test_main_show_all_skip_failures():
 def test_main_show_failed_empty():
     # Call main for all repos with skipping successful workflows
     # No failed workflows so state so
-    args = jobs.get_command_line_parser().parse_args(
-        "show --target all --skip-successful".split()
-    )
+    args = jobs.get_command_line_parser().parse_args("show --skip-successful".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
         {
@@ -629,12 +743,7 @@ def test_main_show_failed_empty():
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "failing-repo",
@@ -646,9 +755,7 @@ def test_main_show_failed_empty():
 def test_main_show_failed_found():
     # Call main for all repos with skipping successful workflows
     # Only the failing repo should appear
-    args = jobs.get_command_line_parser().parse_args(
-        "show --target all --skip-successful".split()
-    )
+    args = jobs.get_command_line_parser().parse_args("show --skip-successful".split())
 
     blocks = json.loads(jobs.main(args))
     assert blocks == [
@@ -698,9 +805,7 @@ def test_main_show_failed_found():
 def test_main_show_failed_skipped():
     # Call main for all repos with skipping successful workflows
     # Skip failures that are already known
-    args = jobs.get_command_line_parser().parse_args(
-        "show --target all --skip-successful".split()
-    )
+    args = jobs.get_command_line_parser().parse_args("show --skip-successful".split())
 
     blocks = json.loads(jobs.main(args))
     assert blocks == [
@@ -739,21 +844,14 @@ def test_main_show_invalid_target():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Argument must be a known organisation or repo, or a repo given as [org/repo].",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Run `@test_username workflows help` to see the available organisations.",
+                "text": "Run `@test_username workflows usage` to see the valid values for `target`.",
             },
         },
     ]
 
 
 @patch(
-    "workspace.workflows.config.CUSTOM_JOBS",
+    "workspace.workflows.config.CUSTOM_WORKFLOWS_GROUPS",
     {
         "check-links": {
             "header_text": "Link-checking workflows",
@@ -794,11 +892,9 @@ def test_main_show_invalid_target():
         },
     ]
 )
-def test_check_links():
-    args = jobs.get_command_line_parser().parse_args(
-        "custom --job-name check-links".split()
-    )
-    blocks = json.loads(jobs.get_blocks_for_custom_workflow_list(args))
+def test_show_group():
+    args = jobs.get_command_line_parser().parse_args("show --group check-links".split())
+    blocks = json.loads(jobs.main(args))
     assert blocks == [
         {  # Only 1 emoji should appear for each repo
             "type": "header",
@@ -833,6 +929,31 @@ def test_check_links():
             "text": {
                 "type": "mrkdwn",
                 "text": "<https://github.com/ebmdatalab/team-manual/actions?query=branch%3Amain|ebmdatalab/team-manual>: :red_circle:",
+            },
+        },
+    ]
+
+
+@patch(
+    "workspace.workflows.config.CUSTOM_WORKFLOWS_GROUPS",
+    {"check-links": ...},
+)
+def test_show_group_not_found():
+    args = jobs.get_command_line_parser().parse_args("show --group unknown".split())
+    blocks = json.loads(jobs.main(args))
+    assert blocks == [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Group unknown was not defined",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Available custom workflow groups are: check-links",
             },
         },
     ]
