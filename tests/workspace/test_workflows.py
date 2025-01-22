@@ -28,6 +28,19 @@ CACHE = {
         "conclusions": {str(key): "success" for key in WORKFLOWS_MAIN.keys()},
     }
 }
+RESULT_PATCH_SETTINGS = {
+    "org": "opensafely-core",
+    "repo": "airlock",
+    "team": "Team RAP",
+    "conclusions": ["success"] * 5,
+}
+RESULT_BLOCK = {
+    "type": "section",
+    "text": {
+        "type": "mrkdwn",
+        "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
+    },
+}
 
 
 @pytest.fixture
@@ -461,12 +474,7 @@ def test_main_show_repo(mock_conclusions, conclusion, reported, emoji):
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely-core",
             "repo": "failing-repo",
@@ -496,24 +504,13 @@ def test_main_show_org():
                 "text": f"<https://github.com/opensafely-core/failing-repo/actions?query=branch%3Amain|opensafely-core/failing-repo>: {':red_circle:' * 5}",
             },
         },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
-            },
-        },
+        RESULT_BLOCK,
     ]
 
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "documentation",
@@ -548,13 +545,7 @@ def test_main_show_all():
                 "text": "Workflows for Team RAP",
             },
         },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
-            },
-        },
+        RESULT_BLOCK,
     ]
 
 
@@ -566,12 +557,7 @@ def test_main_show_all():
 )
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "failing-repo",
@@ -586,31 +572,20 @@ def test_main_show_all_skip_failures():
     args = jobs.get_command_line_parser().parse_args("show".split())
     blocks = json.loads(jobs.main(args))
     assert blocks == [
-        {
+        {  # Only the Team RAP section should appear
             "type": "header",
             "text": {
                 "type": "plain_text",
                 "text": "Workflows for Team RAP",
             },
         },
-        {  # Only the Team RAP section should appear
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"<https://github.com/opensafely-core/airlock/actions?query=branch%3Amain|opensafely-core/airlock>: {':large_green_circle:' * 5}",
-            },
-        },
+        RESULT_BLOCK,
     ]
 
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "documentation",
@@ -637,12 +612,7 @@ def test_main_show_failed_empty():
 
 @use_mock_results(
     [
-        {
-            "org": "opensafely-core",
-            "repo": "airlock",
-            "team": "Team RAP",
-            "conclusions": ["success"] * 5,
-        },
+        RESULT_PATCH_SETTINGS,
         {
             "org": "opensafely",
             "repo": "failing-repo",
