@@ -331,7 +331,7 @@ def main(args) -> str:
 
 def _main(targets: list[str], skip_successful: bool) -> str:
     """
-    Main function to report on the status of workflows in a specified target.
+    Main function to report on the status of workflows in one or more specified targets.
     args:
         targets: list[str]
             List elements may be one of the following:
@@ -396,16 +396,21 @@ def get_text_blocks_for_key(args) -> str:
 
 
 def get_usage_text(args) -> str:
+    orgs = ", ".join([f"`{k} ({v})`" for k, v in config.SHORTHANDS.items()])
     return "\n".join(
         [
-            "Usage for `show [target]`. The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful.",
+            "Usage for `show [target]` (The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful):",
             "`show [all]`: Summarise all repos, sectioned by team.",
-            "`show [org]`: Summarise all repos for a known organisation, which is limited to the following shorthands and their full names: `os (opensafely)`, `osc (opensafely-core)` or `ebm (ebmdatalab)`.",
+            f"`show [org]`: Summarise all repos for a known organisation, which is limited to the following shorthands and their full names: {orgs}.",
             "`show [repo]`: Report status for all workflows in a known repo (e.g. `show airlock`) or a repo in a known org (e.g. `show os/some-study-repo`).",
             "To pass multiple targets, separate them by spaces (e.g. `show os osc` or `show airlock ehrql`).",
+            "When passing multiple targets, the targets should be of the same type (multiple orgs or multiple repos, but not a combination of both).",
             "",
             "List of known repos:",
             ", ".join(config.REPOS.keys()),
+            "",
+            "Usage for `show-group`:",
+            f"`show-group [group]`: Summarise a custom group of workflows. Available groups are: {', '.join(config.CUSTOM_WORKFLOWS_GROUPS.keys())}.",
         ]
     )
 

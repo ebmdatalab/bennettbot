@@ -188,7 +188,7 @@ def test_print_usage():
     with pytest.raises(json.JSONDecodeError):
         json.loads(usage_text)
     assert usage_text.startswith(
-        "Usage for `show [target]`. The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful."
+        "Usage for `show [target]` (The behaviour for `show-failed [target]` is the same, but skips repos whose workflows are all successful):"
     )
 
 
