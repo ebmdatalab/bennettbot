@@ -4,7 +4,7 @@
 
 ### just
 
-Follow installation instructions from the [Just Programmer's Manual](Follow [installation instructions](https://just.systems/man/en/chapter_4.html) for your OS.
+Follow installation instructions from the [Just Programmer's Manual](https://just.systems/man/en/packages.html "Follow installation instructions for your OS").
 
 #### Add completion for your shell. E.g. for bash:
 ```
@@ -22,16 +22,25 @@ just #  shortcut for just --list
 brew install shellcheck
 
 # Linux
-apt install shellcheck
+sudo apt install shellcheck
 ```
 
 
 ## Local development environment
 
+### Python virtual environment
+
+Set up an environment, or upgrade the packages in an existing environment
+```
+just devenv
+```
+
+### .env file
+
 Set up your local .env file by running
 
 ```
-./scripts/local-setup-sh
+./scripts/local-setup.sh
 ```
 
 This will create a `.env` file by copying `dotenv-sample`, and will use the
@@ -41,7 +50,7 @@ By default, re-running the script will skip updating secrets from Bitwarden
 if they are already populated. To force them to update again:
 
 ```
-./scripts/local-setup-sh -f
+./scripts/local-setup.sh -f
 ```
 
 ### bitwarden CLI
