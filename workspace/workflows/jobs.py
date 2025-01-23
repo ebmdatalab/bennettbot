@@ -418,15 +418,19 @@ def get_usage_text(args) -> str:
 def get_command_line_parser():
     class SplitString(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
-            # Split space-separated strings into individual list items
-            setattr(namespace, self.dest, " ".join(values).split(" "))
+            setattr(namespace, self.dest, values.split())
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
     # Main task: show workflows
     show_parser = subparsers.add_parser("show")
-    show_parser.add_argument("--target", nargs="+", default=["all"], action=SplitString)
+    show_parser.add_argument(
+        "--target",
+        default="all",
+        action=SplitString,
+        help="Provide multiple targets as a space-separated quoted string, e.g. 'os osc'.",
+    )
     show_parser.add_argument("--group", required=False)
     show_parser.add_argument("--skip-successful", action="store_true", default=False)
     show_parser.set_defaults(func=main)
