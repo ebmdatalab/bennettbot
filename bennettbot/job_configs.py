@@ -376,7 +376,7 @@ raw_config = {
                 "job_type": "show_failed",
             },
             {
-                "command": "show-group",
+                "command": "show-group [group]",
                 "help": "Summarise GitHub Actions workflow runs for a custom defined group of workflows.",
                 "action": "schedule_job",
                 "job_type": "show_group",

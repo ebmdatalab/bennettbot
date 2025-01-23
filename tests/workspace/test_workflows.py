@@ -240,8 +240,16 @@ def test_website_repo_as_target():
         MockReporter.assert_called_once_with("ebmdatalab/bennett.ox.ac.uk")
 
 
-def test_list_of_orgs_as_target():
-    args = jobs.get_command_line_parser().parse_args(["show", "--target", "osc ebm"])
+@pytest.mark.parametrize(
+    "cli_args",
+    [
+        ["show", "--target", "osc ebm"],
+        ["show", "--target", "osc  ebm"],
+        ["show", "--target", " osc ebm"],
+    ],
+)
+def test_list_of_orgs_as_target(cli_args):
+    args = jobs.get_command_line_parser().parse_args(cli_args)
     with patch("workspace.workflows.jobs.summarise_org") as mock_summarise_org:
         jobs.main(args)
         mock_summarise_org.assert_any_call("opensafely-core", False)
