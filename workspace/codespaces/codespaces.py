@@ -129,13 +129,27 @@ def is_at_risk(codespace, threshold_in_days):
 
 
 def main(threshold_in_days):
+    # These could be parameters instead of hard-coded but no need for now.
     org = "opensafely"
+    excluded_repos = [
+        # Repos unlikely to contain valuable work product.
+        # Template for tutorial.
+        "ehrql-tutorial",
+        # Tagged non-research.
+        "research-template",
+        "roadmap",
+        "documentation",
+    ]
 
     # Fetch info on org CodeSpaces at risk from GitHub API.
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
     codespaces = (get_codespace(rec) for rec in records)
     at_risk_codespaces = sorted(
-        (cs for cs in codespaces if is_at_risk(cs, threshold_in_days)),
+        (
+            cs
+            for cs in codespaces
+            if is_at_risk(cs, threshold_in_days) and cs.repo not in excluded_repos
+        ),
         key=lambda cs: cs.remaining_retention_period_days,
     )
 
