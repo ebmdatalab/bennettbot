@@ -28,6 +28,7 @@ from slack_sdk.models.blocks import (
 CODE = RichTextElementParts.TextStyle(code=True)
 BOLD = RichTextElementParts.TextStyle(bold=True)
 Text = RichTextElementParts.Text
+Link = RichTextElementParts.Link
 Emoji = RichTextElementParts.Emoji
 
 
@@ -159,6 +160,12 @@ def main(threshold_in_days):
     if at_risk_codespaces:
         intro_block = RichTextSectionElement(
             elements=[
+                Text(text=("For how to use this report, refer to ")),
+                Link(
+                    url="https://github.com/ebmdatalab/team-manual/blob/main/docs/tech-group/playbooks/codespaces.md",
+                    text="the Codespaces playbook",
+                ),
+                Text(text=". "),
                 Text(text=org, style=CODE),
                 Text(
                     text=(
