@@ -28,6 +28,7 @@ from slack_sdk.models.blocks import (
 CODE = RichTextElementParts.TextStyle(code=True)
 BOLD = RichTextElementParts.TextStyle(bold=True)
 Text = RichTextElementParts.Text
+Link = RichTextElementParts.Link
 Emoji = RichTextElementParts.Emoji
 
 
@@ -129,13 +130,27 @@ def is_at_risk(codespace, threshold_in_days):
 
 
 def main(threshold_in_days):
+    # These could be parameters instead of hard-coded but no need for now.
     org = "opensafely"
+    excluded_repos = [
+        # Repos unlikely to contain valuable work product.
+        # Template for tutorial.
+        "ehrql-tutorial",
+        # Tagged non-research.
+        "research-template",
+        "roadmap",
+        "documentation",
+    ]
 
     # Fetch info on org CodeSpaces at risk from GitHub API.
     records = fetch(URL_PATTERN.format(org=org), "codespaces")
     codespaces = (get_codespace(rec) for rec in records)
     at_risk_codespaces = sorted(
-        (cs for cs in codespaces if is_at_risk(cs, threshold_in_days)),
+        (
+            cs
+            for cs in codespaces
+            if is_at_risk(cs, threshold_in_days) and cs.repo not in excluded_repos
+        ),
         key=lambda cs: cs.remaining_retention_period_days,
     )
 
@@ -145,6 +160,12 @@ def main(threshold_in_days):
     if at_risk_codespaces:
         intro_block = RichTextSectionElement(
             elements=[
+                Text(text=("For how to use this report, refer to ")),
+                Link(
+                    url="https://github.com/ebmdatalab/team-manual/blob/main/docs/tech-group/playbooks/codespaces.md",
+                    text="the Codespaces playbook",
+                ),
+                Text(text=". "),
                 Text(text=org, style=CODE),
                 Text(
                     text=(
