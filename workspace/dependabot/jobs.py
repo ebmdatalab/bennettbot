@@ -37,9 +37,9 @@ class DependabotRotaReporter(RotaReporter):
     ) -> str:
         checker = rota[monday]
         if this_or_next == "this":
-            checker = checker.value.get_formatted_slack_username()
+            checker = checker.get_formatted_slack_username()
         else:
-            checker = checker.name.title()
+            checker = checker.human_readable
         return f"To review dependabot PRs {this_or_next} week ({self.format_week(monday)}): {checker}"
 
 

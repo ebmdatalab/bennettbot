@@ -1,5 +1,4 @@
 from collections import namedtuple
-from enum import Enum
 
 
 class Person(
@@ -9,7 +8,7 @@ class Person(
         return f"<@{self.slack_username}>"
 
 
-class People(Enum):
+class People:
     """Tech team members' GitHub and Slack usernames."""
 
     # Find a Slack user's username by right-clicking on their name in the Slack app and clicking "Copy link".
@@ -36,10 +35,29 @@ class People(Enum):
     TOM_P = Person("Tom P", "remlapmot", "U07L0L0SS6M")
     TOM_W = Person("Tom W", "madwort", "U019R5FJ7G8")
 
+    # Dict mapping github_username to People, constructed lazily and cached the
+    # first time it's needed. Can't be built in the class definition as we
+    # can't introspect the class until it is constructed.
+    _by_github_username = None
 
-PEOPLE_BY_GITHUB_USERNAME = {
-    person.value.github_username: person.value for person in People
-}
+    @classmethod
+    def all(cls):
+        return [value for name, value in vars(cls).items() if isinstance(value, Person)]
+
+    @classmethod
+    def by_github_username(cls, github_username):
+        if cls._by_github_username is None:
+            cls._by_github_username = {
+                person.github_username: person for person in cls.all()
+            }
+
+        default = Person(
+            human_readable=github_username,
+            github_username=github_username,
+            slack_username=github_username,
+        )
+        return cls._by_github_username.get(github_username, default)
+
 
 TEAM_REX = [
     People.JON,
@@ -49,12 +67,3 @@ TEAM_REX = [
     People.MIKE,
     People.THOMAS,
 ]
-
-
-def get_person_from_github_username(github_username) -> Person:
-    default = Person(
-        human_readable=github_username,
-        github_username=github_username,
-        slack_username=github_username,
-    )
-    return PEOPLE_BY_GITHUB_USERNAME.get(github_username, default)
