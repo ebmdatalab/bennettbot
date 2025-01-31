@@ -11,6 +11,7 @@ class DependabotRotaReporter(RotaReporter):
     The candidates are currently Team Rex (except Katie).
     If the candidate definition or Team changes this will affect
     the rota offset and the rota will restart at an arbitrary point.
+    Consider redesigning class to include an offset if that happens.
     """
 
     def get_rota(self) -> dict:

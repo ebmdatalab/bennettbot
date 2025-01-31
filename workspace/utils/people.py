@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(order=True)
 class Person:
     human_readable: str
     github_username: str
@@ -12,7 +12,18 @@ class Person:
         return f"<@{self.slack_username}>"
 
 
-class People:
+class PersonIterator(type):
+    """Metaclass to iterate on Person instances in class attributes.
+
+    This is to allow `for person in People` or similar to work."""
+
+    def __iter__(cls):
+        return iter(
+            sorted(value for value in vars(cls).values() if isinstance(value, Person))
+        )
+
+
+class People(metaclass=PersonIterator):
     """Tech team members' GitHub and Slack usernames."""
 
     # Find a Slack user's username by right-clicking on their name in the Slack
@@ -46,15 +57,9 @@ class People:
     _by_github_username = None
 
     @classmethod
-    def all(cls):
-        return [value for name, value in vars(cls).items() if isinstance(value, Person)]
-
-    @classmethod
     def by_github_username(cls, github_username):
         if cls._by_github_username is None:
-            cls._by_github_username = {
-                person.github_username: person for person in cls.all()
-            }
+            cls._by_github_username = {person.github_username: person for person in cls}
 
         default = Person(
             human_readable=github_username,
@@ -64,6 +69,10 @@ class People:
         return cls._by_github_username.get(github_username, default)
 
 
+# Note that adding to or re-ordering this list will will affect the
+# DependabotRotaReporter ordering algorithm, restarting it at an arbitrary
+# point. If you need to change this list, consider redesigning that class to
+# include an offset.
 TEAM_REX = [
     People.JON,
     People.KATIE,
