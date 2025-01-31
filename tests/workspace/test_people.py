@@ -15,7 +15,7 @@ def test_get_person_from_github_username_returns_default():
     assert result.slack_username == "TestUser"
 
 
-def test_get_formatted_slack_username_returns_slack_user_id():
-    result = People.LUCY.get_formatted_slack_username()
+def test_formatted_slack_username():
+    result = People.LUCY.formatted_slack_username
 
     assert result == "<@U035FT48KEK>"

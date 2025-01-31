@@ -1,10 +1,14 @@
-from collections import namedtuple
+from dataclasses import dataclass
 
 
-class Person(
-    namedtuple("Person", ["human_readable", "github_username", "slack_username"])
-):
-    def get_formatted_slack_username(self) -> str:
+@dataclass
+class Person:
+    human_readable: str
+    github_username: str
+    slack_username: str
+
+    @property
+    def formatted_slack_username(self) -> str:
         return f"<@{self.slack_username}>"
 
 

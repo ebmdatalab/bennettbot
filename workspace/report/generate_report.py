@@ -171,7 +171,7 @@ def get_status_and_summary(card):  # pragma: no cover
     title = card["content"]["title"]
     url = card["content"].get("bodyUrl")
     assignees = " / ".join(
-        People.by_github_username(node["login"]).get_formatted_slack_username()
+        People.by_github_username(node["login"]).formatted_slack_username
         for node in card["content"]["assignees"]["nodes"]
     )
 
