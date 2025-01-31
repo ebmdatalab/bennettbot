@@ -15,7 +15,8 @@ class Person:
 class People:
     """Tech team members' GitHub and Slack usernames."""
 
-    # Find a Slack user's username by right-clicking on their name in the Slack app and clicking "Copy link".
+    # Find a Slack user's username by right-clicking on their name in the Slack
+    # app and clicking "Copy link".
 
     ALICE = Person("Alice", "alarthast", "U07KX6L3CMA")
     BECKY = Person("Becky", "rebkwok", "U01SP5JLBFD")
