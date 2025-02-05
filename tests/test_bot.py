@@ -108,14 +108,16 @@ def test_register_listeners_invalid_support_channel_settings(setting, value):
 def test_schedule_job(mock_app):
     handle_message(mock_app, "<@U1234> test do job 10")
 
-    jj = scheduler.get_jobs_of_type("test_good_job")
+    jj = scheduler.get_jobs_of_type("test_parameterised_job")
     assert len(jj) == 1
-    assert_job_matches(jj[0], "test_good_job", {"n": "10"}, "channel", T(60), None)
+    assert_job_matches(
+        jj[0], "test_parameterised_job", {"n": "10"}, "channel", T(60), None
+    )
 
 
 def test_schedule_job_with_job_already_running(mock_app):
     with patch("bennettbot.scheduler.schedule_job", return_value=True):
-        handle_message(mock_app, "<@U1234> test do job 1")
+        handle_message(mock_app, "<@U1234> test do good job")
         assert_slack_client_sends_messages(
             messages_kwargs=[{"channel": "channel", "text": "already started"}],
         )
@@ -124,9 +126,11 @@ def test_schedule_job_with_job_already_running(mock_app):
 def test_schedule_job_from_reminder(mock_app):
     handle_message(mock_app, "Reminder: <@U1234|test bot> test do job 10")
 
-    jj = scheduler.get_jobs_of_type("test_good_job")
+    jj = scheduler.get_jobs_of_type("test_parameterised_job")
     assert len(jj) == 1
-    assert_job_matches(jj[0], "test_good_job", {"n": "10"}, "channel", T(60), None)
+    assert_job_matches(
+        jj[0], "test_parameterised_job", {"n": "10"}, "channel", T(60), None
+    )
 
 
 def test_schedule_python_job(mock_app):
@@ -155,7 +159,7 @@ def test_url_formatting_removed(mock_app, message):
 
 
 def test_cancel_job(mock_app):
-    handle_message(mock_app, "<@U1234> test do job 10")
+    handle_message(mock_app, "<@U1234> test do good job")
     assert scheduler.get_jobs_of_type("test_good_job")
 
     handle_message(mock_app, "<@U1234> test cancel job", reaction_count=2)
@@ -238,7 +242,7 @@ def test_namespace_help(mock_app):
     handle_message(mock_app, "<@U1234> test help", reaction_count=0)
     assert_slack_client_sends_messages(
         messages_kwargs=[
-            {"channel": "channel", "text": "`test do job [n]`: do the job"}
+            {"channel": "channel", "text": "`test do good job`: do the good job"}
         ],
     )
 
@@ -335,7 +339,7 @@ def test_message_parsing(mock_app, pre_message, message):
     handle_message(mock_app, f"{pre_message}<@U1234>{message}", reaction_count=0)
     assert_slack_client_sends_messages(
         messages_kwargs=[
-            {"channel": "channel", "text": "`test do job [n]`: do the job"}
+            {"channel": "channel", "text": "`test do good job`: do the good job"}
         ],
     )
 
@@ -367,7 +371,7 @@ def test_direct_message(mock_app, message):
     )
     assert_slack_client_sends_messages(
         messages_kwargs=[
-            {"channel": "IM0001", "text": "`test do job [n]`: do the job"}
+            {"channel": "IM0001", "text": "`test do good job`: do the good job"}
         ],
     )
 
@@ -800,7 +804,7 @@ def test_new_channel_created(mock_app):
 
 
 def test_remove_job(mock_app):
-    handle_message(mock_app, "<@U1234> test do job 10", reaction_count=1)
+    handle_message(mock_app, "<@U1234> test do good job", reaction_count=1)
     jobs = scheduler.get_jobs_of_type("test_good_job")
     assert len(jobs) == 1
     job_id = jobs[0]["id"]
