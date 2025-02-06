@@ -18,10 +18,14 @@ class PersonCollection(type):
     """Metaclass for collections of Person instances."""
 
     def __init__(cls, name, bases, namespace):
+        # dict mapping github_username to People instances, for later lookups.
+        cls._by_github_username = {}
+
         people_items = [
             item for item in namespace.items() if isinstance(item[1], Person)
         ]
         for attribute_name, person in people_items:
+            cls._by_github_username[person.github_username] = person
             # Populate human_readable based on attribute value if not set explicitly.
             if not person.human_readable:
                 person.human_readable = attribute_name.title().replace("_", " ")
@@ -66,16 +70,8 @@ class People(metaclass=PersonCollection):
     TOM_P = Person("remlapmot", "U07L0L0SS6M")
     TOM_W = Person("madwort", "U019R5FJ7G8")
 
-    # Dict mapping github_username to People, constructed lazily and cached the
-    # first time it's needed. Can't be built in the class definition as we
-    # can't introspect the class until it is constructed.
-    _by_github_username = None
-
     @classmethod
     def by_github_username(cls, github_username):
-        if cls._by_github_username is None:
-            cls._by_github_username = {person.github_username: person for person in cls}
-
         default = Person(
             human_readable=github_username,
             github_username=github_username,

@@ -19,3 +19,7 @@ def test_formatted_slack_username():
     result = People.LUCY.formatted_slack_username
 
     assert result == "<@U035FT48KEK>"
+
+
+def test_iteration():
+    assert isinstance([person for person in People], list)
