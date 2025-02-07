@@ -13,8 +13,8 @@ def test_build_config():
             "restricted": True,
             "default_channel": "#some-channel",
             "jobs": {
-                "good_job": {"run_args_template": "cat [poem]"},
-                "bad_job": {"run_args_template": "dog [poem]"},
+                "good_job": {"run_args_template": "cat {poem}"},
+                "bad_job": {"run_args_template": "dog {poem}"},
             },
             "slack": [
                 {
@@ -27,8 +27,8 @@ def test_build_config():
         },
         "ns2": {
             "jobs": {
-                "good_job": {"run_args_template": "cat [poem]", "report_stdout": True},
-                "bad_job": {"run_args_template": "dog [poem]", "report_success": False},
+                "good_job": {"run_args_template": "cat {poem}", "report_stdout": True},
+                "bad_job": {"run_args_template": "dog {poem}", "report_success": False},
             },
             "slack": [
                 {
@@ -76,25 +76,25 @@ def test_build_config():
     assert config == {
         "jobs": {
             "ns1_good_job": {
-                "run_args_template": "cat [poem]",
+                "run_args_template": "cat {poem}",
                 "report_stdout": False,
                 "report_format": "text",
                 "report_success": True,
             },
             "ns1_bad_job": {
-                "run_args_template": "dog [poem]",
+                "run_args_template": "dog {poem}",
                 "report_stdout": False,
                 "report_format": "text",
                 "report_success": True,
             },
             "ns2_good_job": {
-                "run_args_template": "cat [poem]",
+                "run_args_template": "cat {poem}",
                 "report_stdout": True,
                 "report_format": "text",
                 "report_success": True,
             },
             "ns2_bad_job": {
-                "run_args_template": "dog [poem]",
+                "run_args_template": "dog {poem}",
                 "report_stdout": False,
                 "report_format": "text",
                 "report_success": False,
@@ -303,3 +303,53 @@ def test_build_config_with_invalid_report_format():
     with pytest.raises(RuntimeError) as e:
         build_config(raw_config)
     assert "invalid report_format" in str(e)
+
+
+def test_build_config_with_missing_param_in_slack_command():
+    raw_config = {
+        "workflows": {
+            "restricted": True,
+            "description": "read a poem",
+            "jobs": {
+                "parameterised_job": {
+                    "run_args_template": "python read.py --poem {poem}",
+                },
+            },
+            "slack": [
+                {
+                    "command": "read poem",
+                    "help": "read a poem",
+                    "action": "schedule_job",
+                    "job_type": "parameterised_job",
+                },
+            ],
+        },
+    }
+    with pytest.raises(RuntimeError) as e:
+        build_config(raw_config)
+    assert "does not match the template" in str(e)
+
+
+def test_build_config_with_missing_param_in_run_args_template():
+    raw_config = {
+        "workflows": {
+            "restricted": True,
+            "description": "read a poem",
+            "jobs": {
+                "mismatched_job": {
+                    "run_args_template": "python read_poem.py",
+                },
+            },
+            "slack": [
+                {
+                    "command": "read poem [poem]",
+                    "help": "read a poem",
+                    "action": "schedule_job",
+                    "job_type": "mismatched_job",
+                },
+            ],
+        },
+    }
+    with pytest.raises(RuntimeError) as e:
+        build_config(raw_config)
+    assert "does not match the template" in str(e)

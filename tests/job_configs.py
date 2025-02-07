@@ -12,7 +12,7 @@ raw_config = {
                 "run_args_template": "cat poem",
             },
             "parameterised_job": {
-                "run_args_template": "cat {path}",
+                "run_args_template": "cp poem poem{n}; cat poem{n}; rm poem{n}",
             },
             "parameterised_job_2": {
                 "run_args_template": "echo {thing_to_echo}",
@@ -78,10 +78,17 @@ raw_config = {
         },
         "slack": [
             {
-                "command": "do job [n]",
-                "help": "do the job",
+                "command": "do good job",
+                "help": "do the good job",
                 "action": "schedule_job",
                 "job_type": "good_job",
+                "delay_seconds": 60,
+            },
+            {
+                "command": "do job [n]",
+                "help": "do the parameterised job",
+                "action": "schedule_job",
+                "job_type": "parameterised_job",
                 "delay_seconds": 60,
             },
             {

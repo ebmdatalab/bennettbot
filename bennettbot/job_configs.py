@@ -630,10 +630,15 @@ def build_config(raw_config):
     config["slack"] = sorted(config["slack"], key=itemgetter("command"))
 
     for slack_config in config["slack"]:
-        if slack_config["job_type"] not in config["jobs"]:
-            msg = f"Slack command {slack_config['command']} references unknown job type {slack_config['job_type']}"
+        command = slack_config["command"]
+        job_type = config["jobs"].get(slack_config["job_type"])
+        if not job_type:
+            msg = f"Slack command {command} references unknown job type {slack_config['job_type']}"
             raise RuntimeError(msg)
-
+        if slack_config["action"] == "schedule_job":
+            validate_job_and_slack_params_match(
+                command, slack_config["template_params"], job_type["run_args_template"]
+            )
     return config
 
 
@@ -648,14 +653,17 @@ def build_regex_from_command(command):
     return re.compile(pattern)
 
 
-def get_template_params(command):
-    """Extract parameters from Slack command.
+def get_template_params(command, wrapper="[]"):
+    """Extract parameters from a Slack command or arguments template.
 
     >>> get_template_params("say [greeting] to [name]")
     ["greeting", "name"]
+    >>> get_template_params("say {greeting} to {name}", wrapper="{}")
+    ["greeting", "name"]
     """
-
-    return re.findall(r"\[(\w+)\]", command)
+    start, end = wrapper
+    regex = f"{re.escape(start)}(\\w+){re.escape(end)}"
+    return re.findall(regex, command)
 
 
 def validate_job_config(job_type, job_config):
@@ -705,6 +713,13 @@ def validate_slack_config(slack_config):
 
     if extra_keys := (slack_config.keys() - expected_keys):
         msg = f"Slack command `{command}` has extra keys {extra_keys}"
+        raise RuntimeError(msg)
+
+
+def validate_job_and_slack_params_match(command, params, run_args_template):
+    run_args = get_template_params(run_args_template, wrapper="{}")
+    if set(params) != set(run_args):
+        msg = f"Slack command {command} does not match the template {run_args_template}"
         raise RuntimeError(msg)
 
 

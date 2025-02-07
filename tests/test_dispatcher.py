@@ -105,7 +105,7 @@ def test_job_success():
 def test_job_success_with_parameterised_args():
     log_dir = build_log_dir("test_parameterised_job")
 
-    scheduler.schedule_job("test_parameterised_job", {"path": "poem"}, "channel", TS, 0)
+    scheduler.schedule_job("test_parameterised_job", {"n": "10"}, "channel", TS, 0)
     job = scheduler.reserve_job()
 
     do_job(slack_web_client(), job)
