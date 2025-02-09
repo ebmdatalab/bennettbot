@@ -56,10 +56,14 @@ def report_rota() -> str:
     repo_links = [
         f"<https://github.com/{org}/{repo}/pulls|{repo}>" for org, repo in repos
     ]
+    combined_link = "https://github.com/pulls?q=is%3Apr+is%3Aopen+" + "+".join(
+        f"repo%3A{org}%2F{repo}" for org, repo in repos
+    )
+
     repo_links_text = ", ".join(repo_links[:-1]) + " and " + repo_links[-1]
     extra_text = (
-        f"\nReview {repo_links_text} "
-        "repos and merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\n"
+        f"\nReview repos {repo_links_text}. <{combined_link}|Combined link>. "
+        "Merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\n"
         "Review Thomas' PRs for NPM updates.\n"
     )
 
