@@ -45,19 +45,25 @@ class DependabotRotaReporter(RotaReporter):
 
 
 def report_rota() -> str:
-    return DependabotRotaReporter(
-        title="Dependabot rota",
-    ).report(
-        "\nReview "
-        "<https://github.com/opensafely-core/job-server/pulls|job-server>, "
-        "<https://github.com/opensafely-core/opencodelists/pulls|opencodelists>, "
-        "<https://github.com/ebmdatalab/metrics/pulls|metrics>, "
-        "<https://github.com/opensafely-core/reports/pulls|reports>, "
-        "<https://github.com/opensafely-core/actions-registry/pulls|actions-registry> and "
-        "<https://github.com/opensafely-core/research-template-docker/pulls|research-template-docker> "
+    repos = [
+        ("opensafely-core", "job-server"),
+        ("opensafely-core", "opencodelists"),
+        ("ebmdatalab", "metrics"),
+        ("opensafely-core", "reports"),
+        ("opensafely-core", "actions-registry"),
+        ("opensafely-core", "research-template-docker"),
+    ]
+    repo_links = [
+        f"<https://github.com/{org}/{repo}/pulls|{repo}>" for org, repo in repos
+    ]
+    repo_links_text = ", ".join(repo_links[:-1]) + " and " + repo_links[-1]
+    extra_text = (
+        f"\nReview {repo_links_text} "
         "repos and merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\n"
         "Review Thomas' PRs for NPM updates.\n"
     )
+
+    return DependabotRotaReporter(title="Dependabot rota").report(extra_text)
 
 
 if __name__ == "__main__":
