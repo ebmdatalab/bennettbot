@@ -6,6 +6,25 @@ from workspace.utils.people import People
 
 TEAM_REX = [People.JON, People.LUCY, People.KATIE]
 
+EXTRA_TEXT = (
+    "\nReview repos <https://github.com/opensafely-core/job-server/pulls|job-server>, "
+    "<https://github.com/opensafely-core/opencodelists/pulls|opencodelists>, "
+    "<https://github.com/ebmdatalab/metrics/pulls|metrics>, "
+    "<https://github.com/opensafely-core/reports/pulls|reports>, "
+    "<https://github.com/opensafely-core/actions-registry/pulls|actions-registry> "
+    "and <https://github.com/opensafely-core/research-template-docker/pulls|research-template-docker>. "
+    "<https://github.com/pulls?q=is%3Apr+is%3Aopen+repo%3A"
+    "opensafely-core%2Fjob-server+"
+    "repo%3Aopensafely-core%2Fopencodelists+"
+    "repo%3Aebmdatalab%2Fmetrics+"
+    "repo%3Aopensafely-core%2Freports+"
+    "repo%3Aopensafely-core%2Factions-registry+"
+    "repo%3Aopensafely-core%2Fresearch-template-docker"
+    "|Combined link>. "
+    "Merge any outstanding non-NPM Dependabot/update-dependencies-action PRs."
+    "\nReview Thomas' PRs for NPM updates.\n"
+)
+
 
 def test_rota_report_on_monday(freezer, monkeypatch):
     freezer.move_to("2024-03-25")
@@ -31,7 +50,7 @@ def test_rota_report_on_monday(freezer, monkeypatch):
         },
         {
             "text": {
-                "text": "\nReview <https://github.com/opensafely-core/job-server/pulls|job-server>, <https://github.com/opensafely-core/opencodelists/pulls|opencodelists>, <https://github.com/ebmdatalab/metrics/pulls|metrics>, <https://github.com/opensafely-core/reports/pulls|reports>, <https://github.com/opensafely-core/actions-registry/pulls|actions-registry> and <https://github.com/opensafely-core/research-template-docker/pulls|research-template-docker> repos and merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\nReview Thomas' PRs for NPM updates.\n",
+                "text": EXTRA_TEXT,
                 "type": "mrkdwn",
             },
             "type": "section",
@@ -63,7 +82,7 @@ def test_rota_report_on_tuesday(freezer, monkeypatch):
         },
         {
             "text": {
-                "text": "\nReview <https://github.com/opensafely-core/job-server/pulls|job-server>, <https://github.com/opensafely-core/opencodelists/pulls|opencodelists>, <https://github.com/ebmdatalab/metrics/pulls|metrics>, <https://github.com/opensafely-core/reports/pulls|reports>, <https://github.com/opensafely-core/actions-registry/pulls|actions-registry> and <https://github.com/opensafely-core/research-template-docker/pulls|research-template-docker> repos and merge any outstanding non-NPM Dependabot/update-dependencies-action PRs.\nReview Thomas' PRs for NPM updates.\n",
+                "text": EXTRA_TEXT,
                 "type": "mrkdwn",
             },
             "type": "section",
