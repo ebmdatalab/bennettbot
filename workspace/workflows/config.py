@@ -102,7 +102,7 @@ REPOS = {
     },
 }
 
-SKIPPED_WORKFLOWS_ON_MAIN = {
+IGNORED_WORKFLOWS = {
     "opensafely/documentation": [
         65834242,  # [On workflow dispatch] Check docs with Vale
     ],
