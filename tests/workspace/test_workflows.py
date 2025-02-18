@@ -388,6 +388,16 @@ def test_all_workflows_found(mock_airlock_reporter, cache_path):
     assert "created" not in Mocket.last_request().querystring
 
 
+def test_some_workflows_ignored(mock_airlock_reporter, cache_path):
+    # Have the first run in runs.json be for an ignored workflow
+    mock_airlock_reporter.workflows.pop(113602598)
+    mock_airlock_reporter.workflow_ids = set(mock_airlock_reporter.workflows.keys())
+    with patch("workspace.workflows.jobs.CACHE_PATH", cache_path):
+        conclusions = mock_airlock_reporter.get_latest_conclusions()
+    assert len(conclusions) == len(WORKFLOWS_MAIN) - 1
+    assert 113602598 not in conclusions
+
+
 def test_some_workflows_not_found(mock_airlock_reporter, cache_path):
     mock_airlock_reporter.workflows[1234] = "Workflow that only exists in the cache"
     mock_airlock_reporter.cache = {

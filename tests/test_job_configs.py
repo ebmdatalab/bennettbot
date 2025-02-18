@@ -71,7 +71,7 @@ def test_build_config():
     config = build_config(raw_config)
     # Assert that in tests, settings.WORKSPACE_DIR and
     # settings.WRITEABLE_WORKSPACE_DIR are different. Jobs that don't already have
-    # a namespace dir will useWRITEABLE_WORKSPACE_DIR
+    # a namespace dir will use WRITEABLE_WORKSPACE_DIR
     assert settings.WORKSPACE_DIR != settings.WRITEABLE_WORKSPACE_DIR
     assert config == {
         "jobs": {

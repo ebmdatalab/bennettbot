@@ -211,8 +211,9 @@ class RepoWorkflowReporter:
         for run in all_runs:
             if run["workflow_id"] in found_ids:
                 continue
-            latest_runs.append(run)
-            found_ids.add(run["workflow_id"])
+            if run["workflow_id"] in self.workflow_ids:
+                latest_runs.append(run)
+                found_ids.add(run["workflow_id"])
             if found_ids == self.workflow_ids:
                 return latest_runs, set()
         missing_ids = self.workflow_ids - found_ids
