@@ -102,7 +102,10 @@ REPOS = {
     },
 }
 
-SKIPPED_WORKFLOWS_ON_MAIN = {
+IGNORED_WORKFLOWS = {
+    "opensafely-core/backend-server": [
+        88048790,  # Disabled
+    ],
     "opensafely/documentation": [
         65834242,  # [On workflow dispatch] Check docs with Vale
     ],

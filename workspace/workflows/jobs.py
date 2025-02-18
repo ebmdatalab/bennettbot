@@ -121,11 +121,11 @@ class RepoWorkflowReporter:
     def get_workflows(self) -> dict:
         results = self._get_json_response("actions/workflows")["workflows"]
         workflows = {wf["id"]: wf["name"] for wf in results}
-        self.remove_workflows_skipped_on_main(workflows)
+        self.remove_ignored_workflows(workflows)
         return workflows
 
-    def remove_workflows_skipped_on_main(self, workflows):
-        skipped = config.SKIPPED_WORKFLOWS_ON_MAIN.get(self.location, [])
+    def remove_ignored_workflows(self, workflows):
+        skipped = config.IGNORED_WORKFLOWS.get(self.location, [])
         for workflow_id in skipped:
             workflows.pop(workflow_id, None)
 
