@@ -98,6 +98,24 @@ raw_config = {
             },
         ],
     },
+    "inbox": {
+        "description": "Email inbox tools",
+        "jobs": {
+            "rota_report": {
+                "run_args_template": "python jobs.py",
+                "report_stdout": True,
+                "report_format": "blocks",
+            },
+        },
+        "slack": [
+            {
+                "command": "rota report",
+                "help": "Report who's next on inbox checking duty",
+                "action": "schedule_job",
+                "job_type": "rota_report",
+            },
+        ],
+    },
     "op": {
         "restricted": True,
         "description": "OpenPrescribing deployment and tools",
